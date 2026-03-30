@@ -12,7 +12,12 @@ import {
   type MeasurementFieldKey,
 } from '@/lib/measurement';
 import { requestOtpViaTextLk } from '@/lib/otp-client';
-import { isValidE164Phone, normalizePhoneForAuth } from '@/lib/phone-auth';
+import {
+  DEFAULT_PHONE_COUNTRY_CODE,
+  getSriLankaLocalPhoneInput,
+  isValidE164Phone,
+  normalizePhoneForAuth,
+} from '@/lib/phone-auth';
 import { setOtpSession, setPendingRegistration } from '@/lib/auth-flow';
 
 /* ─────────────────────────────────────────────
@@ -336,6 +341,20 @@ const CSS = `
     color: var(--ash); flex-shrink: 0;
   }
   .rp-input-icon svg { width: 15px; height: 15px; }
+  .rp-input-country {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 14px 0 0;
+    margin-right: 14px;
+    border-right: 1px solid var(--cloud);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
   .rp-input-suffix {
     padding: 0 14px; font-size: 13px; font-weight: 600;
     color: var(--ash); flex-shrink: 0;
@@ -818,7 +837,7 @@ export function RegisterPage() {
       showError('First name, last name, and phone number are required.'); return;
     }
     if (!isValidE164Phone(normalizedPhone)) {
-      showError('Phone must be in E.164 format: +9477xxxxxxx'); return;
+      showError('Enter a valid Sri Lankan mobile number.'); return;
     }
     if (password.length < 6) { showError('Password must be at least 6 characters.'); return; }
     if (password !== confirmPw) { showError('Passwords do not match.'); return; }
@@ -1086,7 +1105,17 @@ export function RegisterPage() {
                   <div>
                     <label className="rp-label">Phone number</label>
                     <InputWrap icon={<Ico.Phone />}>
-                      <input className="rp-text-input" type="tel" placeholder="+9477xxxxxxx" value={phone} onChange={e => setPhone(e.target.value)} autoComplete="tel" />
+                      <div className="rp-input-country">{DEFAULT_PHONE_COUNTRY_CODE}</div>
+                      <input
+                        className="rp-text-input"
+                        type="tel"
+                        inputMode="numeric"
+                        maxLength={9}
+                        placeholder="77xxxxxxx"
+                        value={phone}
+                        onChange={e => setPhone(getSriLankaLocalPhoneInput(e.target.value))}
+                        autoComplete="tel"
+                      />
                     </InputWrap>
                   </div>
 

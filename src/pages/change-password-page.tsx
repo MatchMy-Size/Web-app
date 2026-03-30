@@ -5,7 +5,12 @@ import { useAuth } from '@/context/auth-context';
 import { getOtpSession, setOtpSession, type OtpSession } from '@/lib/auth-flow';
 import { attachPasswordToVerifiedPhone } from '@/lib/firebase-auth';
 import { requestOtpViaTextLk, verifyOtpSession } from '@/lib/otp-client';
-import { isValidE164Phone, normalizePhoneForAuth } from '@/lib/phone-auth';
+import {
+  DEFAULT_PHONE_COUNTRY_CODE,
+  getSriLankaLocalPhoneInput,
+  isValidE164Phone,
+  normalizePhoneForAuth,
+} from '@/lib/phone-auth';
 import { useRecommendationData } from '@/lib/use-recommendation-data';
 
 /* ─────────────────────────────────────────────
@@ -209,6 +214,20 @@ const CSS = `
     color: var(--ash); flex-shrink: 0;
   }
   .cp-input-icon svg { width: 15px; height: 15px; }
+  .cp-input-country {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 14px 0 0;
+    margin-right: 14px;
+    border-right: 1px solid var(--cloud);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
   .cp-text-input {
     flex: 1; height: 52px; border: none; outline: none;
     background: transparent; font-family: var(--fs);
@@ -398,7 +417,7 @@ export function ChangePasswordPage() {
 
   const [step,        setStep]        = useState<Step>('verify');
   const [dir,         setDir]         = useState<'fwd' | 'back'>('fwd');
-  const [phone,       setPhone]       = useState(String(profile?.phoneNumber ?? ''));
+  const [phone,       setPhone]       = useState(getSriLankaLocalPhoneInput(String(profile?.phoneNumber ?? '')));
   const [session,     setSession]     = useState<OtpSession | null>(getOtpSession());
   const [code,        setCode]        = useState('');
   const [newPw,       setNewPw]       = useState('');
@@ -411,7 +430,7 @@ export function ChangePasswordPage() {
   const [sentTo,      setSentTo]      = useState<string | null>(null);
 
   useEffect(() => {
-    if (profile?.phoneNumber) setPhone(String(profile.phoneNumber));
+    if (profile?.phoneNumber) setPhone(getSriLankaLocalPhoneInput(String(profile.phoneNumber)));
   }, [profile?.phoneNumber]);
 
   const showError = (msg: string) => { setError(msg); setErrorKey(k => k + 1); };
@@ -421,7 +440,7 @@ export function ChangePasswordPage() {
 
   const handleSendOtp = async () => {
     const normalized = normalizePhoneForAuth(phone);
-    if (!isValidE164Phone(normalized)) { showError('Use E.164 format: +9477xxxxxxx'); return; }
+    if (!isValidE164Phone(normalized)) { showError('Enter a valid Sri Lankan mobile number.'); return; }
     try {
       setLoading(true); setError(null);
       const nextSession = await requestOtpViaTextLk(normalized, 'changePassword');
@@ -512,16 +531,19 @@ export function ChangePasswordPage() {
               <div className="cp-field">
                 <div className="cp-field-label">
                   Phone number
-                  <span className="cp-field-hint" style={{ marginLeft: 'auto' }}>E.164 format</span>
+                  <span className="cp-field-hint" style={{ marginLeft: 'auto' }}>Sri Lanka</span>
                 </div>
                 <div className={`cp-input-wrap${error ? ' cp-err' : ''}`}>
                   <div className="cp-input-icon"><Ico.Phone /></div>
+                  <div className="cp-input-country">{DEFAULT_PHONE_COUNTRY_CODE}</div>
                   <input
                     className="cp-text-input"
                     type="tel"
-                    placeholder="+9477xxxxxxx"
+                    inputMode="numeric"
+                    maxLength={9}
+                    placeholder="77xxxxxxx"
                     value={phone}
-                    onChange={e => setPhone(e.target.value)}
+                    onChange={e => setPhone(getSriLankaLocalPhoneInput(e.target.value))}
                     onKeyDown={e => e.key === 'Enter' && handleSendOtp()}
                     autoComplete="tel"
                   />

@@ -1,5 +1,6 @@
 import { doc, serverTimestamp, setDoc } from '@/lib/firebase-db';
 import { db, getDocById, subscribeDocById } from '@/lib/firebase-db';
+import { normalizePhoneForAuth } from '@/lib/phone-auth';
 
 import type {
   ClothingChoice,
@@ -189,6 +190,10 @@ export const saveCustomerProfile = async (profile: CustomerProfileInput) => {
   const measurementKeys = Object.keys(measurementNumbers);
   const primaryMeasurementKeys = sanitizeStringArray(profile.primaryMeasurementKeys ?? []);
   const measurementDisplayNames = sanitizeDisplayNames(profile.measurementDisplayNames);
+  const normalizedPhoneNumber =
+    typeof profile.phoneNumber === 'string' && profile.phoneNumber.trim()
+      ? normalizePhoneForAuth(profile.phoneNumber)
+      : null;
 
   const profileKey = resolveProfileKey(profile);
 
@@ -197,7 +202,7 @@ export const saveCustomerProfile = async (profile: CustomerProfileInput) => {
       doc(db, 'users', profile.uid),
       {
         role: 'customer',
-        phoneNumber: profile.phoneNumber ?? null,
+        phoneNumber: normalizedPhoneNumber,
         email: profile.email ?? null,
         firstName: profile.firstName,
         lastName: profile.lastName,

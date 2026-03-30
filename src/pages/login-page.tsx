@@ -3,6 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import { AppLogo } from '@/components/app-logo';
 import { signInWithPhonePassword } from '@/lib/firebase-auth';
+import {
+  DEFAULT_PHONE_COUNTRY_CODE,
+  getSriLankaLocalPhoneInput,
+  isValidE164Phone,
+  normalizePhoneForAuth,
+} from '@/lib/phone-auth';
 
 /* ─────────────────────────────────────────────
    Fonts + CSS injected once
@@ -206,6 +212,21 @@ const CSS = `
   }
   .lp-input-prefix svg { width: 16px; height: 16px; }
 
+  .lp-input-country {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 14px 0 0;
+    margin-right: 14px;
+    border-right: 1px solid var(--cloud);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
   .lp-text-input {
     flex: 1; height: 52px;
     border: none; outline: none; background: transparent;
@@ -354,6 +375,23 @@ function IconAlert() {
     </svg>
   );
 }
+
+const getLoginErrorMessage = (error: unknown) => {
+  const code = typeof error === 'object' && error && 'code' in error
+    ? String((error as { code?: string }).code ?? '')
+    : '';
+
+  if (
+    code === 'auth/invalid-credential' ||
+    code === 'auth/user-not-found' ||
+    code === 'auth/wrong-password' ||
+    code === 'auth/invalid-login-credentials'
+  ) {
+    return 'Phone number or password is incorrect.';
+  }
+
+  return error instanceof Error ? error.message : 'Unable to sign in.';
+};
 /* ─────────────────────────────────────────────
    Main component
 ───────────────────────────────────────────── */
@@ -371,12 +409,18 @@ export function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    const normalizedPhone = normalizePhoneForAuth(phoneNumber);
+    if (!isValidE164Phone(normalizedPhone)) {
+      setError('Enter a valid Sri Lankan mobile number.');
+      setErrorKey(k => k + 1);
+      return;
+    }
     try {
       setLoading(true);
-      await signInWithPhonePassword(phoneNumber.trim(), password);
+      await signInWithPhonePassword(normalizedPhone, password);
       navigate('/app/home', { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to sign in.');
+      setError(getLoginErrorMessage(err));
       setErrorKey(k => k + 1);
     } finally {
       setLoading(false);
@@ -457,12 +501,15 @@ export function LoginPage() {
                 <label className="lp-field-label">Phone number</label>
                 <div className={`lp-input-wrap${error ? ' lp-input-error' : ''}`}>
                   <div className="lp-input-prefix"><IconPhone /></div>
+                  <div className="lp-input-country">{DEFAULT_PHONE_COUNTRY_CODE}</div>
                   <input
                     className="lp-text-input"
                     type="tel"
-                    placeholder="+94 77 xxx xxxx"
+                    inputMode="numeric"
+                    maxLength={9}
+                    placeholder="77xxxxxxx"
                     value={phoneNumber}
-                    onChange={e => setPhoneNumber(e.target.value)}
+                    onChange={e => setPhoneNumber(getSriLankaLocalPhoneInput(e.target.value))}
                     autoComplete="tel"
                   />
                 </div>
