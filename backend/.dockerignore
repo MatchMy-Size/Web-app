@@ -1,0 +1,6 @@
+target
+.env
+.env.*
+!.env.example
+migration/node_modules
+*.log

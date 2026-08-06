@@ -1,0 +1,55 @@
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: matchmysize-backend
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: ${JDBC_DATABASE_URL:jdbc:postgresql://localhost:54322/postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:5}
+      minimum-idle: 1
+      connection-timeout: 20000
+  flyway:
+    enabled: true
+  jackson:
+    default-property-inclusion: non_null
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+# Authentication requests contain passwords and tokens. Keep framework request-body
+# logging disabled even when a local DEBUG environment variable is present.
+logging:
+  level:
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  security:
+    supabase-issuer: ${SUPABASE_JWT_ISSUER:https://example.supabase.co/auth/v1}
+    supabase-jwks-uri: ${SUPABASE_JWKS_URI:https://example.supabase.co/auth/v1/.well-known/jwks.json}
+  supabase:
+    url: ${SUPABASE_URL:}
+    publishable-key: ${SUPABASE_PUBLISHABLE_KEY:}
+    secret-key: ${SUPABASE_SECRET_KEY:}
+  text-lk:
+    api-token: ${TEXTLK_API_TOKEN:}
+    sender-id: ${TEXTLK_SENDER_ID:MatchMySize}
+    base-url: ${TEXTLK_BASE_URL:https://app.text.lk/api/v3}
+    otp-template: ${TEXTLK_OTP_TEMPLATE:Your MatchMySize verification code is {code}. It expires in {minutes} minutes.}
+    otp-ttl-ms: ${TEXTLK_OTP_TTL_MS:300000}

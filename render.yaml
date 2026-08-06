@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: matchmysize-api
+    runtime: docker
+    plan: free
+    region: singapore
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: JDBC_DATABASE_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_POOL_SIZE
+        value: "5"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: SUPABASE_JWT_ISSUER
+        sync: false
+      - key: SUPABASE_JWKS_URI
+        sync: false
+      - key: APP_CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: PHONE_PASSWORD_DOMAIN
+        value: phone.whatmysize.app
+      - key: TEXTLK_API_TOKEN
+        sync: false
+      - key: TEXTLK_SENDER_ID
+        value: MatchMySize
+      - key: TEXTLK_BASE_URL
+        value: https://app.text.lk/api/v3
+      - key: TEXTLK_OTP_TTL_MS
+        value: "300000"

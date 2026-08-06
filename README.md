@@ -1,96 +1,50 @@
-# MatchMySize Web
+# MatchMySize
 
-React + Vite frontend with a small Node/Express backend for secure Text.lk OTP requests.
+MatchMySize is organized as a modular-monolith system with one Spring Boot backend for the web and mobile clients.
 
-## Setup
-
-1. Copy `.env.example` to `.env`
-2. Fill in the Firebase web config (`VITE_...`)
-3. Fill in the backend secrets:
-   - `TEXTLK_API_TOKEN`
-   - `TEXTLK_SENDER_ID`
-   - `FIREBASE_SERVICE_ACCOUNT_PATH`
-   - `FIREBASE_PROJECT_ID`
-4. Install dependencies
-   - `npm install`
-
-## Development
-
-- Frontend + backend together: `npm run dev`
-- Frontend only: `npm run dev:client`
-- Backend only: `npm run dev:server`
-
-## Production build
-
-- Build frontend: `npm run build`
-- Start Node server: `npm run start`
-
-## Firebase hosting setup
-
-This repo deploys in two pieces:
-
-- Firebase Hosting serves the Vite frontend from `dist`
-- Cloud Run serves the Express API under `/api/*`
-
-Files already added for this setup:
-
-- `firebase.json`
-- `.firebaserc`
-- `Dockerfile`
-- `.dockerignore`
-- `.env.production.example`
-- `scripts/generate-production-env.mjs`
-- `scripts/deploy-cloudrun.mjs`
-- `scripts/deploy-hosting.mjs`
-
-### 1. Build the frontend for hosting
-
-1. Generate `.env.production` from `.env`
-2. Build:
-
-   ```bash
-   npm run deploy:prepare
-   npm run build
-   ```
-
-### 2. Deploy the API to Cloud Run
-
-Use the same Google project as Firebase:
-
-```bash
-gcloud auth login
-npm run deploy:api
+```text
+.
+├── frontend/       React + Vite website (Netlify)
+├── backend/        Spring Boot modular monolith (Render)
+├── netlify.toml
+└── render.yaml
 ```
 
-Set these runtime environment variables on the Cloud Run service:
+## Architecture
 
-- `FIREBASE_PROJECT_ID`
-- `TEXTLK_API_TOKEN`
-- `TEXTLK_SENDER_ID`
-- `TEXTLK_BASE_URL`
-- `TEXTLK_OTP_TEMPLATE`
-- `TEXTLK_OTP_TTL_MS`
+- **Clients:** the website and mobile app communicate only with the Spring API.
+- **Authentication:** Spring performs Supabase Auth registration, login, refresh, logout, and password operations. Clients never receive Supabase project credentials.
+- **Application API:** Spring modules cover identity, OTP, profiles, measurements, family members, and catalog data.
+- **Database:** Supabase PostgreSQL, managed by Flyway migrations and accessed only by Spring.
+- **Catalog ownership:** every product/size record has a required PostgreSQL foreign key to its seller account; deleting a seller with catalog data is restricted.
+- **Images:** Cloudinary uploads remain unchanged.
+- **SMS:** Text.lk is called only by Spring.
 
-Notes:
+Legacy customer accounts were intentionally reset. Seller and super-admin identities and profiles were retained in Supabase, but they require a password reset before their first Supabase login because the previous password hashes are not portable. New customer accounts must be created through the OTP registration API.
 
-- Cloud Run can now use application default credentials, so you do not need to mount a Firebase service-account JSON in production.
-- The Cloud Run runtime service account must have access to Firebase Auth and Firestore in your Google project.
+## Local development
 
-### 3. Deploy Firebase Hosting
+1. Copy `backend/.env.example` to `backend/.env` and fill in the server values.
+2. Copy `frontend/.env.example` to `frontend/.env` and set the backend URL and Cloudinary values.
+3. Start the backend:
 
 ```bash
-firebase login
-npm run deploy:hosting
+cd backend
+./mvnw spring-boot:run
 ```
 
-`firebase.json` is configured so:
+4. Start the frontend in another terminal:
 
-- `/api/**` rewrites to the Cloud Run service `matchmysize-api`
-- all other routes rewrite to `/index.html` for React Router
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## Notes
+The browser opens at `http://localhost:5173`; the Spring API listens at `http://localhost:8080`.
 
-- The frontend uses the same Firebase project and Firestore collections as the mobile app.
-- Login stays phone + password.
-- Signup and change-password OTP flows use Text.lk through the Node backend.
-- QR scan is intentionally not included in the web build.
+## Production
+
+- Render reads `render.yaml` and builds `backend/Dockerfile`.
+- Netlify reads `netlify.toml`, builds `frontend/`, and applies the SPA fallback.
+- Add the values documented in each `.env.example` to the relevant provider dashboard. Never commit real credentials.
