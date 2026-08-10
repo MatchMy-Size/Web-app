@@ -9,6 +9,8 @@ import {
 } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+import manImage from '@/assets/images/man.png';
+import womenImage from '@/assets/images/women.png';
 import { AppLogo } from '@/components/app-logo';
 import {
   CLOTHING_OPTIONS_BY_GENDER,
@@ -269,6 +271,114 @@ const CSS = `
   }
   .rp-choice-check svg { width: 11px; height: 11px; color: var(--white); opacity: 0; transition: opacity 0.15s; }
   .rp-choice-card.is-selected .rp-choice-check svg { opacity: 1; }
+
+  /* Visual gender cards */
+  .rp-phase-wrap.rp-phase-wrap-gender {
+    max-width: 820px;
+  }
+  .rp-gender-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .rp-gender-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 390px;
+    padding: 14px;
+    border: 1.5px solid var(--cloud);
+    border-radius: 22px;
+    background: var(--white);
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    appearance: none;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.2s var(--ease), border-color 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s var(--ease);
+  }
+  .rp-gender-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(13,13,13,0.18);
+    box-shadow: 0 18px 46px rgba(13,13,13,0.08);
+  }
+  .rp-gender-card.is-selected {
+    border-color: var(--ink);
+    background: rgba(13,13,13,0.025);
+    box-shadow: 0 0 0 3px rgba(13,13,13,0.06), 0 20px 54px rgba(13,13,13,0.08);
+  }
+  .rp-gender-card:focus-visible {
+    outline: none;
+    border-color: var(--ink);
+    box-shadow: 0 0 0 4px rgba(13,13,13,0.09);
+  }
+  .rp-gender-visual {
+    height: 280px;
+    border-radius: 18px;
+    border: 1px solid rgba(13,13,13,0.08);
+    background: linear-gradient(180deg, #FFFFFF 0%, #F3F6F0 100%);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    overflow: hidden;
+    transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
+  }
+  .rp-gender-card.is-selected .rp-gender-visual {
+    border-color: rgba(73,102,87,0.3);
+    background: linear-gradient(180deg, #FFFFFF 0%, #EEF3EC 100%);
+  }
+  .rp-gender-visual img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center bottom;
+    transform: scale(1.14);
+    filter: drop-shadow(0 18px 22px rgba(13,13,13,0.1));
+  }
+  .rp-gender-copy {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 4px 2px;
+  }
+  .rp-gender-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .rp-gender-sub {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ash);
+  }
+  .rp-gender-check {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--cloud);
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .rp-gender-card.is-selected .rp-gender-check {
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+  .rp-gender-check svg {
+    width: 13px;
+    height: 13px;
+    color: var(--white);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .rp-gender-card.is-selected .rp-gender-check svg { opacity: 1; }
 
   /* Measurement guide card */
   .rp-measure-card {
@@ -597,7 +707,7 @@ const CSS = `
     }
 
     .rp-phase-header {
-      margin-bottom: 28px;
+      margin-bottom: 22px;
     }
 
     .rp-phase-title {
@@ -611,6 +721,58 @@ const CSS = `
     .rp-choice-card {
       padding: 16px;
       gap: 14px;
+    }
+
+    .rp-gender-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .rp-gender-card {
+      flex-direction: row;
+      align-items: center;
+      min-height: auto;
+      padding: 12px;
+      border-radius: 18px;
+      gap: 14px;
+    }
+
+    .rp-gender-visual {
+      width: 116px;
+      height: 136px;
+      border-radius: 15px;
+      flex-shrink: 0;
+    }
+
+    .rp-gender-copy {
+      flex: 1;
+      align-items: center;
+      padding: 0;
+      gap: 12px;
+    }
+
+    .rp-gender-title {
+      font-size: 17px;
+    }
+
+    .rp-gender-sub {
+      font-size: 12.5px;
+      line-height: 1.45;
+    }
+
+    .rp-gender-check {
+      width: 26px;
+      height: 26px;
+    }
+
+    .rp-btn-next {
+      min-height: 50px;
+      height: auto;
+      padding: 12px 14px;
+      line-height: 1.25;
+      text-align: center;
+      white-space: normal;
     }
 
     .rp-choice-icon {
@@ -757,6 +919,36 @@ function ChoiceCard({ selected, title, sub, icon, onClick }: {
   );
 }
 
+function GenderChoiceCard({ selected, title, sub, imageSrc, onClick }: {
+  selected: boolean;
+  title: ReactNode;
+  sub: ReactNode;
+  imageSrc: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`rp-gender-card${selected ? ' is-selected' : ''}`}
+      aria-pressed={selected}
+      onClick={onClick}
+    >
+      <div className="rp-gender-visual">
+        <img src={imageSrc} alt="" aria-hidden="true" />
+      </div>
+      <div className="rp-gender-copy">
+        <div>
+          <div className="rp-gender-title">{title}</div>
+          <div className="rp-gender-sub">{sub}</div>
+        </div>
+        <span className="rp-gender-check">
+          <Ico.Check />
+        </span>
+      </div>
+    </button>
+  );
+}
+
 function InputWrap({ icon, suffix, error = false, children }: {
   icon?: ReactNode;
   suffix?: ReactNode;
@@ -775,9 +967,10 @@ function InputWrap({ icon, suffix, error = false, children }: {
 /* ─────────────────────────────────────────────
    Animated phase container
 ───────────────────────────────────────────── */
-function PhaseContainer({ phaseKey, dir, children }: {
+function PhaseContainer({ phaseKey, dir, className, children }: {
   phaseKey: string;
   dir: 'fwd' | 'back';
+  className?: string;
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -791,7 +984,7 @@ function PhaseContainer({ phaseKey, dir, children }: {
       : 'rp-slideIn 0.32s var(--ease) both';
   }, [phaseKey]);
 
-  return <div ref={ref} className="rp-phase-wrap">{children}</div>;
+  return <div ref={ref} className={`rp-phase-wrap${className ? ` ${className}` : ''}`}>{children}</div>;
 }
 
 /* ─────────────────────────────────────────────
@@ -936,7 +1129,11 @@ export function RegisterPage() {
 
       {/* ── Main ── */}
       <main className="rp-main">
-        <PhaseContainer phaseKey={`${phase}-${stepIndex}`} dir={dir}>
+        <PhaseContainer
+          phaseKey={`${phase}-${stepIndex}`}
+          dir={dir}
+          className={phase === 'gender' ? 'rp-phase-wrap-gender' : undefined}
+        >
 
           {/* ── Phase 1: Gender ── */}
           {phase === 'gender' && (
@@ -946,25 +1143,26 @@ export function RegisterPage() {
                 title="Tell us about you"
                 sub="Choose your gender so we can tailor clothing options and measurement guides."
               />
-              <div className="rp-choice-grid">
-                <ChoiceCard
+              <div className="rp-gender-grid">
+                <GenderChoiceCard
                   selected={gender === 'men'}
-                  title="Men"
-                  sub="Men's sizing charts and clothing options"
-                  icon={<Ico.User />}
+                  title="Men's sizing"
+                  sub="Shirts, T-shirts, trousers and shorts"
+                  imageSrc={manImage}
                   onClick={() => setGender('men')}
                 />
-                <ChoiceCard
+                <GenderChoiceCard
                   selected={gender === 'women'}
-                  title="Women"
-                  sub="Women's sizing charts and clothing options"
-                  icon={<Ico.User />}
+                  title="Women's sizing"
+                  sub="Blouses, dresses, trousers and shorts"
+                  imageSrc={womenImage}
                   onClick={() => setGender('women')}
                 />
               </div>
               <div className="rp-actions">
                 <button className="rp-btn-next" disabled={!gender} onClick={() => go('preference')}>
-                  Continue <Ico.Arrow />
+                  {gender === 'men' ? "Continue with men's sizing" : gender === 'women' ? "Continue with women's sizing" : 'Choose a sizing model'}
+                  <Ico.Arrow />
                 </button>
               </div>
             </>

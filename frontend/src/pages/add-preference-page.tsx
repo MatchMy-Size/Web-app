@@ -1,6 +1,8 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
+import manImage from '@/assets/images/man.png';
+import womenImage from '@/assets/images/women.png';
 import { useAuth } from '@/context/auth-context';
 import { useProfileSubject } from '@/context/profile-subject-context';
 import {
@@ -240,10 +242,16 @@ const CSS = `
     padding: 22px;
     background: var(--white); border: 1.5px solid var(--cloud);
     border-radius: 16px; cursor: pointer;
+    font: inherit; color: inherit; text-align: left; appearance: none;
     transition: all 0.2s var(--ease);
     position: relative;
   }
   .ap-choice-card:hover { border-color: var(--mist); box-shadow: 0 6px 22px rgba(0,0,0,0.06); transform: translateY(-2px); }
+  .ap-choice-card:focus-visible {
+    outline: none;
+    border-color: var(--ink);
+    box-shadow: 0 0 0 4px rgba(13,13,13,0.09);
+  }
   .ap-choice-card.selected {
     border-color: var(--ink);
     background: rgba(13,13,13,0.02);
@@ -260,6 +268,54 @@ const CSS = `
   .ap-choice-card.selected .ap-choice-icon svg { color: var(--white); }
   .ap-choice-card-title { font-size: 14.5px; font-weight: 700; color: var(--ink); }
   .ap-choice-card-sub   { font-size: 12.5px; color: var(--ash); line-height: 1.4; margin-top: -4px; }
+  .ap-gender-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    max-width: 820px;
+  }
+  .ap-gender-card {
+    padding: 14px;
+    min-height: 386px;
+    border-radius: 22px;
+    overflow: hidden;
+  }
+  .ap-gender-image {
+    height: 272px;
+    margin: 0 0 2px;
+    border-radius: 18px;
+    border: 1px solid rgba(13,13,13,0.08);
+    background: linear-gradient(180deg, #FFFFFF 0%, #F5F7F2 100%);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    overflow: hidden;
+    transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
+  }
+  .ap-choice-card.selected .ap-gender-image {
+    border-color: rgba(73,102,87,0.28);
+    background: linear-gradient(180deg, #FFFFFF 0%, #EEF3EC 100%);
+  }
+  .ap-gender-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center bottom;
+    transform: scale(1.14);
+    filter: drop-shadow(0 18px 22px rgba(13,13,13,0.1));
+  }
+  .ap-gender-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .ap-gender-card .ap-choice-card-title {
+    font-size: 18px;
+    margin-top: 10px;
+  }
+  .ap-gender-card .ap-choice-card-sub {
+    font-size: 13px;
+    line-height: 1.5;
+  }
   .ap-check-circle {
     position: absolute; top: 14px; right: 14px;
     width: 20px; height: 20px; border-radius: 50%;
@@ -448,6 +504,56 @@ const CSS = `
   .ap-no-gender-icon svg { width: 28px; height: 28px; color: var(--red); }
   .ap-no-gender-title { font-family: var(--fd); font-size: 26px; font-weight: 700; color: var(--ink); }
   .ap-no-gender-sub { font-size: 14px; color: var(--ash); max-width: 320px; line-height: 1.65; }
+
+  @media (max-width: 760px) {
+    .ap-gender-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .ap-gender-card {
+      flex-direction: row;
+      align-items: center;
+      min-height: auto;
+      padding: 12px;
+      border-radius: 18px;
+      gap: 14px;
+    }
+    .ap-gender-image {
+      width: 116px;
+      height: 136px;
+      border-radius: 15px;
+      flex-shrink: 0;
+    }
+    .ap-gender-copy {
+      flex: 1;
+      min-width: 0;
+      gap: 5px;
+    }
+    .ap-gender-card .ap-choice-card-title {
+      font-size: 17px;
+      margin-top: 0;
+    }
+    .ap-gender-card .ap-choice-card-sub {
+      font-size: 12.5px;
+      line-height: 1.45;
+    }
+    .ap-gender-card .ap-check-circle {
+      position: static;
+      width: 26px;
+      height: 26px;
+      margin-left: auto;
+      flex-shrink: 0;
+      order: 4;
+    }
+    .ap-btn-next {
+      min-height: 48px;
+      height: auto;
+      padding: 12px 14px;
+      line-height: 1.25;
+      text-align: center;
+      white-space: normal;
+    }
+  }
 
   /* Keyframes */
   @keyframes ap-fadeDown { from{opacity:0;transform:translateY(-14px)} to{opacity:1;transform:none} }
@@ -768,27 +874,33 @@ export function AddPreferencePage() {
                 <p className="ap-page-sub">Pick the fit guide for {subjectLabel}. This is only needed once before adding clothing measurements.</p>
               </div>
 
-              <div className="ap-choice-grid">
+              <div className="ap-choice-grid ap-gender-grid">
                 {([
-                  { value: 'men' as CustomerGender, title: "Men's sizing", subtitle: 'Shirts, T-shirts, trousers and shorts' },
-                  { value: 'women' as CustomerGender, title: "Women's sizing", subtitle: 'Blouses, dresses, trousers and shorts' },
+                  { value: 'men' as CustomerGender, title: "Men's sizing", subtitle: 'Shirts, T-shirts, trousers and shorts', image: manImage },
+                  { value: 'women' as CustomerGender, title: "Women's sizing", subtitle: 'Blouses, dresses, trousers and shorts', image: womenImage },
                 ]).map(opt => (
-                  <div
+                  <button
+                    type="button"
                     key={opt.value}
-                    className={`ap-choice-card${chosenGender === opt.value ? ' selected' : ''}`}
+                    className={`ap-choice-card ap-gender-card${chosenGender === opt.value ? ' selected' : ''}`}
+                    aria-pressed={chosenGender === opt.value}
                     onClick={() => setChosenGender(opt.value)}>
                     <div className="ap-check-circle"><Ico.Check /></div>
-                    <div className="ap-choice-icon"><Ico.User /></div>
-                    <div className="ap-choice-card-title">{opt.title}</div>
-                    <div className="ap-choice-card-sub">{opt.subtitle}</div>
-                  </div>
+                    <div className="ap-gender-image">
+                      <img src={opt.image} alt="" aria-hidden="true" />
+                    </div>
+                    <div className="ap-gender-copy">
+                      <div className="ap-choice-card-title">{opt.title}</div>
+                      <div className="ap-choice-card-sub">{opt.subtitle}</div>
+                    </div>
+                  </button>
                 ))}
               </div>
 
               <div className="ap-actions" style={{ marginTop: 8 }}>
                 <button className="ap-btn-next" disabled={!chosenGender}
                   onClick={() => goStep('fwd', () => { setStepIndex(0); setPhase(choice ? 'guide' : 'choose'); })}>
-                  Continue <Ico.Arrow />
+                  {chosenGender === 'men' ? "Continue with men's sizing" : chosenGender === 'women' ? "Continue with women's sizing" : 'Choose a sizing model'} <Ico.Arrow />
                 </button>
               </div>
             </PhaseWrap>
