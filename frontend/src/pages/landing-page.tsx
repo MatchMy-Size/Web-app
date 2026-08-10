@@ -1253,6 +1253,7 @@ import { useEffect, type CSSProperties, type ReactNode } from 'react';
 import appStoreIcon from '@/assets/images/appstore.png';
 import cameraIcon from '@/assets/images/camera.png';
 import clothesIcon from '@/assets/images/clothes.png';
+import fashionFigure from '@/assets/images/figure.png';
 import lockIcon from '@/assets/images/lock.png';
 import playStoreIcon from '@/assets/images/playstore.png';
 import qrCodeIcon from '@/assets/images/qr-code.png';
@@ -1396,22 +1397,304 @@ const CSS = `
   .lp-section-sub { font-size: 16px; color: var(--ash); max-width: 520px; line-height: 1.75; }
 
   /* How it works */
-  .lp-how { background: var(--white); }
-  .lp-how-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; margin-top: 64px; }
-  .lp-steps { display: flex; flex-direction: column; }
-  .lp-step { display: flex; gap: 22px; padding: 26px 0; border-bottom: 1px solid var(--cloud); cursor: default; }
-  .lp-step:first-child { border-top: 1px solid var(--cloud); }
-  .lp-step:hover .lp-step-num { background: var(--ink); color: var(--white); }
-  .lp-step-num { width: 40px; height: 40px; border-radius: 10px; background: var(--paper); border: 1px solid var(--cloud); display: flex; align-items: center; justify-content: center; font-family: var(--fd); font-size: 18px; font-weight: 700; color: var(--ink); flex-shrink: 0; transition: all 0.2s; }
-  .lp-step-title { font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .lp-how { background: var(--white); position: relative; overflow: hidden; }
+  .lp-how-grid {
+    display: grid;
+    grid-template-columns: minmax(290px, 0.82fr) minmax(660px, 1.38fr);
+    gap: clamp(52px, 6vw, 92px);
+    align-items: center;
+    margin-top: 64px;
+  }
+  .lp-steps {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .lp-steps::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 38px;
+    bottom: 38px;
+    width: 1px;
+    background: linear-gradient(180deg, rgba(73,102,87,0.28), rgba(73,102,87,0.08));
+  }
+  .lp-step {
+    position: relative;
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    gap: 20px;
+    padding: 26px 0;
+    border-bottom: 1px solid rgba(13,13,13,0.08);
+    cursor: default;
+  }
+  .lp-step:first-child { border-top: 1px solid rgba(13,13,13,0.08); }
+  .lp-step:hover .lp-step-num,
+  .lp-step:first-child .lp-step-num {
+    background: #EEF3EC;
+    border-color: rgba(73,102,87,0.3);
+    color: #496657;
+  }
+  .lp-step-num {
+    position: relative;
+    z-index: 1;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--paper);
+    border: 1px solid var(--cloud);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--fd);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
+    flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+  }
+  .lp-step-kicker {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 6px;
+  }
+  .lp-step-icon {
+    width: 20px;
+    height: 20px;
+    color: #496657;
+    opacity: 0.72;
+    flex-shrink: 0;
+  }
+  .lp-step-icon svg,
+  .lp-meas-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    stroke: currentColor;
+  }
+  .lp-step-title { font-size: 15px; font-weight: 600; color: var(--ink); }
   .lp-step-desc { font-size: 13.5px; color: var(--ash); line-height: 1.65; }
-  .lp-how-vis { background: var(--paper); border-radius: 24px; border: 1px solid var(--cloud); padding: 32px; position: relative; overflow: hidden; }
-  .lp-how-vis-glow { position: absolute; inset: 0; background: radial-gradient(ellipse at 70% 20%, rgba(195,216,193,0.2) 0%, transparent 65%); pointer-events: none; }
-  .lp-meas-label-col { font-size: 11px; font-weight: 600; color: var(--ash); width: 72px; text-align: right; }
-  .lp-bar-wrap { flex: 1; background: var(--cloud); border-radius: 999px; height: 8px; overflow: hidden; }
-  .lp-bar { height: 100%; border-radius: 999px; background: var(--sage-deep); }
-  .lp-meas-val { font-size: 12px; font-weight: 700; color: var(--ink); width: 48px; }
-  .lp-score { background: var(--sage-light); border: 1px solid var(--sage-dark); border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 700; color: var(--sage-deep); }
+  .lp-how-vis {
+    min-height: 590px;
+    background: #FAFAF7;
+    border-radius: 24px;
+    border: 1px solid rgba(13,13,13,0.08);
+    padding: clamp(26px, 3vw, 38px);
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: minmax(360px, 1.08fr) minmax(300px, 0.92fr);
+    gap: clamp(22px, 3vw, 36px);
+    align-items: center;
+  }
+  .lp-how-vis-glow {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 38% 54%, rgba(238,243,236,0.86) 0%, transparent 46%),
+      radial-gradient(ellipse at 82% 20%, rgba(195,216,193,0.16) 0%, transparent 62%);
+    pointer-events: none;
+  }
+  .lp-fashion-figure-wrap {
+    position: relative;
+    z-index: 1;
+    min-height: 520px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .lp-fashion-figure {
+    width: clamp(410px, 35vw, 530px);
+    max-width: none;
+    filter: drop-shadow(0 26px 36px rgba(13,13,13,0.06));
+    opacity: 0;
+    transform: translateY(18px);
+    animation: lp-figureIn 0.78s 0.2s var(--ease) both;
+  }
+  .lp-measuring-tape,
+  .lp-fabric-art {
+    position: absolute;
+    pointer-events: none;
+    color: #496657;
+  }
+  .lp-measuring-tape {
+    width: 740px;
+    height: auto;
+    left: -170px;
+    top: -92px;
+    opacity: 0.1;
+    transform: rotate(-5deg);
+  }
+  .lp-fabric-art {
+    width: 620px;
+    right: -250px;
+    bottom: -112px;
+    opacity: 0.14;
+  }
+  .lp-editorial-note {
+    position: absolute;
+    z-index: 2;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.24em;
+    color: rgba(73,102,87,0.2);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .lp-note-fit { left: -4px; bottom: 58px; transform: rotate(-90deg); transform-origin: left bottom; }
+  .lp-note-return { right: 4px; top: 38px; }
+  .lp-measurement-card {
+    position: relative;
+    z-index: 2;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid rgba(13,13,13,0.08);
+    border-radius: 22px;
+    padding: 28px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.05);
+    backdrop-filter: blur(12px);
+  }
+  .lp-measurement-card-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .lp-measurement-card-title p {
+    font-size: 11px;
+    font-weight: 700;
+    color: #666863;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .lp-measurement-card-title span {
+    font-family: var(--fd);
+    font-size: 18px;
+    font-weight: 600;
+    color: #496657;
+  }
+  .lp-meas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .lp-meas-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 52px;
+    gap: 12px;
+    align-items: center;
+  }
+  .lp-meas-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .lp-meas-icon {
+    width: 18px;
+    height: 18px;
+    color: #496657;
+    opacity: 0.64;
+    flex-shrink: 0;
+  }
+  .lp-meas-label-col {
+    font-size: 10px;
+    font-weight: 700;
+    color: #666863;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .lp-bar-wrap {
+    position: relative;
+    height: 7px;
+    background: rgba(13,13,13,0.07);
+    border-radius: 999px;
+  }
+  .lp-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    border-radius: 999px;
+    background: #496657;
+  }
+  .lp-bar-marker {
+    position: absolute;
+    top: 50%;
+    left: var(--x);
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #496657;
+    border: 2px solid var(--white);
+    box-shadow: 0 0 0 1px rgba(73,102,87,0.24);
+    transform: translate(-50%, -50%) scale(0.72);
+    opacity: 0;
+    animation: lp-markerIn 0.42s var(--ease) both;
+  }
+  .lp-meas-val {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .lp-card-result {
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid rgba(13,13,13,0.1);
+  }
+  .lp-result-brand {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+  .lp-result-brand span {
+    color: #666863;
+    font-weight: 600;
+  }
+  .lp-result-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #666863;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .lp-result-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+  .lp-result-size {
+    font-family: var(--fd);
+    font-size: 64px;
+    font-weight: 700;
+    line-height: 0.9;
+    color: var(--ink);
+  }
+  .lp-result-match {
+    border-radius: 999px;
+    background: #EEF3EC;
+    border: 1px solid rgba(73,102,87,0.16);
+    color: #496657;
+    padding: 7px 12px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
 
   /* Features */
   .lp-features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 64px; }
@@ -1562,10 +1845,104 @@ const CSS = `
   @keyframes lp-float     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
   @keyframes lp-chip2     { 0%,100%{transform:translate(0,0)} 50%{transform:translate(4px,-7px)} }
   @keyframes lp-growBar   { from{width:0} to{width:var(--w)} }
+  @keyframes lp-markerIn  { from{opacity:0;transform:translate(-50%,-50%) scale(.72)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
+  @keyframes lp-figureIn  { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
   @keyframes lp-pulseDot  { 0%,100%{opacity:1;box-shadow:0 0 5px var(--sage)} 50%{opacity:.5;box-shadow:0 0 2px var(--sage)} }
   @keyframes fb-scroll    { from{transform:translateX(0)} to{transform:translateX(calc(-50% - 12px))} }
 
+  @media (max-width: 1100px) {
+    body .lp-how-grid {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+    .lp-how-vis {
+      min-height: auto;
+      grid-template-columns: minmax(280px, 0.84fr) minmax(310px, 1fr);
+      padding: 28px;
+    }
+    .lp-fashion-figure-wrap {
+      min-height: 460px;
+    }
+    .lp-fashion-figure {
+      width: clamp(350px, 42vw, 460px);
+    }
+    .lp-measuring-tape {
+      left: -220px;
+      top: -112px;
+    }
+  }
+
   @media (max-width: 700px) {
+    body .lp-how-grid {
+      margin-top: 40px;
+      gap: 28px;
+    }
+    body .lp-step {
+      grid-template-columns: 36px 1fr;
+      gap: 14px;
+      padding: 18px 0;
+    }
+    body .lp-step-num {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+    .lp-steps::before {
+      left: 17px;
+      top: 32px;
+      bottom: 32px;
+    }
+    .lp-step-kicker {
+      gap: 8px;
+    }
+    .lp-step-icon {
+      width: 18px;
+      height: 18px;
+    }
+    body .lp-how-vis {
+      display: block;
+      min-height: auto;
+      padding: 18px;
+      border-radius: 20px;
+    }
+    .lp-fashion-figure-wrap,
+    .lp-measuring-tape,
+    .lp-note-fit,
+    .lp-note-return {
+      display: none;
+    }
+    .lp-fabric-art {
+      width: 420px;
+      right: -220px;
+      bottom: -98px;
+      opacity: 0.08;
+    }
+    .lp-measurement-card {
+      padding: 20px;
+      border-radius: 18px;
+      box-shadow: 0 14px 40px rgba(0,0,0,0.045);
+    }
+    body .lp-meas-row {
+      grid-template-columns: 88px 1fr 48px;
+      gap: 10px;
+    }
+    body .lp-meas-label-col {
+      font-size: 9px;
+      width: auto;
+      text-align: left;
+    }
+    .lp-meas-icon {
+      width: 16px;
+      height: 16px;
+    }
+    .lp-result-size {
+      font-size: 56px;
+    }
+    .lp-result-match {
+      font-size: 10px;
+      padding: 6px 10px;
+    }
     .fb-scene { height: 330px; }
     .fb-track, .fb-group { gap: 16px; }
     .fb-logo { width: 190px; height: 124px; padding: 24px 30px; border-radius: 20px; }
@@ -1581,6 +1958,27 @@ const CSS = `
     }
     .fb-track { animation: none; }
     .fb-logo { scroll-snap-align: center; }
+    .lp-fashion-figure,
+    .lp-bar,
+    .lp-bar-marker,
+    .lp-reveal,
+    .lp-nav,
+    .lp-hero-eyebrow,
+    .lp-hero-h1,
+    .lp-hero-sub,
+    .lp-hero-actions,
+    .lp-hero-right,
+    .lp-phone,
+    .lp-app-float-tag {
+      animation: none !important;
+      transition: none !important;
+    }
+    .lp-fashion-figure,
+    .lp-bar-marker,
+    .lp-reveal {
+      opacity: 1;
+      transform: none;
+    }
   }
 `;
 
@@ -1623,10 +2021,165 @@ function AutoScrollingBrands() {
    Other sub-components
 ───────────────────────────────────────────── */
 type MeasureBarStyle = CSSProperties & { '--w': string };
-function MeasureBar({ label,pct,val,delay=0 }:{label:string;pct:string;val:string;delay?:number}) {
-  const s:MeasureBarStyle={'--w':pct,width:pct,animation:`lp-growBar 1.4s ${delay}s cubic-bezier(0.22,1,0.36,1) both`};
-  return <div style={{display:'flex',alignItems:'center',gap:14}}><span className="lp-meas-label-col">{label}</span><div className="lp-bar-wrap"><div className="lp-bar" style={s}/></div><span className="lp-meas-val">{val}</span></div>;
+type MarkerStyle = CSSProperties & { '--x': string };
+type MeasurementKind = 'chest' | 'waist' | 'hips' | 'shoulder' | 'inseam';
+type StepIconKind = 'measure' | 'brand' | 'check';
+
+const MEASUREMENTS: Array<{ kind: MeasurementKind; label: string; pct: string; val: string }> = [
+  { kind: 'chest', label: 'Chest', pct: '78%', val: '92 cm' },
+  { kind: 'waist', label: 'Waist', pct: '62%', val: '78 cm' },
+  { kind: 'hips', label: 'Hips', pct: '84%', val: '98 cm' },
+  { kind: 'shoulder', label: 'Shoulder', pct: '54%', val: '44 cm' },
+  { kind: 'inseam', label: 'Inseam', pct: '70%', val: '80 cm' },
+];
+
+const getHowSteps = (brandCount: number) => [
+  { icon: 'measure' as const, title: 'Measure yourself', desc: 'Chest, waist, hips and more — guided step-by-step with illustrated guides for each measurement point.' },
+  { icon: 'brand' as const, title: 'Choose a brand', desc: `Browse ${brandCount} active brands across all clothing categories. Search, filter, or scan a QR tag in-store.` },
+  { icon: 'check' as const, title: 'Get your exact size', desc: 'Instantly see your recommended size with a fit score — no trial and error, no returns.' },
+];
+
+function StepIcon({ kind }: { kind: StepIconKind }) {
+  if (kind === 'brand') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M8 4 5 6.5l-2 3 3.2 2.1L8 9.5V20h8V9.5l1.8 2.1L21 9.5l-2-3L16 4l-2 2h-4L8 4Z" />
+      </svg>
+    );
+  }
+  if (kind === 'check') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="8.5" />
+        <path d="m8.3 12.3 2.4 2.4 5-5.3" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="4" y="6" width="16" height="12" rx="6" />
+      <path d="M8 9h.01M11 9h.01M14 9h.01M17 9h.01M8 15h8" />
+    </svg>
+  );
 }
+
+function MeasurementIcon({ kind }: { kind: MeasurementKind }) {
+  const common = { fill: 'none', strokeWidth: 1.75, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true };
+  if (kind === 'shoulder') {
+    return <svg viewBox="0 0 24 24" {...common}><path d="M4 12h16" /><path d="m7 9-3 3 3 3" /><path d="m17 9 3 3-3 3" /></svg>;
+  }
+  if (kind === 'inseam') {
+    return <svg viewBox="0 0 24 24" {...common}><path d="M12 4v16" /><path d="m9 7 3-3 3 3" /><path d="m9 17 3 3 3-3" /></svg>;
+  }
+  if (kind === 'waist') {
+    return <svg viewBox="0 0 24 24" {...common}><path d="M5 12c2.2-2 4.5-3 7-3s4.8 1 7 3" /><path d="M5 12c2.2 2 4.5 3 7 3s4.8-1 7-3" /></svg>;
+  }
+  if (kind === 'hips') {
+    return <svg viewBox="0 0 24 24" {...common}><path d="M6 11c1.8 4 3.8 6 6 6s4.2-2 6-6" /><path d="M8 7c1.2 1.1 2.5 1.6 4 1.6s2.8-.5 4-1.6" /></svg>;
+  }
+  return <svg viewBox="0 0 24 24" {...common}><path d="M5 12h14" /><path d="m8 9-3 3 3 3" /><path d="m16 9 3 3-3 3" /></svg>;
+}
+
+function HowItWorksStep({ icon, title, desc, index }: { icon: StepIconKind; title: string; desc: string; index: number }) {
+  return (
+    <div className="lp-step">
+      <div className="lp-step-num">{index + 1}</div>
+      <div>
+        <div className="lp-step-kicker">
+          <span className="lp-step-icon"><StepIcon kind={icon} /></span>
+          <div className="lp-step-title">{title}</div>
+        </div>
+        <div className="lp-step-desc">{desc}</div>
+      </div>
+    </div>
+  );
+}
+
+function MeasureBar({ kind, label, pct, val, delay = 0 }: { kind: MeasurementKind; label: string; pct: string; val: string; delay?: number }) {
+  const barStyle: MeasureBarStyle = {
+    '--w': pct,
+    width: pct,
+    animation: `lp-growBar 0.82s ${delay}s cubic-bezier(0.22,1,0.36,1) both`,
+  };
+  const markerStyle: MarkerStyle = {
+    '--x': pct,
+    animationDelay: `${delay + 0.46}s`,
+  };
+  return (
+    <div className="lp-meas-row">
+      <div className="lp-meas-meta">
+        <span className="lp-meas-icon"><MeasurementIcon kind={kind} /></span>
+        <span className="lp-meas-label-col">{label}</span>
+      </div>
+      <div className="lp-bar-wrap">
+        <div className="lp-bar" style={barStyle} />
+        <span className="lp-bar-marker" style={markerStyle} />
+      </div>
+      <span className="lp-meas-val">{val}</span>
+    </div>
+  );
+}
+
+function MeasurementCard() {
+  return (
+    <div className="lp-measurement-card">
+      <div className="lp-measurement-card-title">
+        <p>Your Measurements</p>
+        <span>Profile 01</span>
+      </div>
+      <div className="lp-meas-list">
+        {MEASUREMENTS.map((measurement, index) => (
+          <MeasureBar key={measurement.kind} {...measurement} delay={index * 0.1} />
+        ))}
+      </div>
+      <div className="lp-card-result">
+        <div className="lp-result-brand">H&amp;M <span>· Tops</span><span aria-hidden="true">→</span></div>
+        <span className="lp-result-label">Your recommended size</span>
+        <div className="lp-result-row">
+          <span className="lp-result-size">M</span>
+          <span className="lp-result-match">96% MATCH</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DecorativeMeasuringTape() {
+  return (
+    <svg className="lp-measuring-tape" viewBox="0 0 720 210" fill="none" aria-hidden="true">
+      <path d="M34 132C162 40 312 43 438 96c90 38 184 47 248-16" stroke="currentColor" strokeWidth="24" strokeLinecap="round" opacity="0.18" />
+      <path d="M34 132C162 40 312 43 438 96c90 38 184 47 248-16" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M50 124l11 14M94 98l8 12M140 76l11 16M190 59l8 13M240 54l11 18M292 60l8 13M342 73l10 16M392 91l8 13M444 99l9 17M494 115l7 13M546 121l7 17M598 115l8 13M646 98l10 16" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <text x="132" y="58" fill="currentColor" fontFamily="DM Sans, sans-serif" fontSize="15" fontWeight="700">70</text>
+      <text x="264" y="46" fill="currentColor" fontFamily="DM Sans, sans-serif" fontSize="15" fontWeight="700">80</text>
+      <text x="428" y="83" fill="currentColor" fontFamily="DM Sans, sans-serif" fontSize="15" fontWeight="700">90</text>
+      <text x="600" y="101" fill="currentColor" fontFamily="DM Sans, sans-serif" fontSize="15" fontWeight="700">100</text>
+    </svg>
+  );
+}
+
+function FabricLineArt() {
+  return (
+    <svg className="lp-fabric-art" viewBox="0 0 640 420" fill="none" aria-hidden="true">
+      <path d="M20 304C94 212 171 263 246 181c71-78 145-159 245-122 66 24 86 83 125 119" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M48 350c76-88 162-46 236-121 81-82 144-147 245-98 42 21 67 55 88 86" stroke="currentColor" strokeWidth="1" />
+      <path d="M152 385c46-79 131-90 204-108 79-20 120-67 145-136" stroke="currentColor" strokeWidth="0.9" />
+    </svg>
+  );
+}
+
+function FashionMeasurementIllustration() {
+  return (
+    <div className="lp-fashion-figure-wrap">
+      <DecorativeMeasuringTape />
+      <FabricLineArt />
+      <span className="lp-editorial-note lp-note-fit">Fit confidence every time</span>
+      <span className="lp-editorial-note lp-note-return">Better fits. Less returns.</span>
+      <img className="lp-fashion-figure" src={fashionFigure} alt="" aria-hidden="true" draggable={false} />
+    </div>
+  );
+}
+
 function FeatureCard({icon,title,desc}:{icon:ReactNode;title:string;desc:string}) {
   return <div className="lp-feature-card"><div className="lp-feature-icon">{icon}</div><div className="lp-feature-title">{title}</div><div className="lp-feature-desc">{desc}</div></div>;
 }
@@ -1769,26 +2322,14 @@ export function LandingPage() {
           <p className="lp-section-sub lp-reveal lp-d2">No tape measure expertise required. We guide you through every measurement with clear illustrations.</p>
           <div className="lp-how-grid">
             <div className="lp-steps lp-reveal lp-d2">
-              {[['Measure yourself','Chest, waist, hips and more — guided step-by-step with illustrated guides for each measurement point.'],['Choose a brand',`Browse ${brandCount} active brands across all clothing categories. Search, filter, or scan a QR tag in-store.`],['Get your exact size','Instantly see your recommended size with a fit score — no trial and error, no returns.']].map(([title,desc],i)=>(
-                <div key={title} className="lp-step"><div className="lp-step-num">{i+1}</div><div><div className="lp-step-title">{title}</div><div className="lp-step-desc">{desc}</div></div></div>
+              {getHowSteps(brandCount).map((step,i)=>(
+                <HowItWorksStep key={step.title} {...step} index={i} />
               ))}
             </div>
             <div className="lp-how-vis lp-reveal lp-d3">
               <div className="lp-how-vis-glow"/>
-              <div style={{position:'relative',zIndex:1,display:'flex',flexDirection:'column',gap:14}}>
-                <p style={{fontSize:11,fontWeight:600,color:'var(--ash)',letterSpacing:'0.6px',textTransform:'uppercase',marginBottom:8}}>Your measurements</p>
-                <MeasureBar label="Chest"    pct="78%" val="92 cm" delay={0}/>
-                <MeasureBar label="Waist"    pct="62%" val="78 cm" delay={0.12}/>
-                <MeasureBar label="Hips"     pct="84%" val="98 cm" delay={0.24}/>
-                <MeasureBar label="Shoulder" pct="54%" val="44 cm" delay={0.36}/>
-                <MeasureBar label="Inseam"   pct="70%" val="80 cm" delay={0.48}/>
-                <div style={{marginTop:24,paddingTop:20,borderTop:'1px solid var(--cloud)'}}>
-                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                    <span style={{fontSize:13,fontWeight:600,color:'var(--ink)'}}>EKKO Tops → Size</span>
-                    <div style={{display:'flex',alignItems:'center',gap:8}}><span style={{fontFamily:'var(--fd)',fontSize:34,fontWeight:700,color:'var(--ink)',letterSpacing:-1}}>M</span><span className="lp-score">96%</span></div>
-                  </div>
-                </div>
-              </div>
+              <FashionMeasurementIllustration />
+              <MeasurementCard />
             </div>
           </div>
         </div>
