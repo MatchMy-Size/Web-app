@@ -1354,25 +1354,24 @@ const CSS = `
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 30px 36px;
-    background: var(--white);
-    border: 1px solid var(--cloud);
-    border-radius: 24px;
-    box-shadow: 0 18px 44px rgba(13,13,13,0.06);
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
     user-select: none;
     cursor: default;
-    transition: border-color 0.22s, box-shadow 0.22s, transform 0.22s;
+    transition: transform 0.22s;
   }
   .fb-logo img {
-    width: 100%;
-    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
     display: block;
     object-fit: contain;
+    mix-blend-mode: multiply;
   }
   .fb-logo:hover {
-    border-color: var(--sage-dark);
-    box-shadow: 0 22px 52px rgba(13,13,13,0.12);
-    transform: translateY(-6px);
+    transform: scale(1.05);
   }
   .fb-scene:hover .fb-track { animation-play-state: paused; }
 
@@ -1568,7 +1567,7 @@ const CSS = `
   @media (max-width: 700px) {
     .fb-scene { height: 330px; }
     .fb-track, .fb-group { gap: 16px; }
-    .fb-logo { width: 190px; height: 124px; padding: 24px 30px; border-radius: 20px; }
+    .fb-logo { width: 190px; height: 124px; }
     @keyframes fb-scroll { from{transform:translateX(0)} to{transform:translateX(calc(-50% - 8px))} }
   }
 
@@ -1584,7 +1583,10 @@ const CSS = `
   }
 `;
 
-if (!document.getElementById('lp-styles')) {
+const landingStyles = document.getElementById('lp-styles');
+if (landingStyles) {
+  landingStyles.textContent = CSS;
+} else {
   const s = document.createElement('style');
   s.id = 'lp-styles';
   s.textContent = CSS;

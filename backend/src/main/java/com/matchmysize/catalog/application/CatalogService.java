@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.matchmysize.shared.config.JsonMaps;
+import com.matchmysize.shared.measurement.MeasurementUnits;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +44,7 @@ public class CatalogService {
             .query((rs, rowNum) -> {
                 var row = jsonMaps.read(rs.getString("raw_json"));
                 row.put("id", rs.getString("catalog_id"));
+                MeasurementUnits.normalizeCatalogRecord(row);
                 return row;
             })
             .list();
