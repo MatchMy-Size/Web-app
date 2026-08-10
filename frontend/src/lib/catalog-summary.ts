@@ -10,9 +10,9 @@ export type CatalogSummary = {
 };
 
 const fallbackSummary: CatalogSummary = {
-  brandCount: 20,
-  catalogRowCount: 310,
-  sellerCount: 22,
+  brandCount: 18,
+  catalogRowCount: 295,
+  sellerCount: 20,
   brandNames: [],
 };
 

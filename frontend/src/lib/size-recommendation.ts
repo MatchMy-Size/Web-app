@@ -5,6 +5,7 @@ type NumericMeasurements = Record<string, number>;
 
 type CustomerMeasurementProfile = {
   measurements?: Record<string, unknown>;
+  unit?: string | null;
   averagePoint?: number | null;
   gender?: string | null;
   preferredClothing?: string | null;
@@ -32,7 +33,21 @@ export type BrandRecommendation = {
   commonMeasurementCount: number;
   primaryMatchedCount: number;
   primaryExpectedCount: number;
+  availability: 'recommended' | 'primary-measurement-unavailable';
+  unavailablePrimaryMeasurementKeys: string[];
+  confidence: 'high' | 'limited';
   sellerUserId: string | null;
+};
+
+export type RecommendationStatus =
+  | 'ready'
+  | 'missing-measurements'
+  | 'no-comparable-key-measurements'
+  | 'no-reliable-match';
+
+export type BrandRecommendationResult = {
+  recommendations: BrandRecommendation[];
+  status: RecommendationStatus;
 };
 
 type NormalizedGender = 'men' | 'women' | 'other' | 'unknown';
@@ -52,6 +67,12 @@ type RankedRecommendation = BrandRecommendation & {
   rankPrimaryCoverage: number;
   rankPrimaryScore: number;
 };
+
+// A size is never presented as a recommendation until it is sufficiently close
+// to the customer's saved measurements. Scores below this are deliberately
+// returned as "no reliable match", rather than a misleading lowest-ranked size.
+export const MINIMUM_RELIABLE_MATCH_SCORE = 60;
+const SHIRT_HIGH_CONFIDENCE_KEYS = new Set(['chest', 'shoulder']);
 
 const CLOTHING_LABELS: Record<Exclude<ClothingChoice, 'unknown'>, string> = {
   shirt: 'Shirt',
@@ -127,7 +148,13 @@ const normalizeStringArray = (values: unknown): string[] => {
   );
 };
 
-const toNumericMeasurements = (raw: unknown): NumericMeasurements => {
+const usesInches = (unit: unknown) =>
+  typeof unit === 'string' && ['in', 'inch', 'inches', 'imperial'].includes(unit.trim().toLowerCase());
+
+const toCentimetres = (value: number, unit: unknown) =>
+  usesInches(unit) ? Number((value * 2.54).toFixed(2)) : value;
+
+const toNumericMeasurements = (raw: unknown, sourceUnit?: unknown): NumericMeasurements => {
   if (!raw || typeof raw !== 'object') {
     return {};
   }
@@ -141,7 +168,7 @@ const toNumericMeasurements = (raw: unknown): NumericMeasurements => {
     }
 
     const normalizedKey = normalizeMeasurementKey(key);
-    normalizedMeasurements[normalizedKey] = numericValue;
+    normalizedMeasurements[normalizedKey] = toCentimetres(numericValue, sourceUnit);
   });
 
   return normalizedMeasurements;
@@ -555,13 +582,21 @@ const getExpectedPrimaryKeys = (
     : Array.from(new Set(normalizedSellerPrimary));
 };
 
-export const buildBrandRecommendations = ({
+export const buildBrandRecommendationResult = ({
   customer,
   brandRows,
   limit = 12,
-}: RecommendationInput): BrandRecommendation[] => {
-  const customerMeasurements = toNumericMeasurements(customer.measurements);
-  const customerAverage = toNumber(customer.averagePoint) ?? calculateAveragePoint(customerMeasurements);
+}: RecommendationInput): BrandRecommendationResult => {
+  const customerMeasurements = toNumericMeasurements(customer.measurements, customer.unit);
+
+  if (!Object.keys(customerMeasurements).length) {
+    return {
+      recommendations: [],
+      status: 'missing-measurements',
+    };
+  }
+
+  const customerAverage = calculateAveragePoint(customerMeasurements);
   const customerPrimaryKeys = normalizeStringArray(customer.primaryMeasurementKeys);
 
   type Candidate = RankedRecommendation & {
@@ -604,8 +639,8 @@ export const buildBrandRecommendations = ({
       );
     })
     .map((entry) => {
-      const brandMeasurements = toNumericMeasurements(entry.measurements);
-      const brandAverage = toNumber(entry.averagePoint) ?? calculateAveragePoint(brandMeasurements);
+      const brandMeasurements = toNumericMeasurements(entry.measurements, entry.unit);
+      const brandAverage = calculateAveragePoint(brandMeasurements);
       const sellerPrimaryKeys = normalizeStringArray(entry.primaryMeasurementKeys ?? entry.measurementKeys);
 
       const primaryResult = calculatePrimaryMeasurementScore(
@@ -621,9 +656,10 @@ export const buildBrandRecommendations = ({
         customerPrimaryKeys.length ? customerPrimaryKeys : sellerPrimaryKeys
       );
 
-      const allCommonCount = Object.keys(customerMeasurements).filter(
+      const allCommonKeys = Object.keys(customerMeasurements).filter(
         (key) => key in brandMeasurements
-      ).length;
+      );
+      const allCommonCount = allCommonKeys.length;
 
       const averageScore =
         customerAverage !== null && brandAverage !== null
@@ -670,9 +706,16 @@ export const buildBrandRecommendations = ({
         sellerPrimaryKeys
       );
       const comparablePrimaryKeys = expectedPrimaryKeys.filter((key) => key in brandMeasurements);
+      const unavailablePrimaryMeasurementKeys = expectedPrimaryKeys.filter(
+        (key) => !(key in brandMeasurements)
+      );
       const fitsAllPrimary =
         comparablePrimaryKeys.length > 0 &&
         comparablePrimaryKeys.every((key) => brandMeasurements[key] >= customerMeasurements[key]);
+      const hasHighConfidenceData =
+        groupClothing === 'shirt'
+          ? allCommonKeys.length >= 2 && allCommonKeys.some((key) => SHIRT_HIGH_CONFIDENCE_KEYS.has(key))
+          : primaryResult.coverage === 1 && primaryResult.commonCount > 0;
 
       return {
         id: entry.id,
@@ -682,12 +725,18 @@ export const buildBrandRecommendations = ({
         sizeKey,
         category: getCategoryLabel(entry),
         subCategory: getSubCategoryLabel(entry),
-        unit: entry.unit ?? 'cm',
+        unit: 'cm',
         averagePoint: brandAverage,
         imageUrl: getImageUrl(entry) ?? getBrandLogoSource(entry.logoKey, brand),
         commonMeasurementCount: allCommonCount,
         primaryMatchedCount: primaryResult.commonCount,
         primaryExpectedCount: primaryResult.expectedCount,
+        availability:
+          primaryResult.expectedCount > 0 && primaryResult.commonCount === 0
+            ? 'primary-measurement-unavailable'
+            : 'recommended',
+        unavailablePrimaryMeasurementKeys,
+        confidence: hasHighConfidenceData ? 'high' : 'limited',
         matchScore: Number(clampScore(rawScore).toFixed(1)),
         sellerUserId,
         rankPrimaryCoverage: primaryResult.coverage,
@@ -698,50 +747,91 @@ export const buildBrandRecommendations = ({
     })
     .filter((entry) => entry.groupKey !== undefined);
 
-  const grouped = new Map<string, Candidate[]>();
-  for (const entry of candidates) {
-    const current = grouped.get(entry.groupKey);
-    if (current) {
-      current.push(entry);
-    } else {
-      grouped.set(entry.groupKey, [entry]);
+  // A chart with no comparable key cannot produce a size recommendation. It is
+  // still returned as an informational card so the customer can see why the
+  // specific brand is unavailable for their selected measurement profile.
+  const comparableCandidates = candidates.filter(
+    (entry) => entry.primaryExpectedCount > 0 && entry.primaryMatchedCount > 0
+  );
+  const unavailableCandidates = candidates.filter(
+    (entry) => entry.primaryExpectedCount > 0 && entry.primaryMatchedCount === 0
+  );
+
+  // Never surface a "closest" result when its calculated fit is too weak to be
+  // useful. A weak score must become a no-recommendation state instead.
+  const reliableCandidates = comparableCandidates.filter(
+    (entry) => entry.matchScore >= MINIMUM_RELIABLE_MATCH_SCORE
+  );
+
+  const selectChartWinners = (entries: Candidate[]) => {
+    const grouped = new Map<string, Candidate[]>();
+    for (const entry of entries) {
+      const current = grouped.get(entry.groupKey);
+      if (current) {
+        current.push(entry);
+      } else {
+        grouped.set(entry.groupKey, [entry]);
+      }
     }
-  }
 
-  const chartWinners: Candidate[] = Array.from(grouped.values()).map((group) => {
-    const fitting = group.filter((entry) => entry.fitsAllPrimary);
+    return Array.from(grouped.values()).map((group) => {
+      const fitting = group.filter((entry) => entry.fitsAllPrimary);
 
-    if (fitting.length) {
-      return fitting
+      if (fitting.length) {
+        return fitting
+          .slice()
+          .sort((left, right) => {
+            const keyOrder = sortBySizeKeyAsc(left, right);
+            if (keyOrder !== 0) return keyOrder;
+            return sortByRank(left, right);
+          })[0];
+      }
+
+      return group
         .slice()
         .sort((left, right) => {
-          const keyOrder = sortBySizeKeyAsc(left, right);
-          if (keyOrder !== 0) return keyOrder;
-          return sortByRank(left, right);
+          const rankOrder = sortByRank(left, right);
+          if (rankOrder !== 0) return rankOrder;
+          return sortBySizeKeyDesc(left, right);
         })[0];
-    }
+    });
+  };
 
-    return group
-      .slice()
-      .sort((left, right) => {
-        const rankOrder = sortByRank(left, right);
-        if (rankOrder !== 0) return rankOrder;
-        return sortBySizeKeyDesc(left, right);
-      })[0];
-  });
-
-  const rankedRecommendations = chartWinners
+  const rankedRecommendations = selectChartWinners(reliableCandidates)
     .slice()
     .sort(sortByRank)
-    .slice(0, limit);
+    .map((entry) => ({ ...entry, availability: 'recommended' as const }));
+  const unavailableNotices = selectChartWinners(unavailableCandidates)
+    .slice()
+    .sort(sortByRank)
+    .map((entry) => ({ ...entry, availability: 'primary-measurement-unavailable' as const }));
 
-  return rankedRecommendations.map(
-    ({
-      groupKey: _groupKey,
-      fitsAllPrimary: _fits,
-      rankPrimaryCoverage: _coverage,
-      rankPrimaryScore: _score,
-      ...item
-    }) => item
-  );
+  const visibleResults = [...rankedRecommendations, ...unavailableNotices].slice(0, limit);
+
+  if (!visibleResults.length) {
+    return {
+      recommendations: [],
+      status: comparableCandidates.length ? 'no-reliable-match' : 'no-comparable-key-measurements',
+    };
+  }
+
+  return {
+    recommendations: visibleResults.map(
+      ({
+        groupKey: _groupKey,
+        fitsAllPrimary: _fits,
+        rankPrimaryCoverage: _coverage,
+        rankPrimaryScore: _score,
+        ...item
+      }) => item
+    ),
+    status: rankedRecommendations.length
+      ? 'ready'
+      : comparableCandidates.length
+        ? 'no-reliable-match'
+        : 'no-comparable-key-measurements',
+  };
 };
+
+export const buildBrandRecommendations = (input: RecommendationInput): BrandRecommendation[] =>
+  buildBrandRecommendationResult(input).recommendations;

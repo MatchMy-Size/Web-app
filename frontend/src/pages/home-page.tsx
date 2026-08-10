@@ -4,7 +4,9 @@ import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/context/auth-context';
 import rulerIcon from '@/assets/images/ruler.png';
+import { getClothingTemplate, normalizeGender } from '@/lib/measurement';
 import { resolveBrandDisplay, type EnrichedRecommendation } from '@/lib/recommendation-view';
+import type { BrandRecommendation } from '@/lib/size-recommendation';
 import { getCategoryBadge, useRecommendationData } from '@/lib/use-recommendation-data';
 
 /* ─────────────────────────────────────────────
@@ -285,6 +287,30 @@ const CSS = `
 
   .hp-filter-divider { width: 1px; height: 24px; background: var(--cloud); }
 
+  .hp-measurement-prompt {
+    display: flex; align-items: center; gap: 14px;
+    padding: 15px 18px;
+    border: 1px solid var(--sage-dark); border-radius: 14px;
+    background: var(--sage-light);
+    animation: hp-fadeUp 0.5s 0.22s var(--ease) both;
+  }
+  .hp-measurement-prompt-icon {
+    width: 34px; height: 34px; flex: 0 0 auto;
+    display: grid; place-items: center;
+    color: var(--sage-deep); background: rgba(255,255,255,0.6); border-radius: 10px;
+  }
+  .hp-measurement-prompt-icon svg { width: 18px; height: 18px; }
+  .hp-measurement-prompt-copy { min-width: 0; }
+  .hp-measurement-prompt-title { color: var(--ink); font-size: 13px; font-weight: 700; }
+  .hp-measurement-prompt-sub { margin-top: 2px; color: var(--ash); font-size: 12px; line-height: 1.45; }
+  .hp-measurement-prompt-btn {
+    flex: 0 0 auto; margin-left: auto; padding: 8px 12px;
+    border: 1px solid var(--sage-dark); border-radius: 9px;
+    color: var(--sage-deep); background: var(--white);
+    font-family: var(--fs); font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  .hp-measurement-prompt-btn:hover { background: var(--paper); }
+
   /* ── Section header ── */
   .hp-section-header {
     display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;
@@ -367,6 +393,7 @@ const CSS = `
   .hp-card-score-badge.perfect { background: var(--ink); color: var(--white); }
   .hp-card-score-badge.great   { background: var(--sage-light); color: var(--sage-deep); border: 1px solid var(--sage-dark); }
   .hp-card-score-badge.fair    { background: var(--cloud); color: var(--ash); }
+  .hp-card-score-badge.unavailable { background: var(--cloud); color: var(--ash); }
 
   .hp-card-body {
     padding: 16px 18px 18px;
@@ -398,6 +425,7 @@ const CSS = `
   .hp-card-fit-pill.perfect { background: rgba(13,13,13,0.07); color: var(--ink); }
   .hp-card-fit-pill.great   { background: var(--sage-light); color: var(--sage-deep); }
   .hp-card-fit-pill.fair    { background: var(--cloud); color: var(--ash); }
+  .hp-card-unavailable { font-size: 11px; line-height: 1.4; color: var(--ash); font-weight: 600; }
 
   /* ── Recommendation details modal ── */
   .hp-modal-backdrop {
@@ -467,6 +495,7 @@ const CSS = `
   .hp-modal-score.perfect { background: var(--ink); color: var(--white); }
   .hp-modal-score.great { background: var(--sage-light); color: var(--sage-deep); border: 1px solid var(--sage-dark); }
   .hp-modal-score.fair { background: var(--cloud); color: var(--ash); }
+  .hp-modal-score.unavailable { background: var(--cloud); color: var(--ash); }
   .hp-modal-body { padding: 22px 26px 26px; }
   .hp-modal-eyebrow { margin-bottom: 6px; color: var(--ash); font-size: 11px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; }
   .hp-modal-title { margin: 0; color: var(--ink); font-family: var(--fd); font-size: 32px; font-weight: 700; line-height: 1.08; letter-spacing: -0.7px; }
@@ -490,6 +519,8 @@ const CSS = `
   .hp-modal-fit.perfect { background: rgba(13,13,13,0.07); color: var(--ink); }
   .hp-modal-fit.great { background: var(--sage-light); color: var(--sage-deep); }
   .hp-modal-fit.fair { background: var(--cloud); color: var(--ash); }
+  .hp-modal-unavailable { display: flex; align-items: flex-start; gap: 9px; margin-top: 18px; padding: 14px; border: 1px solid var(--cloud); border-radius: 12px; background: var(--paper); color: var(--ash); font-size: 13px; line-height: 1.5; }
+  .hp-modal-unavailable svg { width: 17px; height: 17px; flex: 0 0 auto; margin-top: 1px; color: var(--sage-deep); }
   .hp-modal-metrics { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-top: 16px; }
   .hp-modal-metric { padding: 13px 14px; border: 1px solid var(--cloud); border-radius: 12px; background: var(--paper); }
   .hp-modal-metric-label { color: var(--ash); font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
@@ -646,6 +677,7 @@ const CSS = `
 
     .hp-filter-bar,
     .hp-section-header,
+    .hp-measurement-prompt,
     .hp-tip,
     .hp-card-footer {
       flex-direction: column;
@@ -660,6 +692,11 @@ const CSS = `
       margin-left: 0;
       width: 100%;
       justify-content: center;
+    }
+
+    .hp-measurement-prompt-btn {
+      width: 100%;
+      margin-left: 0;
     }
 
     .hp-pill-group {
@@ -756,32 +793,90 @@ const MATCH_FILTERS = [
   { value: 'all',     label: 'All matches' },
   { value: 'perfect', label: 'Perfect fit' },
   { value: 'great',   label: 'Great fit'   },
-  { value: 'fair',    label: 'Can try'     },
 ] as const;
 type MatchFilter = typeof MATCH_FILTERS[number]['value'];
 
-function getScoreClass(score: number) {
-  if (score >= 75) return 'perfect';
-  if (score >= 60) return 'great';
-  return 'fair';
+function isRecommendationAvailable(card: BrandRecommendation) {
+  return card.availability === 'recommended';
 }
-function getFitLabel(score: number) {
-  if (score >= 75) return 'Perfect fit';
-  if (score >= 60) return 'Great fit';
-  return 'Can try';
+function isPerfectFit(card: BrandRecommendation) {
+  return isRecommendationAvailable(card) && card.matchScore >= 75 && card.confidence === 'high';
+}
+function isGreatFit(card: BrandRecommendation) {
+  return isRecommendationAvailable(card) && card.matchScore >= 60 && !isPerfectFit(card);
+}
+function getScoreClass(card: EnrichedRecommendation) {
+  if (!isRecommendationAvailable(card)) return 'unavailable';
+  return isPerfectFit(card) ? 'perfect' : 'great';
+}
+function getFitLabel(card: EnrichedRecommendation) {
+  return isPerfectFit(card) ? 'Perfect fit' : 'Great fit';
+}
+function formatMeasurementKeys(keys: string[]) {
+  const labels = keys.map((key) => key.charAt(0).toUpperCase() + key.slice(1));
+  if (labels.length < 2) return labels[0] ?? 'Primary measurement';
+  return `${labels.slice(0, -1).join(', ')} or ${labels[labels.length - 1]}`;
+}
+function normalizeMeasurementKeyForPrompt(key: string) {
+  return key.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+function isEnteredMeasurement(value: unknown) {
+  const numeric = typeof value === 'number' ? value : typeof value === 'string' ? Number.parseFloat(value) : NaN;
+  return Number.isFinite(numeric) && numeric > 0;
+}
+
+function getRecommendationEmptyState(
+  status: string | undefined,
+  hasProfile: boolean,
+  additionalMeasurementGuidance: string,
+) {
+  switch (status) {
+    case 'no-reliable-match':
+      return {
+        title: 'No reliable size recommendation yet',
+        description:
+          `None of the available size charts is close enough to your saved measurements. Check the values, then ${additionalMeasurementGuidance}`,
+        action: 'Review measurements',
+      };
+    case 'no-comparable-key-measurements':
+      return {
+        title: 'No comparable size chart yet',
+        description:
+          `The available brands do not include your key measurements for this category. ${additionalMeasurementGuidance} Or try another clothing category.`,
+        action: 'Add measurements',
+      };
+    case 'missing-measurements':
+      return {
+        title: 'Add measurements to get started',
+        description: 'Save your measurements before we can calculate a reliable size recommendation.',
+        action: 'Add measurements',
+      };
+    default:
+      return {
+        title: 'No matches yet',
+        description: hasProfile
+          ? 'Add more measurements or switch to another clothing category to unlock recommendations.'
+          : 'Complete your profile first to unlock size recommendations.',
+        action: 'Add measurements',
+      };
+  }
 }
 
 /* ─────────────────────────────────────────────
    Product card
 ───────────────────────────────────────────── */
 function ProductCard({ card, onOpen }: { card: EnrichedRecommendation; onOpen: () => void }) {
-  const cls = getScoreClass(card.matchScore);
+  const cls = getScoreClass(card);
+  const measurementUnavailable = !isRecommendationAvailable(card);
+  const unavailableMeasurements = formatMeasurementKeys(card.unavailablePrimaryMeasurementKeys);
   const image = card.imageUrl || card.seller?.photoURL || null;
   return (
     <button
       type="button"
       className="hp-product-card"
-      aria-label={`View ${card.brandDisplay} ${card.title} recommendation details`}
+      aria-label={measurementUnavailable
+        ? `View ${card.brandDisplay} ${card.title} measurement availability details`
+        : `View ${card.brandDisplay} ${card.title} recommendation details`}
       onClick={onOpen}>
       <div className="hp-card-image">
         {image
@@ -789,7 +884,7 @@ function ProductCard({ card, onOpen }: { card: EnrichedRecommendation; onOpen: (
           : <div className="hp-card-image-placeholder"><Ico.Shirt /></div>
         }
         <div className={`hp-card-score-badge ${cls}`}>
-          {card.matchScore}%
+          {measurementUnavailable ? 'Key data unavailable' : `${card.matchScore}%`}
         </div>
       </div>
       <div className="hp-card-body">
@@ -797,11 +892,17 @@ function ProductCard({ card, onOpen }: { card: EnrichedRecommendation; onOpen: (
         <div className="hp-card-title">{card.title}</div>
         {card.subCategory && <div className="hp-card-sub">{card.subCategory}</div>}
         <div className="hp-card-footer">
-          <div className="hp-card-size-wrap">
-            <span className="hp-card-size">{card.sizeLabel ?? '—'}</span>
-            <span className="hp-card-size-label">size</span>
-          </div>
-          <span className={`hp-card-fit-pill ${cls}`}>{getFitLabel(card.matchScore)}</span>
+          {measurementUnavailable ? (
+            <span className="hp-card-unavailable">{unavailableMeasurements} is not available in this size chart.</span>
+          ) : (
+            <>
+              <div className="hp-card-size-wrap">
+                <span className="hp-card-size">{card.sizeLabel ?? '—'}</span>
+                <span className="hp-card-size-label">size</span>
+              </div>
+              <span className={`hp-card-fit-pill ${cls}`}>{getFitLabel(card)}</span>
+            </>
+          )}
         </div>
       </div>
     </button>
@@ -809,7 +910,9 @@ function ProductCard({ card, onOpen }: { card: EnrichedRecommendation; onOpen: (
 }
 
 function RecommendationDetailsModal({ card, onClose }: { card: EnrichedRecommendation; onClose: () => void }) {
-  const cls = getScoreClass(card.matchScore);
+  const cls = getScoreClass(card);
+  const measurementUnavailable = !isRecommendationAvailable(card);
+  const unavailableMeasurements = formatMeasurementKeys(card.unavailablePrimaryMeasurementKeys);
   const image = card.imageUrl || card.seller?.photoURL || null;
 
   useEffect(() => {
@@ -835,7 +938,9 @@ function RecommendationDetailsModal({ card, onClose }: { card: EnrichedRecommend
             ? <img src={image} alt={`${card.brandDisplay} ${card.title}`} />
             : <div className="hp-modal-image-placeholder"><Ico.Shirt /></div>
           }
-          <span className={`hp-modal-score ${cls}`}>{card.matchScore}% match</span>
+          <span className={`hp-modal-score ${cls}`}>
+            {measurementUnavailable ? 'Key data unavailable' : `${card.matchScore}% match`}
+          </span>
         </div>
         <div className="hp-modal-body">
           <div className="hp-modal-eyebrow">{card.brandDisplay}</div>
@@ -844,15 +949,26 @@ function RecommendationDetailsModal({ card, onClose }: { card: EnrichedRecommend
             <div className="hp-modal-subcategory">{[card.subCategory, card.category].filter(Boolean).join(' · ')}</div>
           )}
           <p className="hp-modal-copy">
-            According to your saved measurements, <strong>{card.sizeLabel || 'this size'}</strong> is your closest available match for this item.
+            {measurementUnavailable ? (
+              <>We cannot recommend a size because this chart does not provide your primary measurement: <strong>{unavailableMeasurements}</strong>.</>
+            ) : (
+              <>According to your saved measurements, <strong>{card.sizeLabel || 'this size'}</strong> is your closest available match for this item.</>
+            )}
           </p>
-          <div className="hp-modal-result">
-            <div>
-              <div className="hp-modal-size-label">Your recommended size</div>
-              <div className="hp-modal-size"><strong>{card.sizeLabel || '—'}</strong><span>size</span></div>
+          {measurementUnavailable ? (
+            <div className="hp-modal-unavailable">
+              <Ico.Alert />
+              <span>{unavailableMeasurements} is not available for this clothing item. Add other measurements or check another brand to receive a size recommendation.</span>
             </div>
-            <span className={`hp-modal-fit ${cls}`}>{getFitLabel(card.matchScore)}</span>
-          </div>
+          ) : (
+            <div className="hp-modal-result">
+              <div>
+                <div className="hp-modal-size-label">Your recommended size</div>
+                <div className="hp-modal-size"><strong>{card.sizeLabel || '—'}</strong><span>size</span></div>
+              </div>
+              <span className={`hp-modal-fit ${cls}`}>{getFitLabel(card)}</span>
+            </div>
+          )}
           <div className="hp-modal-metrics">
             <div className="hp-modal-metric">
               <div className="hp-modal-metric-label">Comparable measurements</div>
@@ -861,6 +977,10 @@ function RecommendationDetailsModal({ card, onClose }: { card: EnrichedRecommend
             <div className="hp-modal-metric">
               <div className="hp-modal-metric-label">Key measurements matched</div>
               <div className="hp-modal-metric-value">{card.primaryMatchedCount} / {card.primaryExpectedCount}</div>
+            </div>
+            <div className="hp-modal-metric">
+              <div className="hp-modal-metric-label">Fit confidence</div>
+              <div className="hp-modal-metric-value">{card.confidence === 'high' ? 'High' : 'Limited'}</div>
             </div>
           </div>
         </div>
@@ -897,7 +1017,7 @@ export function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const {
-    profile, sellers, sections, categoryOptions,
+    profile, sellers, sections, categoryOptions, measurementProfiles,
     normalizedGender, activeSectionKey, loading, error,
   } = useRecommendationData(user?.uid);
 
@@ -924,6 +1044,33 @@ export function HomePage() {
     [choiceFilter, preferredSection, sections]
   );
 
+  const selectedMeasurementProfile = measurementProfiles.find(
+    (entry) => entry.profileKey === selectedSection?.profileKey,
+  );
+  const savedMeasurementKeys = Object.entries(selectedMeasurementProfile?.measurements ?? {})
+    .filter(([, value]) => isEnteredMeasurement(value))
+    .map(([key]) => normalizeMeasurementKeyForPrompt(key));
+  const primaryMeasurementKeys = (selectedMeasurementProfile?.primaryMeasurementKeys ?? [])
+    .map(normalizeMeasurementKeyForPrompt)
+    .filter(Boolean);
+  const hasOnlyPrimaryMeasurements =
+    savedMeasurementKeys.length > 0 &&
+    primaryMeasurementKeys.length > 0 &&
+    savedMeasurementKeys.every((key) => primaryMeasurementKeys.includes(key));
+  const selectedClothingLabel = selectedMeasurementProfile?.preferredClothingLabel ?? selectedSection?.label ?? 'this item';
+  const selectedTemplate = getClothingTemplate(
+    normalizeGender(selectedMeasurementProfile?.gender),
+    selectedMeasurementProfile?.preferredClothing,
+  );
+  const additionalMeasurementLabels = selectedTemplate?.fields
+    .filter((field) => !field.isPrimary)
+    .map((field) => field.label)
+    .slice(0, 2) ?? [];
+  const additionalMeasurementText = additionalMeasurementLabels.length
+    ? `add ${formatMeasurementKeys(additionalMeasurementLabels)} measurements`
+    : 'add more measurements';
+  const extraMeasurementPrompt = `${additionalMeasurementText.charAt(0).toUpperCase()}${additionalMeasurementText.slice(1)} to improve the accuracy of your ${selectedClothingLabel.toLowerCase()} result.`;
+
   const cards = useMemo<EnrichedRecommendation[]>(() => {
     const base = (selectedSection?.recommendations ?? []).map(r => {
       const seller = r.sellerUserId ? sellers[r.sellerUserId] ?? null : null;
@@ -933,9 +1080,8 @@ export function HomePage() {
       const matchesSearch = !search.trim()
         || `${entry.brandDisplay} ${entry.title} ${entry.subCategory}`.toLowerCase().includes(search.trim().toLowerCase());
       if (!matchesSearch) return false;
-      if (matchFilter === 'perfect') return entry.matchScore >= 75;
-      if (matchFilter === 'great')   return entry.matchScore >= 60 && entry.matchScore < 75;
-      if (matchFilter === 'fair')    return entry.matchScore < 60;
+      if (matchFilter === 'perfect') return isPerfectFit(entry);
+      if (matchFilter === 'great') return isGreatFit(entry);
       return true;
     });
   }, [matchFilter, search, selectedSection, sellers]);
@@ -953,9 +1099,18 @@ export function HomePage() {
   };
 
   // Derived stats
-  const totalCards    = selectedSection?.recommendations?.length ?? 0;
-  const perfectCount  = cards.filter(c => c.matchScore >= 75).length;
-  const avgScore      = cards.length ? Math.round(cards.reduce((a, c) => a + c.matchScore, 0) / cards.length) : 0;
+  const recommendedSectionCards = (selectedSection?.recommendations ?? []).filter(isRecommendationAvailable);
+  const availableCards = cards.filter(isRecommendationAvailable);
+  const unavailableCardCount = cards.length - availableCards.length;
+  const totalCards    = recommendedSectionCards.length;
+  const perfectCount  = availableCards.filter(isPerfectFit).length;
+  const avgScore      = availableCards.length ? Math.round(availableCards.reduce((a, c) => a + c.matchScore, 0) / availableCards.length) : 0;
+  const hasUnfilteredRecommendations = recommendedSectionCards.length > 0;
+  const emptyState = getRecommendationEmptyState(
+    selectedSection?.status,
+    !!profile,
+    `${additionalMeasurementText} for a more reliable ${selectedClothingLabel.toLowerCase()} fit.`,
+  );
 
   return (
     <div className="hp-root">
@@ -968,7 +1123,7 @@ export function HomePage() {
           <div className="hp-stats-row">
             <div className="hp-stat-card accent">
               <div className="hp-stat-label">Total matches</div>
-              <div className="hp-stat-num">{totalCards}<span>+</span></div>
+              <div className="hp-stat-num">{totalCards}{totalCards > 0 && <span>+</span>}</div>
               <div className="hp-stat-sub">Across all categories</div>
             </div>
             <div className="hp-stat-card">
@@ -1009,10 +1164,9 @@ export function HomePage() {
             <span className="hp-filter-label">Fit</span>
             <div className="hp-pill-group">
               {MATCH_FILTERS.map(f => {
-                const count = f.value === 'all' ? cards.length
-                  : f.value === 'perfect' ? cards.filter(c => c.matchScore >= 75).length
-                  : f.value === 'great'   ? cards.filter(c => c.matchScore >= 60 && c.matchScore < 75).length
-                  : cards.filter(c => c.matchScore < 60).length;
+                const count = f.value === 'all' ? availableCards.length
+                  : f.value === 'perfect' ? cards.filter(isPerfectFit).length
+                  : cards.filter(isGreatFit).length;
                 return (
                   <button
                     key={f.value}
@@ -1026,15 +1180,33 @@ export function HomePage() {
             </div>
           </div>
 
+          {hasOnlyPrimaryMeasurements && (
+            <div className="hp-measurement-prompt">
+              <div className="hp-measurement-prompt-icon"><Ico.Bulb /></div>
+              <div className="hp-measurement-prompt-copy">
+                <div className="hp-measurement-prompt-title">Improve your {selectedClothingLabel} recommendation</div>
+                <div className="hp-measurement-prompt-sub">You have only your primary measurement saved. {extraMeasurementPrompt}</div>
+              </div>
+              <button
+                type="button"
+                className="hp-measurement-prompt-btn"
+                onClick={() => navigate(`/app/add-preference?choice=${selectedMeasurementProfile?.preferredClothing ?? ''}`)}>
+                Add measurements
+              </button>
+            </div>
+          )}
+
           {/* Section header */}
           <div className="hp-section-header">
             <div className="hp-section-heading">
               <div className="hp-section-title-row">
                 <span className="hp-section-title">{selectedSection?.label ?? 'Recommended'}</span>
-                <span className="hp-section-count">{cards.length}</span>
+                <span className="hp-section-count">{totalCards}</span>
               </div>
               <div className="hp-section-sub">
-                Weighted by key measurements first, then full average fit score.
+                {unavailableCardCount
+                  ? `${unavailableCardCount} brand ${unavailableCardCount === 1 ? 'does' : 'do'} not provide your primary measurement for this clothing item. Open the card for details.`
+                  : 'Reliable results need a comparable key measurement and a score of at least 60%.'}
               </div>
             </div>
           </div>
@@ -1058,14 +1230,21 @@ export function HomePage() {
           ) : (
             <div className="hp-empty">
               <div className="hp-empty-icon">📏</div>
-              <div className="hp-empty-title">No matches yet</div>
+              <div className="hp-empty-title">{hasUnfilteredRecommendations ? 'No matching results' : emptyState.title}</div>
               <div className="hp-empty-sub">
-                {profile
-                  ? 'Add more measurements or switch to another clothing category to unlock recommendations.'
-                  : 'Complete your profile first to unlock size recommendations.'}
+                {hasUnfilteredRecommendations
+                  ? 'Try clearing the search or choosing a different fit filter.'
+                  : emptyState.description}
               </div>
-              <button className="hp-empty-btn" onClick={() => navigate('/app/add-preference')}>
-                Add measurements
+              <button className="hp-empty-btn" onClick={() => {
+                if (hasUnfilteredRecommendations) {
+                  setSearch('');
+                  setMatchFilter('all');
+                  return;
+                }
+                navigate('/app/add-preference');
+              }}>
+                {hasUnfilteredRecommendations ? 'Clear filters' : emptyState.action}
               </button>
             </div>
           )}

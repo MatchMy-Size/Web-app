@@ -13,6 +13,7 @@ import com.matchmysize.identity.infrastructure.AppUserRepository.AppUser;
 import com.matchmysize.profile.infrastructure.ProfileRepository;
 import com.matchmysize.shared.api.ApiException;
 import com.matchmysize.shared.config.JsonMaps;
+import com.matchmysize.shared.measurement.MeasurementUnits;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,18 +57,19 @@ public class ProfileService {
 
     @Transactional
     public Map<String, Object> saveInitialProfile(AppUser appUser, Map<String, Object> payload) {
+        var normalizedPayload = normalizeMeasurementPayload(payload);
         var profile = jsonMaps.copy(appUser.profileData());
-        payload.forEach((key, value) -> {
+        normalizedPayload.forEach((key, value) -> {
             if (!isProtectedIdentityField(key)) profile.put(key, value);
         });
         profile.put("role", "customer");
         profile.putIfAbsent("createdAt", Instant.now().toString());
         profile.put("updatedAt", Instant.now().toString());
 
-        var profileKey = text(payload.get("measurementProfileKey"));
+        var profileKey = text(normalizedPayload.get("measurementProfileKey"));
         if (profileKey == null) {
-            var gender = text(payload.get("gender"));
-            var clothing = text(payload.get("preferredClothing"));
+            var gender = text(normalizedPayload.get("gender"));
+            var clothing = text(normalizedPayload.get("preferredClothing"));
             profileKey = gender != null && clothing != null ? gender + "_" + clothing : "default";
         }
         profile.put("activeMeasurementProfileKey", profileKey);
@@ -76,13 +78,13 @@ public class ProfileService {
         var measurementPayload = profiles.findMeasurements(appUser.id())
             .map(jsonMaps::copy)
             .orElseGet(LinkedHashMap::new);
-        measurementPayload.put("gender", payload.get("gender"));
-        measurementPayload.put("unit", payload.getOrDefault("unit", "cm"));
-        measurementPayload.put("preferredClothing", payload.get("preferredClothing"));
-        measurementPayload.put("preferredClothingLabel", payload.get("preferredClothingLabel"));
+        measurementPayload.put("gender", normalizedPayload.get("gender"));
+        measurementPayload.put("unit", MeasurementUnits.CANONICAL_UNIT);
+        measurementPayload.put("preferredClothing", normalizedPayload.get("preferredClothing"));
+        measurementPayload.put("preferredClothingLabel", normalizedPayload.get("preferredClothingLabel"));
         measurementPayload.put("activeProfileKey", profileKey);
         measurementPayload.putIfAbsent("profiles", new LinkedHashMap<String, Object>());
-        addMeasurementProfile(measurementPayload, profileKey, payload, true);
+        addMeasurementProfile(measurementPayload, profileKey, normalizedPayload, true);
         measurementPayload.put("createdAt", Instant.now().toString());
         measurementPayload.put("updatedAt", Instant.now().toString());
         profiles.saveMeasurements(appUser.id(), measurementPayload);
@@ -91,8 +93,9 @@ public class ProfileService {
 
     @Transactional
     public Map<String, Object> patchProfile(AppUser appUser, Map<String, Object> payload) {
+        var normalizedPayload = normalizeMeasurementPayload(payload);
         var profile = jsonMaps.copy(appUser.profileData());
-        payload.forEach((key, value) -> {
+        normalizedPayload.forEach((key, value) -> {
             if (!isProtectedIdentityField(key)) profile.put(key, value);
         });
         profile.put("updatedAt", Instant.now().toString());
@@ -102,27 +105,28 @@ public class ProfileService {
 
     @Transactional
     public Map<String, Object> saveMeasurementProfile(AppUser appUser, Map<String, Object> payload) {
+        var normalizedPayload = normalizeMeasurementPayload(payload);
         var measurement = profiles.findMeasurements(appUser.id()).orElseGet(LinkedHashMap::new);
-        var profileKey = text(payload.get("measurementProfileKey"));
+        var profileKey = text(normalizedPayload.get("measurementProfileKey"));
         if (profileKey == null) {
-            profileKey = (text(payload.get("gender")) == null ? "default" : text(payload.get("gender")))
-                + "_" + text(payload.get("preferredClothing"));
+            profileKey = (text(normalizedPayload.get("gender")) == null ? "default" : text(normalizedPayload.get("gender")))
+                + "_" + text(normalizedPayload.get("preferredClothing"));
         }
-        var setAsActive = Boolean.TRUE.equals(payload.get("setAsActive"));
-        addMeasurementProfile(measurement, profileKey, payload, setAsActive);
-        measurement.put("gender", payload.get("gender"));
-        measurement.put("unit", payload.getOrDefault("unit", "cm"));
+        var setAsActive = Boolean.TRUE.equals(normalizedPayload.get("setAsActive"));
+        addMeasurementProfile(measurement, profileKey, normalizedPayload, setAsActive);
+        measurement.put("gender", normalizedPayload.get("gender"));
+        measurement.put("unit", MeasurementUnits.CANONICAL_UNIT);
         measurement.putIfAbsent("createdAt", Instant.now().toString());
         measurement.put("updatedAt", Instant.now().toString());
         profiles.saveMeasurements(appUser.id(), measurement);
 
         var profile = jsonMaps.copy(appUser.profileData());
         profile.put("role", "customer");
-        profile.put("gender", payload.get("gender"));
-        profile.put("unit", payload.getOrDefault("unit", "cm"));
+        profile.put("gender", normalizedPayload.get("gender"));
+        profile.put("unit", MeasurementUnits.CANONICAL_UNIT);
         if (setAsActive) {
-            profile.put("preferredClothing", payload.get("preferredClothing"));
-            profile.put("preferredClothingLabel", payload.get("preferredClothingLabel"));
+            profile.put("preferredClothing", normalizedPayload.get("preferredClothing"));
+            profile.put("preferredClothingLabel", normalizedPayload.get("preferredClothingLabel"));
             profile.put("activeMeasurementProfileKey", profileKey);
         }
         profile.put("updatedAt", Instant.now().toString());
@@ -187,21 +191,22 @@ public class ProfileService {
         String memberKey,
         Map<String, Object> payload
     ) {
+        var normalizedPayload = normalizeMeasurementPayload(payload);
         var member = getFamilyMember(appUser, memberKey);
         var data = jsonMaps.copy(member.data());
-        var profileKey = text(payload.get("measurementProfileKey"));
+        var profileKey = text(normalizedPayload.get("measurementProfileKey"));
         if (profileKey == null) {
-            profileKey = (text(payload.get("gender")) == null ? "default" : text(payload.get("gender")))
-                + "_" + text(payload.get("preferredClothing"));
+            profileKey = (text(normalizedPayload.get("gender")) == null ? "default" : text(normalizedPayload.get("gender")))
+                + "_" + text(normalizedPayload.get("preferredClothing"));
         }
         var measurementProfiles = jsonMaps.asMap(data.get("measurementProfiles"));
-        var profile = buildMeasurementProfile(profileKey, payload);
+        var profile = buildMeasurementProfile(profileKey, normalizedPayload);
         measurementProfiles.put(profileKey, profile);
         data.put("measurementProfiles", measurementProfiles);
-        data.put("gender", payload.get("gender"));
-        data.put("unit", payload.getOrDefault("unit", "cm"));
-        if (Boolean.TRUE.equals(payload.get("setAsActive"))) {
-            applyFamilyActiveFields(data, profileKey, profile, payload);
+        data.put("gender", normalizedPayload.get("gender"));
+        data.put("unit", MeasurementUnits.CANONICAL_UNIT);
+        if (Boolean.TRUE.equals(normalizedPayload.get("setAsActive"))) {
+            applyFamilyActiveFields(data, profileKey, profile, normalizedPayload);
         }
         data.put("updatedAt", Instant.now().toString());
         profiles.saveFamilyMember(appUser.id(), memberKey, data);
@@ -255,7 +260,7 @@ public class ProfileService {
         profile.put("gender", payload.get("gender"));
         profile.put("preferredClothing", payload.get("preferredClothing"));
         profile.put("preferredClothingLabel", payload.get("preferredClothingLabel"));
-        profile.put("unit", payload.getOrDefault("unit", "cm"));
+        profile.put("unit", MeasurementUnits.CANONICAL_UNIT);
         profile.put("measurements", measurements);
         profile.put("averagePoint", average(measurements));
         profile.put("primaryMeasurementKeys", stringList(payload.get("primaryMeasurementKeys")));
@@ -271,6 +276,7 @@ public class ProfileService {
         Map<String, Object> payload
     ) {
         measurement.put("activeProfileKey", profileKey);
+        measurement.put("unit", MeasurementUnits.CANONICAL_UNIT);
         measurement.put("preferredClothing", payload.getOrDefault("preferredClothing", active.get("preferredClothing")));
         measurement.put("preferredClothingLabel", payload.getOrDefault("preferredClothingLabel", active.get("preferredClothingLabel")));
         measurement.put("measurements", active.get("measurements"));
@@ -288,6 +294,7 @@ public class ProfileService {
         Map<String, Object> payload
     ) {
         data.put("activeMeasurementProfileKey", profileKey);
+        data.put("unit", MeasurementUnits.CANONICAL_UNIT);
         data.put("preferredClothing", payload.getOrDefault("preferredClothing", profile.get("preferredClothing")));
         data.put("preferredClothingLabel", payload.getOrDefault("preferredClothingLabel", profile.get("preferredClothingLabel")));
         data.put("measurements", profile.get("measurements"));
@@ -334,6 +341,23 @@ public class ProfileService {
             }
         });
         return result;
+    }
+
+    private Map<String, Object> normalizeMeasurementPayload(Map<String, Object> payload) {
+        var normalized = jsonMaps.copy(payload);
+        if (payload.containsKey("measurements")) {
+            normalized.put(
+                "measurements",
+                MeasurementUnits.toCentimetres(
+                    jsonMaps.asMap(payload.get("measurements")),
+                    payload.get("unit")
+                )
+            );
+        }
+        if (payload.containsKey("unit")) {
+            normalized.put("unit", MeasurementUnits.CANONICAL_UNIT);
+        }
+        return normalized;
     }
 
     private BigDecimal average(Map<String, Object> measurements) {

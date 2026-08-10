@@ -4,7 +4,7 @@ import {
   type ClothingChoice,
   type ClothingOption,
 } from '@/lib/measurement';
-import type { BrandRecommendation } from '@/lib/size-recommendation';
+import type { BrandRecommendation, RecommendationStatus } from '@/lib/size-recommendation';
 import type { SellerPublicProfile } from '@/lib/seller-public-profile';
 
 export type CustomerProfileData = {
@@ -31,6 +31,7 @@ export type CustomerMeasurementProfile = {
   gender: string | null;
   preferredClothing: ClothingChoice | null;
   preferredClothingLabel: string;
+  unit: string;
   measurements: Record<string, unknown>;
   averagePoint: number | null;
   primaryMeasurementKeys: string[];
@@ -41,6 +42,7 @@ export type RecommendationSection = {
   choice: ClothingChoice | null;
   label: string;
   recommendations: BrandRecommendation[];
+  status: RecommendationStatus;
 };
 
 export type EnrichedRecommendation = BrandRecommendation & {
@@ -130,6 +132,9 @@ export const extractMeasurementProfiles = (customer: CustomerProfileData): Custo
       normalizeClothingChoice(typeof profile.preferredClothing === 'string' ? profile.preferredClothing : null) ??
       parseChoiceFromProfileKey(profileKey);
     const profileGender = typeof profile.gender === 'string' ? profile.gender : customer.gender ?? null;
+    const profileUnit = typeof profile.unit === 'string'
+      ? profile.unit
+      : typeof customer.unit === 'string' ? customer.unit : 'cm';
 
     profiles.push({
       profileKey,
@@ -140,6 +145,7 @@ export const extractMeasurementProfiles = (customer: CustomerProfileData): Custo
         choice,
         typeof profile.preferredClothingLabel === 'string' ? profile.preferredClothingLabel : null,
       ),
+      unit: profileUnit,
       measurements,
       averagePoint: toNumber(profile.averagePoint),
       primaryMeasurementKeys: toStringArray(profile.primaryMeasurementKeys),
@@ -156,6 +162,7 @@ export const extractMeasurementProfiles = (customer: CustomerProfileData): Custo
       gender: customer.gender ?? null,
       preferredClothing: choice,
       preferredClothingLabel: getChoiceLabel(customerGender, choice, customer.preferredClothingLabel ?? null),
+      unit: typeof customer.unit === 'string' ? customer.unit : 'cm',
       measurements: customer.measurements,
       averagePoint: toNumber(customer.averagePoint),
       primaryMeasurementKeys: toStringArray(customer.primaryMeasurementKeys),
@@ -241,4 +248,3 @@ export const buildPairSuggestions = (
 
   return pairs.sort((a, b) => b.score - a.score).slice(0, 5);
 };
-
