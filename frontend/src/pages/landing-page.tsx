@@ -1400,10 +1400,10 @@ const CSS = `
   .lp-how { background: var(--white); position: relative; overflow: hidden; }
   .lp-how-grid {
     display: grid;
-    grid-template-columns: minmax(290px, 0.82fr) minmax(660px, 1.38fr);
-    gap: clamp(52px, 6vw, 92px);
+    grid-template-columns: minmax(290px, 0.78fr) minmax(620px, 1.22fr);
+    gap: clamp(42px, 5vw, 76px);
     align-items: center;
-    margin-top: 64px;
+    margin-top: 52px;
   }
   .lp-steps {
     position: relative;
@@ -1476,16 +1476,16 @@ const CSS = `
   .lp-step-title { font-size: 15px; font-weight: 600; color: var(--ink); }
   .lp-step-desc { font-size: 13.5px; color: var(--ash); line-height: 1.65; }
   .lp-how-vis {
-    min-height: 590px;
+    min-height: 620px;
     background: #FAFAF7;
     border-radius: 24px;
     border: 1px solid rgba(13,13,13,0.08);
-    padding: clamp(26px, 3vw, 38px);
+    padding: clamp(24px, 2.5vw, 32px);
     position: relative;
     overflow: hidden;
     display: grid;
-    grid-template-columns: minmax(360px, 1.08fr) minmax(300px, 0.92fr);
-    gap: clamp(22px, 3vw, 36px);
+    grid-template-columns: minmax(300px, 1fr) minmax(290px, 0.9fr);
+    gap: clamp(18px, 2.4vw, 30px);
     align-items: center;
   }
   .lp-how-vis-glow {
@@ -1499,15 +1499,19 @@ const CSS = `
   .lp-fashion-figure-wrap {
     position: relative;
     z-index: 1;
-    min-height: 520px;
+    min-height: 560px;
     display: flex;
     align-items: center;
     justify-content: center;
     pointer-events: none;
+    align-self: stretch;
   }
   .lp-fashion-figure {
-    width: clamp(410px, 35vw, 530px);
-    max-width: none;
+    width: min(100%, clamp(340px, 28vw, 430px));
+    height: clamp(500px, 39vw, 620px);
+    max-width: 430px;
+    max-height: 620px;
+    object-fit: contain;
     filter: drop-shadow(0 26px 36px rgba(13,13,13,0.06));
     opacity: 0;
     transform: translateY(18px);
@@ -1549,10 +1553,12 @@ const CSS = `
   .lp-measurement-card {
     position: relative;
     z-index: 2;
+    width: min(100%, 360px);
+    justify-self: end;
     background: rgba(255,255,255,0.92);
     border: 1px solid rgba(13,13,13,0.08);
     border-radius: 22px;
-    padding: 28px;
+    padding: 24px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.05);
     backdrop-filter: blur(12px);
   }
@@ -1873,20 +1879,178 @@ const CSS = `
   }
 
   @media (max-width: 700px) {
+    body .lp-nav {
+      height: 64px;
+      padding: 0 14px;
+      flex-wrap: nowrap;
+      gap: 10px;
+    }
+    body .lp-logo {
+      min-width: 0;
+    }
+    body .lp-logo-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+    }
+    body .lp-logo-text {
+      font-size: 18px;
+    }
+    body .lp-logo-tagline,
+    body .lp-nav-links,
+    body .lp-nav-cta .lp-btn-ghost {
+      display: none;
+    }
+    body .lp-nav-cta {
+      width: auto;
+      margin-left: auto;
+      flex: 0 0 auto;
+    }
+    body .lp-nav-cta > * {
+      flex: 0 0 auto;
+    }
+    body .lp-nav-cta .lp-btn-ink {
+      width: auto;
+      min-height: 40px;
+      padding: 9px 12px;
+      font-size: 12px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+    body .lp-hero {
+      min-height: auto;
+      padding: 88px 16px 28px;
+      gap: 18px;
+    }
+    body .lp-hero-eyebrow {
+      margin-bottom: 16px;
+      padding: 4px 10px;
+    }
+    body .lp-hero-eyebrow span {
+      font-size: 10px;
+      letter-spacing: 0.36px;
+    }
+    body .lp-hero-h1 {
+      font-size: clamp(38px, 12vw, 48px);
+      line-height: 1.02;
+      letter-spacing: -1px;
+      margin-bottom: 14px;
+    }
+    body .lp-hero-sub {
+      max-width: none;
+      margin-bottom: 20px;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    body .lp-hero-actions {
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+    }
+    body .lp-btn-hero {
+      width: auto;
+      min-height: 44px;
+      padding: 11px 16px;
+      border-radius: 10px;
+      flex: 1 1 auto;
+    }
+    body .lp-btn-text {
+      width: auto;
+      padding: 0;
+      font-size: 12px;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+    body .lp-hero-right {
+      margin: 0 -16px;
+    }
+    body .fb-scene {
+      height: 112px;
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+      mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    }
+    body .fb-track,
+    body .fb-group {
+      gap: 10px;
+    }
+    body .fb-logo {
+      width: 128px;
+      height: 72px;
+      padding: 16px 20px;
+      border-radius: 14px;
+      box-shadow: 0 8px 18px rgba(13,13,13,0.055);
+    }
+    body .lp-stats {
+      padding: 14px 16px;
+    }
+    body .lp-stats-inner {
+      display: flex;
+      grid-template-columns: none;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    body .lp-stats-inner::-webkit-scrollbar {
+      display: none;
+    }
+    body .lp-stat {
+      min-width: 112px;
+      padding: 10px 12px;
+      text-align: left;
+      border-right: none;
+      border-bottom: none;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      scroll-snap-align: start;
+    }
+    body .lp-stat-num {
+      font-size: 28px;
+      margin-bottom: 4px;
+    }
+    body .lp-stat-label {
+      font-size: 11px;
+      line-height: 1.25;
+    }
+    body .lp-section,
+    body .lp-app-section {
+      padding: 52px 16px;
+    }
+    body .lp-eyebrow {
+      margin-bottom: 14px;
+    }
+    body .lp-section-title {
+      font-size: clamp(30px, 10vw, 38px);
+      margin-bottom: 10px;
+    }
+    body .lp-section-sub {
+      max-width: none;
+      font-size: 14px;
+      line-height: 1.55;
+    }
     body .lp-how-grid {
-      margin-top: 40px;
-      gap: 28px;
+      margin-top: 28px;
+      gap: 20px;
     }
     body .lp-step {
-      grid-template-columns: 36px 1fr;
+      grid-template-columns: 34px 1fr;
       gap: 14px;
-      padding: 18px 0;
+      padding: 14px 0;
     }
     body .lp-step-num {
       width: 34px;
       height: 34px;
       border-radius: 10px;
       font-size: 16px;
+    }
+    body .lp-step-title {
+      font-size: 14px;
+    }
+    body .lp-step-desc {
+      font-size: 12.5px;
+      line-height: 1.5;
     }
     .lp-steps::before {
       left: 17px;
@@ -1901,52 +2065,293 @@ const CSS = `
       height: 18px;
     }
     body .lp-how-vis {
-      display: block;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
       min-height: auto;
-      padding: 18px;
+      padding: 16px;
       border-radius: 20px;
     }
-    .lp-fashion-figure-wrap,
-    .lp-measuring-tape,
-    .lp-note-fit,
-    .lp-note-return {
+    body .lp-fashion-figure-wrap {
+      display: flex;
+      min-height: 224px;
+      width: 100%;
+      margin: -8px 0 4px;
+      align-items: center;
+      justify-content: center;
+    }
+    body .lp-fashion-figure {
+      width: auto;
+      height: min(62vw, 280px);
+      max-width: 82%;
+      max-height: 280px;
+      object-fit: contain;
+    }
+    body .lp-measuring-tape,
+    body .lp-note-fit,
+    body .lp-note-return {
       display: none;
     }
-    .lp-fabric-art {
-      width: 420px;
-      right: -220px;
-      bottom: -98px;
-      opacity: 0.08;
+    body .lp-fabric-art {
+      display: block;
+      width: 330px;
+      right: -160px;
+      bottom: -8px;
+      opacity: 0.07;
     }
-    .lp-measurement-card {
-      padding: 20px;
-      border-radius: 18px;
+    body .lp-measurement-card {
+      width: 100%;
+      padding: 16px;
+      border-radius: 16px;
       box-shadow: 0 14px 40px rgba(0,0,0,0.045);
     }
+    body .lp-measurement-card-title {
+      margin-bottom: 14px;
+    }
+    body .lp-measurement-card-title p {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+    }
+    body .lp-measurement-card-title span {
+      font-size: 16px;
+    }
+    body .lp-meas-list {
+      gap: 11px;
+    }
     body .lp-meas-row {
-      grid-template-columns: 88px 1fr 48px;
-      gap: 10px;
+      grid-template-columns: 74px 1fr 43px;
+      gap: 8px;
     }
     body .lp-meas-label-col {
       font-size: 9px;
       width: auto;
       text-align: left;
     }
-    .lp-meas-icon {
-      width: 16px;
-      height: 16px;
+    body .lp-meas-icon {
+      display: none;
     }
-    .lp-result-size {
-      font-size: 56px;
+    body .lp-meas-val {
+      font-size: 11px;
     }
-    .lp-result-match {
+    body .lp-card-result {
+      margin-top: 18px;
+      padding-top: 16px;
+    }
+    body .lp-result-row {
+      align-items: center;
+    }
+    body .lp-result-size {
+      font-size: 48px;
+    }
+    body .lp-result-match {
       font-size: 10px;
       padding: 6px 10px;
     }
-    .fb-scene { height: 330px; }
-    .fb-track, .fb-group { gap: 16px; }
-    .fb-logo { width: 190px; height: 124px; padding: 24px 30px; border-radius: 20px; }
-    @keyframes fb-scroll { from{transform:translateX(0)} to{transform:translateX(calc(-50% - 8px))} }
+    body .lp-features-grid {
+      display: flex;
+      flex-direction: row;
+      gap: 12px;
+      margin: 28px -16px 0;
+      padding: 0 16px 8px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    body .lp-features-grid::-webkit-scrollbar {
+      display: none;
+    }
+    body .lp-features-grid > .lp-reveal {
+      flex: 0 0 min(82vw, 286px);
+      scroll-snap-align: start;
+    }
+    body .lp-feature-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 178px;
+      padding: 16px;
+      border-radius: 14px;
+      align-items: start;
+    }
+    body .lp-feature-icon {
+      width: 38px;
+      height: 38px;
+      margin-bottom: 0;
+      border-radius: 10px;
+    }
+    body .lp-feature-icon img {
+      width: 20px;
+      height: 20px;
+    }
+    body .lp-feature-title {
+      margin-bottom: 6px;
+      font-size: 14px;
+      line-height: 1.25;
+    }
+    body .lp-feature-desc {
+      font-size: 12.5px;
+      line-height: 1.5;
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+    }
+    body .lp-app-section {
+      padding-top: 58px;
+      padding-bottom: 48px;
+    }
+    body .lp-app-inner {
+      gap: 30px;
+    }
+    body .lp-app-eyebrow {
+      margin-bottom: 16px;
+    }
+    body .lp-app-title {
+      font-size: clamp(34px, 11vw, 44px);
+      line-height: 1.04;
+      margin-bottom: 14px;
+    }
+    body .lp-app-sub {
+      margin-bottom: 22px;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    body .lp-app-bullets {
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    body .lp-app-bullet {
+      gap: 10px;
+      align-items: flex-start;
+    }
+    body .lp-app-bullet-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+    }
+    body .lp-app-bullet-text {
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    body .lp-app-downloads {
+      gap: 10px;
+    }
+    body .lp-store-btn {
+      min-width: 0;
+      width: 100%;
+      justify-content: center;
+      padding: 11px 16px;
+      border-radius: 12px;
+    }
+    body .lp-app-right {
+      min-height: 350px;
+      overflow: hidden;
+    }
+    body .lp-phones-wrap {
+      width: 220px;
+      max-width: 220px;
+      height: 350px;
+      transform: none;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    body .lp-phone-1 {
+      display: none;
+    }
+    body .lp-phone-2 {
+      position: relative;
+      right: auto;
+      top: auto;
+      width: 210px;
+      height: 360px !important;
+    }
+    body .lp-phone-2 .lp-phone-screen {
+      min-height: 360px;
+    }
+    body .lp-app-float-tag {
+      right: -34px;
+      top: 30px;
+      transform: scale(0.88);
+    }
+    body .lp-brands-grid {
+      display: flex;
+      grid-template-columns: none;
+      gap: 10px;
+      margin: 28px -16px 0;
+      padding: 0 16px 4px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    body .lp-brands-grid::-webkit-scrollbar {
+      display: none;
+    }
+    body .lp-brand-pill {
+      flex: 0 0 auto;
+      min-width: 132px;
+      padding: 12px 14px;
+      border-radius: 999px;
+      scroll-snap-align: start;
+    }
+    body .lp-cta {
+      padding: 64px 16px;
+    }
+    body .lp-cta-title {
+      font-size: clamp(34px, 11vw, 46px);
+      margin-bottom: 14px;
+    }
+    body .lp-cta-sub {
+      margin-bottom: 28px;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    body .lp-cta-actions {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+    }
+    body .lp-btn-sage,
+    body .lp-btn-ghost-white {
+      width: 100%;
+      min-height: 44px;
+      justify-content: center;
+      text-align: center;
+    }
+    body .lp-footer {
+      padding: 22px 16px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    body .lp-footer-links {
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    @keyframes fb-scroll { from{transform:translateX(0)} to{transform:translateX(calc(-50% - 5px))} }
+  }
+
+  @media (max-width: 380px) {
+    body .lp-hero-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    body .lp-btn-hero,
+    body .lp-btn-text {
+      width: 100%;
+      justify-content: center;
+      text-align: center;
+    }
+    body .lp-meas-row {
+      grid-template-columns: 68px 1fr 40px;
+      gap: 7px;
+    }
+    body .lp-meas-label-col,
+    body .lp-meas-val {
+      font-size: 10px;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1982,7 +2387,10 @@ const CSS = `
   }
 `;
 
-if (!document.getElementById('lp-styles')) {
+const landingStyles = document.getElementById('lp-styles');
+if (landingStyles) {
+  landingStyles.textContent = CSS;
+} else {
   const s = document.createElement('style');
   s.id = 'lp-styles';
   s.textContent = CSS;
