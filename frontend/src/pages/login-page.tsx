@@ -1,9 +1,9 @@
-import { useMemo, useRef, useState, useEffect, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
+import loginFigures from '@/assets/images/loginfigures.png';
 import { AppLogo } from '@/components/app-logo';
 import { signInWithPhonePassword } from '@/lib/auth-api';
-import { useCatalogSummary } from '@/lib/catalog-summary';
 import {
   DEFAULT_PHONE_COUNTRY_CODE,
   getSriLankaLocalPhoneInput,
@@ -23,14 +23,16 @@ if (!document.querySelector('[href*="Cormorant+Garamond"]')) document.head.appen
 const CSS = `
   :root {
     --sage: #C3D8C1;
-    --sage-light: #D9EBD7;
-    --sage-deep: #7A9E78;
-    --sage-dark: #A3BFA1;
-    --ink: #0D0D0D;
-    --paper: #FAFAF8;
+    --sage-light: #EEF3EC;
+    --sage-deep: #496657;
+    --sage-dark: #536B55;
+    --ink: #111111;
+    --charcoal: #101210;
+    --paper: #FAFAF7;
     --cloud: #EFEFEF;
+    --line: #E5E6E2;
     --mist: #D4D4D4;
-    --ash: #757575;
+    --ash: #666863;
     --white: #FFFFFF;
     --red: #C0392B;
     --fd: 'Cormorant Garamond', serif;
@@ -41,7 +43,7 @@ const CSS = `
   .lp-login-root {
     min-height: 100vh;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(420px, 44vw) minmax(0, 1fr);
     font-family: var(--fs);
     background: var(--paper);
     overflow: hidden;
@@ -50,11 +52,11 @@ const CSS = `
   /* ── Left panel ── */
   .lp-login-left {
     position: relative;
-    background: var(--ink);
+    background: var(--charcoal);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 48px 56px;
+    padding: 42px clamp(32px, 4vw, 56px) 34px;
     overflow: hidden;
   }
 
@@ -62,8 +64,9 @@ const CSS = `
   .lp-login-left-glow {
     position: absolute; inset: 0; pointer-events: none;
     background:
-      radial-gradient(ellipse at 15% 20%, rgba(195,216,193,0.10) 0%, transparent 55%),
-      radial-gradient(ellipse at 85% 80%, rgba(195,216,193,0.07) 0%, transparent 50%);
+      radial-gradient(ellipse at 40% 52%, rgba(238,243,236,0.09) 0%, transparent 48%),
+      radial-gradient(ellipse at 15% 18%, rgba(73,102,87,0.16) 0%, transparent 48%),
+      linear-gradient(180deg, rgba(16,18,16,0.16), rgba(16,18,16,0.82));
   }
   .lp-login-left-grid {
     position: absolute; inset: 0; pointer-events: none;
@@ -72,13 +75,34 @@ const CSS = `
       linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
     background-size: 48px 48px;
   }
+  .lp-login-left::before,
+  .lp-login-left::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    border: 1px solid rgba(195,216,193,0.08);
+    border-radius: 50%;
+    transform: rotate(-16deg);
+  }
+  .lp-login-left::before {
+    width: 560px;
+    height: 210px;
+    left: -180px;
+    top: 24%;
+  }
+  .lp-login-left::after {
+    width: 640px;
+    height: 260px;
+    right: -300px;
+    bottom: 9%;
+  }
 
   /* Brand */
   .lp-login-brand {
     display: flex; align-items: center; gap: 10px;
-    position: relative; z-index: 1;
+    position: relative; z-index: 3;
     text-decoration: none;
-    animation: lp-auth-fadeUp 0.6s 0.1s var(--ease) both;
+    animation: lp-auth-formIn 0.65s 0.08s var(--ease) both;
   }
   .lp-login-brand-mark {
     width: 44px; height: 44px; border-radius: 12px;
@@ -106,80 +130,102 @@ const CSS = `
     text-transform: uppercase;
   }
 
-  /* Left hero copy */
+  /* Left artwork */
   .lp-login-left-body {
-    position: relative; z-index: 1;
-    animation: lp-auth-fadeUp 0.7s 0.25s var(--ease) both;
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 26px 0 14px;
   }
-  .lp-login-left-eyebrow {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: rgba(195,216,193,0.12);
-    border: 1px solid rgba(195,216,193,0.2);
-    border-radius: 999px; padding: 5px 14px; margin-bottom: 28px;
+  .lp-login-visual-stage {
+    position: relative;
+    width: min(100%, 560px);
+    height: min(72vh, 720px);
+    min-height: 480px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
   }
-  .lp-login-left-eyebrow-dot {
-    width: 6px; height: 6px; border-radius: 50%; background: var(--sage);
-    box-shadow: 0 0 6px var(--sage);
+  .lp-login-visual-stage::before {
+    content: '';
+    position: absolute;
+    left: 8%;
+    right: 2%;
+    bottom: 9%;
+    height: 38%;
+    border: 1px solid rgba(238,243,236,0.08);
+    border-radius: 50%;
+    transform: rotate(11deg);
   }
-  .lp-login-left-eyebrow span {
-    font-size: 11px; font-weight: 600; color: var(--sage);
-    letter-spacing: 0.6px; text-transform: uppercase;
-  }
-  .lp-login-left-h1 {
-    font-family: var(--fd); font-size: clamp(44px, 4.5vw, 68px);
-    font-weight: 700; color: var(--white);
-    line-height: 1.04; letter-spacing: -1.5px;
-    margin-bottom: 20px;
-  }
-  .lp-login-left-h1 em { font-style: italic; color: var(--sage); }
-  .lp-login-left-sub {
-    font-size: 15px; color: rgba(255,255,255,0.45);
-    line-height: 1.75; max-width: 380px;
+  .lp-login-figure {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center bottom;
+    filter: saturate(0.92) contrast(0.98);
+    animation: lp-auth-artIn 0.78s 0.18s var(--ease) both;
   }
 
-  /* Brand testimonial chip */
+  /* Editorial footer */
   .lp-login-left-footer {
-    position: relative; z-index: 1;
-    animation: lp-auth-fadeUp 0.7s 0.4s var(--ease) both;
+    position: relative; z-index: 3;
+    animation: lp-auth-formIn 0.7s 0.28s var(--ease) both;
   }
-  .lp-login-left-stat-row {
-    display: flex; align-items: center; gap: 24px;
-    padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.08);
+  .lp-login-editorial-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    color: rgba(195,216,193,0.74);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.26em;
+    line-height: 1.5;
+    text-transform: uppercase;
   }
-  .lp-login-left-stat { display: flex; flex-direction: column; gap: 3px; }
-  .lp-login-left-stat-num {
-    font-family: var(--fd); font-size: 28px; font-weight: 700;
-    color: var(--white); letter-spacing: -0.8px; line-height: 1;
-  }
-  .lp-login-left-stat-num span { color: var(--sage); }
-  .lp-login-left-stat-label { font-size: 12px; color: rgba(255,255,255,0.35); }
-  .lp-login-left-stat-divider { width: 1px; height: 40px; background: rgba(255,255,255,0.08); }
 
   /* ── Right panel ── */
   .lp-login-right {
     display: flex; align-items: center; justify-content: center;
-    padding: 64px 56px;
+    padding: 64px clamp(36px, 6vw, 78px);
     position: relative;
+    background: var(--paper);
   }
 
   .lp-login-form-wrap {
-    width: 100%; max-width: 420px;
-    animation: lp-auth-fadeUp 0.7s 0.15s var(--ease) both;
+    width: 100%; max-width: 430px;
+    animation: lp-auth-formIn 0.7s 0.12s var(--ease) both;
+  }
+
+  .lp-login-mobile-brand,
+  .lp-login-mobile-art {
+    display: none;
   }
 
   /* Header */
-  .lp-login-form-header { margin-bottom: 40px; }
+  .lp-login-form-header { margin-bottom: 34px; }
   .lp-login-form-eyebrow {
-    font-size: 12px; font-weight: 600; color: var(--sage-deep);
-    letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 10px;
+    font-size: 11px; font-weight: 700; color: var(--sage-deep);
+    letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px;
   }
   .lp-login-form-title {
-    font-family: var(--fd); font-size: 38px; font-weight: 700;
-    color: var(--ink); letter-spacing: -1px; line-height: 1.08;
-    margin-bottom: 10px;
+    font-family: var(--fd); font-size: clamp(42px, 4vw, 56px); font-weight: 700;
+    color: var(--ink); letter-spacing: -1px; line-height: 1.02;
+    margin-bottom: 14px;
+  }
+  .lp-login-form-title em {
+    display: block;
+    color: var(--sage-deep);
+    font-style: italic;
   }
   .lp-login-form-sub {
-    font-size: 14px; color: var(--ash); line-height: 1.6;
+    font-size: 14.5px; color: var(--ash); line-height: 1.65;
+    max-width: 390px;
   }
 
   /* Fields */
@@ -192,15 +238,16 @@ const CSS = `
 
   .lp-input-wrap {
     position: relative; display: flex; align-items: center;
+    min-height: 52px;
     background: var(--white);
-    border: 1.5px solid var(--cloud);
+    border: 1px solid var(--line);
     border-radius: 12px;
     transition: border-color 0.2s, box-shadow 0.2s;
     overflow: hidden;
   }
   .lp-input-wrap:focus-within {
-    border-color: var(--ink);
-    box-shadow: 0 0 0 3px rgba(13,13,13,0.06);
+    border-color: var(--sage-deep);
+    box-shadow: 0 0 0 3px rgba(73,102,87,0.08);
   }
   .lp-input-wrap.lp-input-error {
     border-color: var(--red);
@@ -219,7 +266,7 @@ const CSS = `
     height: 100%;
     padding: 0 14px 0 0;
     margin-right: 14px;
-    border-right: 1px solid var(--cloud);
+    border-right: 1px solid var(--line);
     color: var(--ink);
     font-size: 14px;
     font-weight: 700;
@@ -269,7 +316,8 @@ const CSS = `
     margin-top: 8px;
   }
   .lp-submit-btn:hover:not(:disabled) {
-    opacity: 0.88; transform: translateY(-1px);
+    background: #182019;
+    transform: translateY(-1px);
     box-shadow: 0 8px 24px rgba(13,13,13,0.22);
   }
   .lp-submit-btn:active:not(:disabled) { transform: scale(0.98); }
@@ -287,7 +335,7 @@ const CSS = `
   /* Footer link */
   .lp-auth-footer-text {
     text-align: center; font-size: 13.5px; color: var(--ash);
-    margin-top: 28px;
+    margin-top: 26px;
   }
   .lp-auth-footer-text a {
     color: var(--ink); font-weight: 600; text-decoration: none;
@@ -325,14 +373,24 @@ const CSS = `
 
   /* Divider */
   .lp-auth-divider {
-    display: flex; align-items: center; gap: 14px; margin: 24px 0;
+    display: flex; align-items: center; gap: 14px; margin: 24px 0 0;
   }
-  .lp-auth-divider-line { flex: 1; height: 1px; background: var(--cloud); }
-  .lp-auth-divider span { font-size: 12px; color: var(--mist); font-weight: 500; }
+  .lp-auth-divider-line { flex: 1; height: 1px; background: var(--line); }
+  .lp-auth-divider span {
+    font-size: 11.5px;
+    color: var(--ash);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
 
   /* Keyframes */
-  @keyframes lp-auth-fadeUp {
-    from { opacity: 0; transform: translateY(22px); }
+  @keyframes lp-auth-artIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes lp-auth-formIn {
+    from { opacity: 0; transform: translateY(5px); }
     to   { opacity: 1; transform: none; }
   }
   @keyframes lp-auth-shake {
@@ -345,9 +403,152 @@ const CSS = `
   @keyframes lp-spin {
     to { transform: rotate(360deg); }
   }
+
+  @media (max-width: 1100px) {
+    body .lp-login-root {
+      grid-template-columns: minmax(360px, 42vw) minmax(0, 1fr);
+    }
+    body .lp-login-left {
+      display: flex;
+      padding-left: 32px;
+      padding-right: 32px;
+    }
+    body .lp-login-visual-stage {
+      min-height: 420px;
+      height: min(68vh, 620px);
+    }
+    body .lp-login-right {
+      min-height: 100vh;
+      padding: 54px 34px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    body .lp-login-root {
+      display: block;
+      min-height: 100vh;
+      overflow: visible;
+      background: var(--paper);
+    }
+    body .lp-login-left {
+      display: none;
+    }
+    body .lp-login-right {
+      min-height: 100vh;
+      padding: 24px 20px 36px;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    body .lp-login-form-wrap {
+      max-width: 430px;
+      margin: 0 auto;
+    }
+    body .lp-login-mobile-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      margin-bottom: 18px;
+      animation: lp-auth-formIn 0.65s 0.05s var(--ease) both;
+    }
+    body .lp-login-mobile-brand .lp-login-brand-mark {
+      width: 40px;
+      height: 40px;
+      background: var(--white);
+      border-color: rgba(17,17,17,0.08);
+      box-shadow: 0 8px 20px rgba(17,17,17,0.06);
+    }
+    body .lp-login-mobile-brand .lp-login-brand-name {
+      color: var(--ink);
+    }
+    body .lp-login-mobile-brand .lp-login-brand-tagline {
+      color: var(--sage-deep);
+    }
+    body .lp-login-mobile-art {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 210px;
+      margin: 0 -6px 26px;
+      overflow: hidden;
+      animation: lp-auth-artIn 0.78s 0.12s var(--ease) both;
+    }
+    body .lp-login-mobile-art::before {
+      content: '';
+      position: absolute;
+      width: 285px;
+      height: 96px;
+      border: 1px solid rgba(73,102,87,0.12);
+      border-radius: 50%;
+      transform: rotate(-10deg);
+    }
+    body .lp-login-mobile-art::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 52px;
+      background: linear-gradient(180deg, rgba(250,250,247,0), var(--paper));
+      pointer-events: none;
+    }
+    body .lp-login-mobile-figure {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center center;
+      filter: saturate(0.96) contrast(0.98);
+    }
+    body .lp-login-form-header {
+      margin-bottom: 26px;
+    }
+    body .lp-login-form-title {
+      font-size: clamp(38px, 11vw, 48px);
+    }
+    body .lp-login-form-sub {
+      font-size: 14px;
+    }
+    body .lp-auth-fields {
+      gap: 16px;
+    }
+  }
+
+  @media (max-width: 380px) {
+    body .lp-login-right {
+      padding: 20px 16px 32px;
+    }
+    body .lp-login-mobile-art {
+      height: 166px;
+      margin-bottom: 22px;
+    }
+    body .lp-login-form-title {
+      font-size: 36px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lp-login-brand,
+    .lp-login-left-body,
+    .lp-login-left-footer,
+    .lp-login-figure,
+    .lp-login-mobile-brand,
+    .lp-login-mobile-art,
+    .lp-login-form-wrap,
+    .lp-error-banner,
+    .lp-spinner {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
 `;
 
-if (!document.getElementById('lp-login-styles')) {
+const loginStyles = document.getElementById('lp-login-styles');
+if (loginStyles) {
+  loginStyles.textContent = CSS;
+} else {
   const s = document.createElement('style');
   s.id = 'lp-login-styles';
   s.textContent = CSS;
@@ -426,7 +627,6 @@ const getLoginErrorMessage = (error: unknown) => {
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { brandCount } = useCatalogSummary();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password,    setPassword]    = useState('');
   const [showPw,      setShowPw]      = useState(false);
@@ -478,37 +678,19 @@ export function LoginPage() {
           </div>
         </Link>
 
-        {/* Hero copy */}
+        {/* Artwork */}
         <div className="lp-login-left-body">
-          <div className="lp-login-left-eyebrow">
-            <div className="lp-login-left-eyebrow-dot" />
-            <span>{brandCount} active brands</span>
+          <div className="lp-login-visual-stage" aria-hidden="true">
+            <img className="lp-login-figure" src={loginFigures} alt="" draggable={false} />
           </div>
-          <h2 className="lp-login-left-h1">
-            Your size,<br /><em>every</em><br />brand.
-          </h2>
-          <p className="lp-login-left-sub">
-            One set of measurements unlocks perfect sizing across every brand in our database — online and in-store.
-          </p>
         </div>
 
-        {/* Stats */}
+        {/* Editorial copy */}
         <div className="lp-login-left-footer">
-          <div className="lp-login-left-stat-row">
-            <div className="lp-login-left-stat">
-              <span className="lp-login-left-stat-num">{brandCount}</span>
-              <span className="lp-login-left-stat-label">Brands</span>
-            </div>
-            <div className="lp-login-left-stat-divider" />
-            <div className="lp-login-left-stat">
-              <span className="lp-login-left-stat-num">98<span>%</span></span>
-              <span className="lp-login-left-stat-label">Accuracy</span>
-            </div>
-            <div className="lp-login-left-stat-divider" />
-            <div className="lp-login-left-stat">
-              <span className="lp-login-left-stat-num">0</span>
-              <span className="lp-login-left-stat-label">Returns from bad fit</span>
-            </div>
+          <div className="lp-login-editorial-copy">
+            <span>One profile.</span>
+            <span>Every brand.</span>
+            <span>Your fit.</span>
           </div>
         </div>
       </div>
@@ -516,13 +698,24 @@ export function LoginPage() {
       {/* ── Right panel ── */}
       <div className="lp-login-right">
         <div className="lp-login-form-wrap">
+          <Link to="/" className="lp-login-mobile-brand">
+            <div className="lp-login-brand-mark"><AppLogo size={32} decorative /></div>
+            <div className="lp-login-brand-copy">
+              <span className="lp-login-brand-name">MatchMySize</span>
+              <span className="lp-login-brand-tagline">Find Your Perfect Fit</span>
+            </div>
+          </Link>
+
+          <div className="lp-login-mobile-art" aria-hidden="true">
+            <img className="lp-login-mobile-figure" src={loginFigures} alt="" draggable={false} />
+          </div>
 
           {/* Header */}
           <div className="lp-login-form-header">
-            <p className="lp-login-form-eyebrow">Welcome back</p>
-            <h1 className="lp-login-form-title">Sign in</h1>
+            <p className="lp-login-form-eyebrow">WELCOME BACK</p>
+            <h1 className="lp-login-form-title">Find your perfect <em>fit again.</em></h1>
             <p className="lp-login-form-sub">
-              Enter your registered phone number and password to continue.
+              Sign in to access your measurements, saved sizes and brand matches.
             </p>
           </div>
 
@@ -602,9 +795,15 @@ export function LoginPage() {
 
           {/* Footer */}
           <p className="lp-auth-footer-text">
-            New here?{' '}
+            New to MatchMySize?{' '}
             <Link to="/auth/register">Create an account</Link>
           </p>
+
+          <div className="lp-auth-divider" aria-hidden="true">
+            <div className="lp-auth-divider-line" />
+            <span>500+ brands · One sizing profile</span>
+            <div className="lp-auth-divider-line" />
+          </div>
 
         </div>
       </div>
