@@ -16,6 +16,13 @@ public class CatalogService {
         Map<String, Map<String, Object>> sellers
     ) {}
 
+    public record CatalogSummary(
+        long brandCount,
+        long catalogRowCount,
+        long sellerCount,
+        List<String> brandNames
+    ) {}
+
     private record SellerProfile(String sourceAccountId, Map<String, Object> profileData) {}
 
     private final JdbcClient jdbc;
@@ -62,6 +69,37 @@ public class CatalogService {
         return new CatalogBootstrap(brandRows, sellers);
     }
 
+    @Transactional(readOnly = true)
+    public CatalogSummary summary() {
+        var brandCount = jdbc.sql("""
+                select count(distinct coalesce(nullif(trim(business_name), ''), nullif(trim(brand_name), '')))
+                  from brand_size_measurements
+                 where active = true
+                """)
+            .query(Long.class)
+            .single();
+        var catalogRowCount = jdbc.sql("select count(*) from brand_size_measurements where active = true")
+            .query(Long.class)
+            .single();
+        var sellerCount = jdbc.sql("""
+                select count(*) from app_users
+                 where role = 'seller' and status = 'active'
+                """)
+            .query(Long.class)
+            .single();
+        var brandNames = jdbc.sql("""
+                select distinct coalesce(nullif(trim(business_name), ''), nullif(trim(brand_name), '')) as brand_name
+                  from brand_size_measurements
+                 where active = true
+                   and coalesce(nullif(trim(business_name), ''), nullif(trim(brand_name), '')) is not null
+                 order by brand_name
+                """)
+            .query(String.class)
+            .list();
+
+        return new CatalogSummary(brandCount, catalogRowCount, sellerCount, brandNames);
+    }
+
     private Map<String, Object> publicSeller(String id, Map<String, Object> profile) {
         var displayName = firstText(profile, "displayName");
         if (displayName == null) {
@@ -84,6 +122,7 @@ public class CatalogService {
         result.put("uid", id);
         result.put("businessName", businessName);
         result.put("displayName", displayName);
+        result.put("logoKey", firstText(profile, "logoKey"));
         result.put("photoURL", firstText(
             profile,
             "photoURL", "photoUrl", "imageUrl", "imageURL", "profilePhoto",

@@ -25,6 +25,9 @@ const request = async <T,>(path: string, body: Record<string, unknown>) => {
 export const requestOtpViaTextLk = (phoneNumber: string, purpose: OtpPurpose) =>
   request<OtpSession>('/api/otp/request', { phoneNumber, purpose });
 
+export const requestPasswordResetOtp = (phoneNumber: string) =>
+  request<OtpSession>('/api/auth/password/reset/request', { phoneNumber });
+
 export const verifyOtpSession = (session: OtpSession, code: string) =>
   request<{ verified: true; sessionId: string; purpose: OtpPurpose; phoneNumber: string }>(
     '/api/otp/verify',

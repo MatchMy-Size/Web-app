@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.matchmysize.identity.application.AuthService;
+import com.matchmysize.otp.application.OtpService;
 import com.matchmysize.shared.api.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -40,6 +41,8 @@ public class AuthController {
         @NotNull UUID otpSessionId
     ) {}
 
+    record PasswordResetOtpRequest(@NotBlank String phoneNumber) {}
+
     private final AuthService authService;
 
     public AuthController(AuthService authService) {
@@ -59,6 +62,20 @@ public class AuthController {
     @PostMapping("/refresh")
     ApiResponse<Map<String, Object>> refresh(@Valid @RequestBody RefreshRequest request) {
         return ApiResponse.success(authService.refresh(request.refreshToken()));
+    }
+
+    @PostMapping("/password/reset/request")
+    ApiResponse<OtpService.OtpSessionResponse> requestPasswordResetOtp(
+        @Valid @RequestBody PasswordResetOtpRequest request
+    ) {
+        return ApiResponse.success(authService.requestPasswordReset(request.phoneNumber()));
+    }
+
+    @PostMapping("/password/reset")
+    ApiResponse<Map<String, Object>> resetPassword(@Valid @RequestBody UpdatePasswordRequest request) {
+        return ApiResponse.success(authService.resetPassword(
+            request.phoneNumber(), request.password(), request.otpSessionId()
+        ));
     }
 
     @PostMapping("/logout")

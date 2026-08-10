@@ -222,7 +222,9 @@ public class OtpService {
     }
 
     private String normalizePurpose(String purpose) {
-        if (!"signup".equals(purpose) && !"changePassword".equals(purpose)) {
+        if (!"signup".equals(purpose)
+            && !"changePassword".equals(purpose)
+            && !"passwordReset".equals(purpose)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "invalid_otp_purpose", "Unsupported OTP purpose.");
         }
         return purpose;

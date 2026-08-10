@@ -30,11 +30,14 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/health",
                     "/actuator/health/**",
+                    "/api/catalog/summary",
                     "/api/otp/request",
                     "/api/otp/verify",
                     "/api/auth/register",
                     "/api/auth/login",
-                    "/api/auth/refresh"
+                    "/api/auth/refresh",
+                    "/api/auth/password/reset/request",
+                    "/api/auth/password/reset"
                 ).permitAll()
                 .anyRequest().authenticated()
             )

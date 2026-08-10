@@ -5,6 +5,8 @@ import { useAuth } from '@/context/auth-context';
 import { useProfileSubject } from '@/context/profile-subject-context';
 import { createFamilyMember } from '@/lib/family-members';
 import { signOutUser } from '@/lib/auth-api';
+import { BRAND_LOGOS } from '@/lib/brand-logos';
+import { useCatalogSummary } from '@/lib/catalog-summary';
 import { extractMeasurementProfiles } from '@/lib/recommendation-view';
 import { useRecommendationData } from '@/lib/use-recommendation-data';
 
@@ -557,14 +559,13 @@ function clothingEmoji(key: string | null) {
   return '📏';
 }
 
-const POPULAR_BRANDS = ['H&M','Zara','Nike','Adidas','Uniqlo','Mango',"Levi's",'Gap'];
-
 /* ─────────────────────────────────────────────
    Main Component
 ───────────────────────────────────────────── */
 export function ProfilePage() {
   const navigate   = useNavigate();
   const { user }   = useAuth();
+  const { brandCount, brandNames } = useCatalogSummary();
   const { familyMembers, selectedSubject, selectFamilyMember, selectSelf } = useProfileSubject();
   const { profile, measurementProfiles } = useRecommendationData(user?.uid, { subject: 'self' });
   const [activeTab,  setActiveTab]  = useState<'overview' | 'measurements' | 'brands'>('overview');
@@ -596,6 +597,10 @@ export function ProfilePage() {
   const activeProfile = measurementProfiles.find(
     p => p.profileKey === profile?.activeMeasurementProfileKey
   );
+  const visibleBrands = brandNames.length
+    ? brandNames.slice(0, 8)
+    : BRAND_LOGOS.slice(0, 8).map((brand) => brand.name);
+  const additionalBrandCount = Math.max(brandCount - visibleBrands.length, 0);
   const familySummaries = useMemo(
     () =>
       familyMembers.map((member) => {
@@ -1040,12 +1045,12 @@ export function ProfilePage() {
               </button>
             </div>
             <div className="wp-brands-grid">
-              {POPULAR_BRANDS.map(b => (
+              {visibleBrands.map(b => (
                 <div key={b} className="wp-brand-chip">{b}</div>
               ))}
             </div>
             <div className="wp-brands-more">
-              <a href="/app/home">+ 492 more brands</a> across all clothing categories
+              <a href="/app/home">{additionalBrandCount > 0 ? `+ ${additionalBrandCount} more brands` : `${brandCount} active brands`}</a> across all clothing categories
             </div>
           </div>
 

@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/context/auth-context';
 import { getOtpSession, setOtpSession, type OtpSession } from '@/lib/auth-flow';
-import { attachPasswordToVerifiedPhone } from '@/lib/auth-api';
-import { requestOtpViaTextLk, verifyOtpSession } from '@/lib/otp-client';
+import { attachPasswordToVerifiedPhone, resetPasswordWithVerifiedPhone } from '@/lib/auth-api';
+import { requestOtpViaTextLk, requestPasswordResetOtp, verifyOtpSession } from '@/lib/otp-client';
 import {
   DEFAULT_PHONE_COUNTRY_CODE,
   getSriLankaLocalPhoneInput,
@@ -410,14 +410,27 @@ const STEPS: Step[] = ['verify', 'otp', 'password'];
 /* ─────────────────────────────────────────────
    Main component
 ───────────────────────────────────────────── */
+type PasswordFlowMode = 'change' | 'reset';
+
 export function ChangePasswordPage() {
+  return <PasswordFlow mode="change" />;
+}
+
+export function ForgotPasswordPage() {
+  return <PasswordFlow mode="reset" />;
+}
+
+function PasswordFlow({ mode }: { mode: PasswordFlowMode }) {
   const navigate = useNavigate();
   const { user }  = useAuth();
-  const { profile } = useRecommendationData(user?.uid, { subject: 'self' });
+  const { profile } = useRecommendationData(mode === 'change' ? user?.uid : null, { subject: 'self' });
+  const isPasswordReset = mode === 'reset';
 
   const [step,        setStep]        = useState<Step>('verify');
   const [dir,         setDir]         = useState<'fwd' | 'back'>('fwd');
-  const [phone,       setPhone]       = useState(getSriLankaLocalPhoneInput(String(profile?.phoneNumber ?? '')));
+  const [phone,       setPhone]       = useState(
+    isPasswordReset ? '' : getSriLankaLocalPhoneInput(String(profile?.phoneNumber ?? '')),
+  );
   const [session,     setSession]     = useState<OtpSession | null>(getOtpSession());
   const [code,        setCode]        = useState('');
   const [newPw,       setNewPw]       = useState('');
@@ -430,8 +443,10 @@ export function ChangePasswordPage() {
   const [sentTo,      setSentTo]      = useState<string | null>(null);
 
   useEffect(() => {
-    if (profile?.phoneNumber) setPhone(getSriLankaLocalPhoneInput(String(profile.phoneNumber)));
-  }, [profile?.phoneNumber]);
+    if (!isPasswordReset && profile?.phoneNumber) {
+      setPhone(getSriLankaLocalPhoneInput(String(profile.phoneNumber)));
+    }
+  }, [isPasswordReset, profile?.phoneNumber]);
 
   const showError = (msg: string) => { setError(msg); setErrorKey(k => k + 1); };
   const go = (next: Step, direction: 'fwd' | 'back') => {
@@ -443,7 +458,9 @@ export function ChangePasswordPage() {
     if (!isValidE164Phone(normalized)) { showError('Enter a valid Sri Lankan mobile number.'); return; }
     try {
       setLoading(true); setError(null);
-      const nextSession = await requestOtpViaTextLk(normalized, 'changePassword');
+      const nextSession = isPasswordReset
+        ? await requestPasswordResetOtp(normalized)
+        : await requestOtpViaTextLk(normalized, 'changePassword');
       setOtpSession(nextSession); setSession(nextSession);
       setSentTo(normalized);
       go('otp', 'fwd');
@@ -467,9 +484,16 @@ export function ChangePasswordPage() {
     if (newPw !== confirmPw) { showError('Passwords do not match.'); return; }
     try {
       setLoading(true); setError(null);
-      await attachPasswordToVerifiedPhone(session.phoneNumber, newPw, session.sessionId);
+      if (isPasswordReset) {
+        await resetPasswordWithVerifiedPhone(session.phoneNumber, newPw, session.sessionId);
+      } else {
+        await attachPasswordToVerifiedPhone(session.phoneNumber, newPw, session.sessionId);
+      }
       setOtpSession(null);
-      navigate('/app/settings', { replace: true });
+      navigate(isPasswordReset ? '/auth/login' : '/app/settings', {
+        replace: true,
+        state: isPasswordReset ? { passwordReset: true } : undefined,
+      });
     } catch (e) { showError(e instanceof Error ? e.message : 'Unable to change password.'); }
     finally { setLoading(false); }
   };
@@ -485,11 +509,14 @@ export function ChangePasswordPage() {
 
       {/* ── Topbar ── */}
       <div className="cp-topbar">
-        <button className="cp-back-btn" onClick={() => navigate('/app/settings')}>
-          <Ico.Back /> Back to settings
+        <button
+          className="cp-back-btn"
+          onClick={() => navigate(isPasswordReset ? '/auth/login' : '/app/settings')}
+        >
+          <Ico.Back /> {isPasswordReset ? 'Back to sign in' : 'Back to settings'}
         </button>
         <div className="cp-topbar-divider" />
-        <span className="cp-topbar-title">Change password</span>
+        <span className="cp-topbar-title">{isPasswordReset ? 'Reset password' : 'Change password'}</span>
 
         {/* Step indicator */}
         <div className="cp-stepper">

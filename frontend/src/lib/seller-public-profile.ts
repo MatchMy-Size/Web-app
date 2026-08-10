@@ -5,6 +5,7 @@ export type SellerPublicProfile = {
   businessName: string;
   displayName: string;
   photoURL: string | null;
+  logoKey?: string | null;
 };
 
 const parseSellerUserId = (sellerRef: string | null | undefined): string | null => {

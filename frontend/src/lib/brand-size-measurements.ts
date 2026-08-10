@@ -38,6 +38,7 @@ export type BrandSizeMeasurementRecord = {
   photoUrl?: string | null;
   logoUrl?: string | null;
   logoURL?: string | null;
+  logoKey?: string | null;
   brandImage?: string | null;
   secureUrl?: string | null;
   secure_url?: string | null;

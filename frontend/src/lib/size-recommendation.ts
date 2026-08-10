@@ -1,4 +1,5 @@
 import type { BrandSizeMeasurementRecord } from '@/lib/brand-size-measurements';
+import { getBrandLogoSource } from '@/lib/brand-logos';
 
 type NumericMeasurements = Record<string, number>;
 
@@ -651,6 +652,7 @@ export const buildBrandRecommendations = ({
         parseSellerUserId(entry.sellerRef);
 
       const sizeKey = getSizeKey(entry);
+      const brand = getBrandName(entry);
       const groupGender =
         normalizeGenderOrCategory(firstText(entry.gender, entry.category)) !== 'unknown'
           ? normalizeGenderOrCategory(firstText(entry.gender, entry.category))
@@ -674,7 +676,7 @@ export const buildBrandRecommendations = ({
 
       return {
         id: entry.id,
-        brand: getBrandName(entry),
+        brand,
         title: getTitle(entry),
         sizeLabel: getSizeLabel(entry),
         sizeKey,
@@ -682,7 +684,7 @@ export const buildBrandRecommendations = ({
         subCategory: getSubCategoryLabel(entry),
         unit: entry.unit ?? 'cm',
         averagePoint: brandAverage,
-        imageUrl: getImageUrl(entry),
+        imageUrl: getImageUrl(entry) ?? getBrandLogoSource(entry.logoKey, brand),
         commonMeasurementCount: allCommonCount,
         primaryMatchedCount: primaryResult.commonCount,
         primaryExpectedCount: primaryResult.expectedCount,
@@ -743,4 +745,3 @@ export const buildBrandRecommendations = ({
     }) => item
   );
 };
-

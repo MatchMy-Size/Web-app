@@ -20,6 +20,7 @@ import {
   type CustomerMeasurementProfile,
 } from '@/lib/recommendation-view';
 import { useRecommendationData } from '@/lib/use-recommendation-data';
+import { useCatalogSummary } from '@/lib/catalog-summary';
 
 /* ─────────────────────────────────────────────
    Fonts
@@ -504,6 +505,7 @@ function PhaseWrap({ phaseKey, dir, children }: { phaseKey: string; dir: 'fwd' |
 export function AddPreferencePage() {
   const navigate = useNavigate();
   const { user }  = useAuth();
+  const { brandCount } = useCatalogSummary();
   const { selectedSubject } = useProfileSubject();
   const [searchParams] = useSearchParams();
   const { profile } = useRecommendationData(user?.uid);
@@ -695,7 +697,7 @@ export function AddPreferencePage() {
             <div className="ap-ctx-sub">
               {isEditing
                 ? 'Update your measurements below. Changes apply to all brand recommendations.'
-                : 'Enter your measurements to unlock size recommendations across 500+ brands.'}
+                : `Enter your measurements to unlock size recommendations across ${brandCount} active brands.`}
             </div>
           </div>
 

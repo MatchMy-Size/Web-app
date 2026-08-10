@@ -1,6 +1,6 @@
 import type { ClothingChoice, CustomerGender, MeasurementFieldKey } from '@/lib/measurement';
 
-export type OtpPurpose = 'signup' | 'changePassword';
+export type OtpPurpose = 'signup' | 'changePassword' | 'passwordReset';
 export type OtpSession = {
   sessionId: string;
   purpose: OtpPurpose;

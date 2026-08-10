@@ -15,10 +15,12 @@ The mobile app must use the same Spring API as the website. It must not connect 
 
 | Method and path | Purpose |
 |---|---|
-| `POST /api/otp/request` | Send signup or change-password OTP |
+| `POST /api/otp/request` | Send signup or signed-in change-password OTP |
 | `POST /api/otp/verify` | Verify OTP session |
 | `POST /api/auth/register` | Create an account after OTP and return a session |
 | `POST /api/auth/login` | Sign in with phone number and password |
+| `POST /api/auth/password/reset/request` | Send a reset OTP after confirming the phone belongs to an account |
+| `POST /api/auth/password/reset` | Reset a password with a verified reset OTP; no active session required |
 | `POST /api/auth/refresh` | Refresh an expired access token |
 | `POST /api/auth/logout` | Revoke the current session |
 | `GET /api/auth/me` | Get the current authenticated identity |

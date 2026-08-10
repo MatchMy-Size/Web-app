@@ -1251,32 +1251,19 @@
 import { useEffect, type CSSProperties, type ReactNode } from 'react';
 
 import appStoreIcon from '@/assets/images/appstore.png';
-import adidasBrand from '@/assets/images/brands/adidas.png';
-import bershkaBrand from '@/assets/images/brands/bershika.png';
-import calvinKleinBrand from '@/assets/images/brands/calvin-klein.png';
 import cameraIcon from '@/assets/images/camera.png';
 import clothesIcon from '@/assets/images/clothes.png';
-import gapBrand from '@/assets/images/brands/gap.png';
-import hmBrand from '@/assets/images/brands/h-and-m.png';
-import levisBrand from '@/assets/images/brands/levis.png';
 import lockIcon from '@/assets/images/lock.png';
-import marksAndSpencerBrand from '@/assets/images/brands/m-and-s.jpg';
-import mangoBrand from '@/assets/images/brands/mango.png';
-import mimosaBrand from '@/assets/images/brands/mimosa.png';
 import playStoreIcon from '@/assets/images/playstore.png';
-import pullAndBearBrand from '@/assets/images/brands/pull-and-bear.png';
-import pumaBrand from '@/assets/images/brands/puma.png';
 import qrCodeIcon from '@/assets/images/qr-code.png';
 import rulerIcon from '@/assets/images/ruler.png';
 import scaleIcon from '@/assets/images/scale.png';
 import searchIcon from '@/assets/images/search.png';
-import springAndSummerBrand from '@/assets/images/brands/spring-and-summer.png';
 import starIcon from '@/assets/images/star.png';
-import tommyHilfigerBrand from '@/assets/images/brands/tommy-hilfiger.png';
 import tshirtIcon from '@/assets/images/t-shirt.png';
-import uniqloBrand from '@/assets/images/brands/uniqlo.png';
-import zaraBrand from '@/assets/images/brands/zara.png';
 import { AppLogo } from '@/components/app-logo';
+import { BRAND_LOGOS } from '@/lib/brand-logos';
+import { useCatalogSummary } from '@/lib/catalog-summary';
 
 /* ─────────────────────────────────────────────
    Google Fonts
@@ -1607,29 +1594,13 @@ if (!document.getElementById('lp-styles')) {
 /* ═══════════════════════════════════════════════
    AUTO-SCROLLING BRANDS
 ═══════════════════════════════════════════════ */
-const FB_BRANDS = [
-  { id:'hm',      name:'H&M',             src:hmBrand },
-  { id:'zara',    name:'Zara',            src:zaraBrand },
-  { id:'adidas',  name:'Adidas',          src:adidasBrand },
-  { id:'tommy',   name:'Tommy Hilfiger',  src:tommyHilfigerBrand },
-  { id:'gap',     name:'Gap',             src:gapBrand },
-  { id:'uniqlo',  name:'Uniqlo',          src:uniqloBrand },
-  { id:'spring',  name:'Spring & Summer', src:springAndSummerBrand },
-  { id:'pb',      name:'Pull&Bear',        src:pullAndBearBrand },
-  { id:'levis',   name:"Levi's",          src:levisBrand },
-  { id:'puma',    name:'Puma',            src:pumaBrand },
-  { id:'mimosa',  name:'Mimosa',          src:mimosaBrand },
-  { id:'mango',   name:'Mango',           src:mangoBrand },
-  { id:'ms',      name:'Marks & Spencer', src:marksAndSpencerBrand },
-  { id:'bershka', name:'Bershka',         src:bershkaBrand },
-  { id:'ck',      name:'Calvin Klein',    src:calvinKleinBrand },
-];
+const FB_BRANDS = BRAND_LOGOS;
 
 function BrandLogoGroup({ duplicate = false }:{ duplicate?: boolean }) {
   return (
     <div className="fb-group" aria-hidden={duplicate || undefined}>
       {FB_BRANDS.map(brand=>(
-        <div key={brand.id} className="fb-logo">
+        <div key={brand.key} className="fb-logo">
           <img src={brand.src} alt={duplicate ? '' : brand.name}/>
         </div>
       ))}
@@ -1660,16 +1631,20 @@ function FeatureCard({icon,title,desc}:{icon:ReactNode;title:string;desc:string}
   return <div className="lp-feature-card"><div className="lp-feature-icon">{icon}</div><div className="lp-feature-title">{title}</div><div className="lp-feature-desc">{desc}</div></div>;
 }
 
-const FEATURES=[
+const getFeatures = (brandCount: number) => [
   {icon:<img src={rulerIcon}  alt="" aria-hidden="true"/>,title:'Guided measurements',   desc:'Step-by-step illustrated guides make measuring yourself accurate and effortless — even for first timers.'},
-  {icon:<img src={searchIcon} alt="" aria-hidden="true"/>,title:'500+ brand database',    desc:'Every major brand and hundreds of niche labels, all with real sizing data mapped to your body.'},
+  {icon:<img src={searchIcon} alt="" aria-hidden="true"/>,title:`${brandCount} active brands`,desc:'Every active brand has real sizing data mapped to your body.'},
   {icon:<img src={qrCodeIcon} alt="" aria-hidden="true"/>,title:'QR scan in-store',       desc:'Scan any clothing tag QR code in a physical store. Get your size in under a second.'},
   {icon:<img src={clothesIcon}alt="" aria-hidden="true"/>,title:'Multi-category profiles',desc:'Different sizes for tops, trousers, dresses, and shoes — one profile handles every type you wear.'},
   {icon:<img src={scaleIcon}  alt="" aria-hidden="true"/>,title:'Outfit fit scoring',     desc:'Compare outfits across brands with a combined fit score so you know which complete look works best.'},
   {icon:<img src={lockIcon}   alt="" aria-hidden="true"/>,title:'Private by design',      desc:'Your measurements stay on your account. We never share or sell your sizing data.'},
 ];
-const BRANDS=['H&M','Zara','Nike','Uniqlo','Adidas','Mango',"Levi's",'Gap','Marks & Spencer','Pull & Bear','Massimo Dutti','Bershka'];
-const STATS=[{num:'500',suffix:'+',label:'Brands supported'},{num:'98',suffix:'%',label:'Size accuracy'},{num:'2',suffix:'M+',label:'Sizes matched'},{num:'0',suffix:'',label:'Returns from bad fit'}];
+const getStats = (brandCount: number) => [
+  {num:String(brandCount),suffix:'',label:'Active brands'},
+  {num:'98',suffix:'%',label:'Size accuracy'},
+  {num:'2',suffix:'M+',label:'Sizes matched'},
+  {num:'0',suffix:'',label:'Returns from bad fit'},
+];
 const APP_BULLETS=[
   {icon:<img src={cameraIcon} alt="" aria-hidden="true"/>,text:'Scan QR codes in-store for instant size recommendations'},
   {icon:<img src={tshirtIcon} alt="" aria-hidden="true"/>,text:'Guided measurement illustrations for every clothing type'},
@@ -1693,7 +1668,7 @@ function PhoneHome() {
         <div className="lp-ph-search"><div className="lp-ph-search-dot"/><div className="lp-ph-search-bar"/></div>
         <div className="lp-ph-chips"><div className="lp-ph-chip active">Tops</div><div className="lp-ph-chip">Jeans</div><div className="lp-ph-chip">Shoes</div></div>
         <div className="lp-ph-grid">
-          {[{brand:'H&M',score:'96%',size:'M'},{brand:'Zara',score:'91%',size:'S'},{brand:'Nike',score:'98%',size:'L'},{brand:'Uniqlo',score:'94%',size:'M'}].map(({brand,score,size})=>(
+          {[{brand:'EKKO',score:'96%',size:'M'},{brand:'King Street',score:'91%',size:'S'},{brand:'Hustle',score:'98%',size:'L'},{brand:'ODEL',score:'94%',size:'M'}].map(({brand,score,size})=>(
             <div className="lp-ph-card" key={brand}>
               <div className="lp-ph-card-img"><div style={{width:'100%',height:'100%',background:'var(--cloud)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>👕</div><div className="lp-ph-card-score">{score}</div></div>
               <div className="lp-ph-card-body"><div className="lp-ph-card-brand">{brand}</div><div className="lp-ph-card-size">{size}</div></div>
@@ -1716,7 +1691,7 @@ function PhoneResult() {
       <div className="lp-phone-notch"><div className="lp-phone-notch-cam"/></div>
       <div className="lp-phone-screen" style={{background:'var(--ink)'}}>
         <div className="lp-ph-result-topbar"><div className="lp-ph-result-back"><div className="lp-ph-result-back-line"/></div><span className="lp-ph-result-label">Size result</span><div style={{width:20}}/></div>
-        <div className="lp-ph-brand-section"><div className="lp-ph-brand-logo">H&M</div><div><div className="lp-ph-brand-name-sm">H&M</div><div className="lp-ph-brand-cat-sm">Tops & Shirts</div></div><div className="lp-ph-score-badge">96%</div></div>
+        <div className="lp-ph-brand-section"><div className="lp-ph-brand-logo">EKKO</div><div><div className="lp-ph-brand-name-sm">EKKO</div><div className="lp-ph-brand-cat-sm">Tops & Shirts</div></div><div className="lp-ph-score-badge">96%</div></div>
         <div className="lp-ph-size-hero"><div className="lp-ph-size-eyebrow">Your size</div><div className="lp-ph-size-big">M</div><div className="lp-ph-size-tag">✓ Excellent fit</div></div>
         <div className="lp-ph-meas-row">{[['Chest','92 cm'],['Waist','78 cm'],['Shoulder','44 cm']].map(([l,v])=><div className="lp-ph-meas-chip" key={l}><div className="lp-ph-meas-chip-label">{l}</div><div className="lp-ph-meas-chip-val">{v}</div></div>)}</div>
         <div className="lp-ph-cta-btn">Find in store →</div>
@@ -1729,6 +1704,11 @@ function PhoneResult() {
    Main page
 ───────────────────────────────────────────── */
 export function LandingPage() {
+  const { brandCount, brandNames } = useCatalogSummary();
+  const features = getFeatures(brandCount);
+  const stats = getStats(brandCount);
+  const brands = brandNames.length ? brandNames : BRAND_LOGOS.map((brand) => brand.name);
+
   useEffect(() => {
     const els = document.querySelectorAll('.lp-reveal');
     const io = new IntersectionObserver(
@@ -1759,7 +1739,7 @@ export function LandingPage() {
         <div className="lp-hero">
           {/* Left — copy */}
           <div>
-            <div className="lp-hero-eyebrow"><div className="lp-hero-eyebrow-dot"/><span>500+ brands · Perfect fit every time</span></div>
+            <div className="lp-hero-eyebrow"><div className="lp-hero-eyebrow-dot"/><span>{brandCount} active brands · Perfect fit every time</span></div>
             <h1 className="lp-hero-h1">Wear what<br/>actually <em>fits</em><br/>you.</h1>
             <p className="lp-hero-sub">Enter your measurements once. MatchMySize tells you exactly which size to order across every brand — no more returns, no more guessing.</p>
             <div className="lp-hero-actions">
@@ -1776,7 +1756,7 @@ export function LandingPage() {
 
       <div className="lp-stats">
         <div className="lp-stats-inner">
-          {STATS.map(({num,suffix,label},i)=>(
+          {stats.map(({num,suffix,label},i)=>(
             <div key={label} className={`lp-stat lp-reveal lp-d${i}`}><div className="lp-stat-num">{num}<span>{suffix}</span></div><div className="lp-stat-label">{label}</div></div>
           ))}
         </div>
@@ -1789,7 +1769,7 @@ export function LandingPage() {
           <p className="lp-section-sub lp-reveal lp-d2">No tape measure expertise required. We guide you through every measurement with clear illustrations.</p>
           <div className="lp-how-grid">
             <div className="lp-steps lp-reveal lp-d2">
-              {[['Measure yourself','Chest, waist, hips and more — guided step-by-step with illustrated guides for each measurement point.'],['Choose a brand','Browse 500+ brands across all clothing categories. Search, filter, or scan a QR tag in-store.'],['Get your exact size','Instantly see your recommended size with a fit score — no trial and error, no returns.']].map(([title,desc],i)=>(
+              {[['Measure yourself','Chest, waist, hips and more — guided step-by-step with illustrated guides for each measurement point.'],['Choose a brand',`Browse ${brandCount} active brands across all clothing categories. Search, filter, or scan a QR tag in-store.`],['Get your exact size','Instantly see your recommended size with a fit score — no trial and error, no returns.']].map(([title,desc],i)=>(
                 <div key={title} className="lp-step"><div className="lp-step-num">{i+1}</div><div><div className="lp-step-title">{title}</div><div className="lp-step-desc">{desc}</div></div></div>
               ))}
             </div>
@@ -1804,7 +1784,7 @@ export function LandingPage() {
                 <MeasureBar label="Inseam"   pct="70%" val="80 cm" delay={0.48}/>
                 <div style={{marginTop:24,paddingTop:20,borderTop:'1px solid var(--cloud)'}}>
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                    <span style={{fontSize:13,fontWeight:600,color:'var(--ink)'}}>H&M Tops → Size</span>
+                    <span style={{fontSize:13,fontWeight:600,color:'var(--ink)'}}>EKKO Tops → Size</span>
                     <div style={{display:'flex',alignItems:'center',gap:8}}><span style={{fontFamily:'var(--fd)',fontSize:34,fontWeight:700,color:'var(--ink)',letterSpacing:-1}}>M</span><span className="lp-score">96%</span></div>
                   </div>
                 </div>
@@ -1819,7 +1799,7 @@ export function LandingPage() {
           <div className="lp-eyebrow lp-reveal"><div className="lp-eyebrow-line"/><span>Features</span></div>
           <h2 className="lp-section-title lp-reveal lp-d1">Built for how you <em>actually</em> shop</h2>
           <div className="lp-features-grid">
-            {FEATURES.map(({icon,title,desc},i)=>(
+            {features.map(({icon,title,desc},i)=>(
               <div key={title} className={`lp-reveal lp-d${i%6}`}><FeatureCard icon={icon} title={title} desc={desc}/></div>
             ))}
           </div>
@@ -1851,8 +1831,8 @@ export function LandingPage() {
           <div className="lp-eyebrow lp-reveal"><div className="lp-eyebrow-line"/><span>Supported brands</span></div>
           <h2 className="lp-section-title lp-reveal lp-d1">Every brand, <em>one profile</em></h2>
           <p className="lp-section-sub lp-reveal lp-d2">From fast fashion to luxury — if they make clothes, we have their sizing.</p>
-          <div className="lp-brands-grid">{BRANDS.map((b,i)=><div key={b} className={`lp-brand-pill lp-reveal lp-d${i%6}`}>{b}</div>)}</div>
-          <p className="lp-reveal" style={{marginTop:32,fontSize:13,color:'var(--ash)',textAlign:'center'}}>+ 488 more brands and growing</p>
+          <div className="lp-brands-grid">{brands.map((brand,i)=><div key={brand} className={`lp-brand-pill lp-reveal lp-d${i%6}`}>{brand}</div>)}</div>
+          <p className="lp-reveal" style={{marginTop:32,fontSize:13,color:'var(--ash)',textAlign:'center'}}>{brandCount} active brands with live sizing data.</p>
         </div>
       </section>
 

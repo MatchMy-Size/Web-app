@@ -19,4 +19,9 @@ public class CatalogController {
     ApiResponse<CatalogService.CatalogBootstrap> bootstrap() {
         return ApiResponse.success(catalogService.bootstrap());
     }
+
+    @GetMapping("/summary")
+    ApiResponse<CatalogService.CatalogSummary> summary() {
+        return ApiResponse.success(catalogService.summary());
+    }
 }

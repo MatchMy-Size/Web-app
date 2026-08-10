@@ -6,6 +6,7 @@ import { useProfileSubject } from '@/context/profile-subject-context';
 import { setCustomerActiveMeasurementProfile } from '@/lib/customer-profile';
 import { setFamilyMemberActiveMeasurementProfile } from '@/lib/family-members';
 import { useRecommendationData } from '@/lib/use-recommendation-data';
+import { useCatalogSummary } from '@/lib/catalog-summary';
 
 /* ─────────────────────────────────────────────
    Fonts + CSS
@@ -569,6 +570,7 @@ function ProfileDetail({
 export function MeasurementsPage() {
   const navigate = useNavigate();
   const { user }  = useAuth();
+  const { brandCount } = useCatalogSummary();
   const { selectedSubject } = useProfileSubject();
   const { measurementProfiles, profile } = useRecommendationData(user?.uid);
   const activeKey = typeof profile?.activeMeasurementProfileKey === 'string'
@@ -695,7 +697,7 @@ export function MeasurementsPage() {
             <div className="mw-empty-sub">
               {selectedSubject?.type === 'family'
                 ? `Add ${selectedSubject.label}'s first clothing category to start getting personalised size recommendations.`
-                : 'Add your first clothing category to start getting personalised size recommendations across 500+ brands.'}
+                : `Add your first clothing category to start getting personalised size recommendations across ${brandCount} active brands.`}
             </div>
             <button className="mw-empty-btn" onClick={() => navigate('/app/add-preference')}>
               <Ico.Plus /> {selectedSubject?.type === 'family' ? 'Add measurements' : 'Add a preference'}

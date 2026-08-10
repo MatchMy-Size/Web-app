@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.matchmysize.otp.application.OtpService;
+import com.matchmysize.shared.api.ApiException;
 import com.matchmysize.shared.api.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/otp")
@@ -32,6 +34,13 @@ public class OtpController {
 
     @PostMapping("/request")
     ApiResponse<OtpService.OtpSessionResponse> request(@Valid @RequestBody RequestOtpRequest request) {
+        if ("passwordReset".equals(request.purpose())) {
+            throw new ApiException(
+                HttpStatus.BAD_REQUEST,
+                "invalid_otp_request",
+                "Use the password reset request endpoint."
+            );
+        }
         return ApiResponse.success(otpService.request(request.phoneNumber(), request.purpose()));
     }
 

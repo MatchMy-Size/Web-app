@@ -58,6 +58,18 @@ export const attachPasswordToVerifiedPhone = async (
   });
 };
 
+export const resetPasswordWithVerifiedPhone = async (
+  phoneNumber: string,
+  password: string,
+  otpSessionId: string,
+) => {
+  await apiRequest('/api/auth/password/reset', {
+    method: 'POST',
+    authenticated: false,
+    body: { phoneNumber, password, otpSessionId },
+  });
+};
+
 export const signOutUser = async () => {
   try {
     if (getAuthSession()) {

@@ -1,8 +1,9 @@
 import { useMemo, useRef, useState, useEffect, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { AppLogo } from '@/components/app-logo';
 import { signInWithPhonePassword } from '@/lib/auth-api';
+import { useCatalogSummary } from '@/lib/catalog-summary';
 import {
   DEFAULT_PHONE_COUNTRY_CODE,
   getSriLankaLocalPhoneInput,
@@ -295,6 +296,33 @@ const CSS = `
   }
   .lp-auth-footer-text a:hover { border-color: var(--ink); }
 
+  .lp-forgot-password {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -8px;
+  }
+  .lp-forgot-password a {
+    color: var(--ink);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px solid var(--sage);
+  }
+  .lp-forgot-password a:hover { border-color: var(--ink); }
+
+  .lp-success-banner {
+    display: flex;
+    align-items: center;
+    background: rgba(122,158,120,0.1);
+    border: 1px solid rgba(122,158,120,0.28);
+    border-radius: 10px;
+    color: #4b7249;
+    font-size: 13px;
+    line-height: 1.45;
+    margin-bottom: 20px;
+    padding: 12px 14px;
+  }
+
   /* Divider */
   .lp-auth-divider {
     display: flex; align-items: center; gap: 14px; margin: 24px 0;
@@ -397,12 +425,18 @@ const getLoginErrorMessage = (error: unknown) => {
 ───────────────────────────────────────────── */
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { brandCount } = useCatalogSummary();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password,    setPassword]    = useState('');
   const [showPw,      setShowPw]      = useState(false);
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState<string | null>(null);
   const [errorKey,    setErrorKey]    = useState(0); // re-trigger shake
+  const passwordReset = Boolean(
+    location.state && typeof location.state === 'object' && 'passwordReset' in location.state
+      && location.state.passwordReset,
+  );
 
   const canSubmit = useMemo(() => phoneNumber.trim() && password.trim(), [phoneNumber, password]);
 
@@ -448,7 +482,7 @@ export function LoginPage() {
         <div className="lp-login-left-body">
           <div className="lp-login-left-eyebrow">
             <div className="lp-login-left-eyebrow-dot" />
-            <span>500+ brands supported</span>
+            <span>{brandCount} active brands</span>
           </div>
           <h2 className="lp-login-left-h1">
             Your size,<br /><em>every</em><br />brand.
@@ -462,7 +496,7 @@ export function LoginPage() {
         <div className="lp-login-left-footer">
           <div className="lp-login-left-stat-row">
             <div className="lp-login-left-stat">
-              <span className="lp-login-left-stat-num">500<span>+</span></span>
+              <span className="lp-login-left-stat-num">{brandCount}</span>
               <span className="lp-login-left-stat-label">Brands</span>
             </div>
             <div className="lp-login-left-stat-divider" />
@@ -491,6 +525,12 @@ export function LoginPage() {
               Enter your registered phone number and password to continue.
             </p>
           </div>
+
+          {passwordReset && (
+            <div className="lp-success-banner" role="status">
+              Password updated successfully. Please sign in with your new password.
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit}>
@@ -532,6 +572,10 @@ export function LoginPage() {
                     <IconEye off={showPw} />
                   </button>
                 </div>
+              </div>
+
+              <div className="lp-forgot-password">
+                <Link to="/auth/forgot-password">Forgot password?</Link>
               </div>
 
               {/* Error */}

@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.matchmysize.identity.infrastructure.AppUserRepository.AppUser;
+import com.matchmysize.identity.infrastructure.AppUserRepository;
 import com.matchmysize.identity.infrastructure.SupabaseAdminClient;
 import com.matchmysize.identity.infrastructure.SupabaseAdminClient.SupabaseSession;
 import com.matchmysize.identity.infrastructure.SupabaseAdminClient.SupabaseUser;
@@ -21,17 +22,20 @@ public class AuthService {
     private final PhoneCredentialService phoneCredentials;
     private final SupabaseAdminClient supabase;
     private final IdentityService identities;
+    private final AppUserRepository users;
 
     public AuthService(
         OtpService otpService,
         PhoneCredentialService phoneCredentials,
         SupabaseAdminClient supabase,
-        IdentityService identities
+        IdentityService identities,
+        AppUserRepository users
     ) {
         this.otpService = otpService;
         this.phoneCredentials = phoneCredentials;
         this.supabase = supabase;
         this.identities = identities;
+        this.users = users;
     }
 
     @Transactional
@@ -89,6 +93,37 @@ public class AuthService {
         otpService.consumeVerified(otpSessionId, normalizedPhone, "changePassword");
         supabase.updatePassword(UUID.fromString(jwt.getSubject()), password, normalizedPhone);
         return Map.of("updated", true);
+    }
+
+    @Transactional
+    public OtpService.OtpSessionResponse requestPasswordReset(String phoneNumber) {
+        var normalizedPhone = phoneCredentials.normalize(phoneNumber);
+        registeredUser(normalizedPhone);
+        return otpService.request(normalizedPhone, "passwordReset");
+    }
+
+    @Transactional
+    public Map<String, Object> resetPassword(
+        String phoneNumber,
+        String password,
+        UUID otpSessionId
+    ) {
+        validatePassword(password);
+        var normalizedPhone = phoneCredentials.normalize(phoneNumber);
+        var appUser = registeredUser(normalizedPhone);
+        otpService.consumeVerified(otpSessionId, normalizedPhone, "passwordReset");
+        supabase.updatePassword(appUser.authUserId(), password, normalizedPhone);
+        return Map.of("updated", true);
+    }
+
+    private AppUser registeredUser(String normalizedPhone) {
+        return users.findByPhoneNumber(normalizedPhone)
+            .or(() -> users.findByAuthEmail(phoneCredentials.syntheticEmail(normalizedPhone)))
+            .orElseThrow(() -> new ApiException(
+                HttpStatus.NOT_FOUND,
+                "account_not_found",
+                "No MatchMySize account was found for this phone number."
+            ));
     }
 
     private Map<String, Object> sessionResponse(SupabaseSession session) {

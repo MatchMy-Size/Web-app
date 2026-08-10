@@ -37,6 +37,14 @@ public class AppUserRepository {
         return find("source_account_id = :value", sourceAccountId);
     }
 
+    public Optional<AppUser> findByPhoneNumber(String phoneNumber) {
+        return find("phone_number = :value", phoneNumber);
+    }
+
+    public Optional<AppUser> findByAuthEmail(String authEmail) {
+        return find("lower(auth_email) = lower(:value)", authEmail);
+    }
+
     public AppUser upsertAuthentication(UUID authUserId, String authEmail, String phoneNumber) {
         return jdbc.sql("""
                 insert into app_users (auth_user_id, auth_email, phone_number)

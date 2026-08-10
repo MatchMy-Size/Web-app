@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { AppShell } from '@/components/app-shell';
 import { ProtectedRoute, PublicOnlyRoute } from '@/components/route-guard';
 import { StartupSplash } from '@/components/startup-splash';
 import { AddPreferencePage } from '@/pages/add-preference-page';
-import { ChangePasswordPage } from '@/pages/change-password-page';
+import { ChangePasswordPage, ForgotPasswordPage } from '@/pages/change-password-page';
 import { ExplorePage } from '@/pages/explore-page';
 import { HomePage } from '@/pages/home-page';
 import { LoginPage } from '@/pages/login-page';
@@ -31,23 +31,16 @@ export default function App() {
     setShowStartupSplash(false);
   }, []);
 
-  useEffect(() => {
-    if (!showStartupSplash) return;
-
-    const timer = window.setTimeout(hideStartupSplash, 5000);
-
-    return () => window.clearTimeout(timer);
-  }, [hideStartupSplash, showStartupSplash]);
-
   return (
     <>
-      {showStartupSplash && <StartupSplash />}
+      {showStartupSplash && <StartupSplash onComplete={hideStartupSplash} />}
 
       <Routes>
         <Route path="/" element={<LandingPage />} />
 
         <Route element={<PublicOnlyRoute />}>
           <Route path="/auth/login" element={<LoginPage />} />
+          <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/auth/register" element={<RegisterPage />} />
           <Route path="/auth/otp" element={<OtpPage />} />
         </Route>
