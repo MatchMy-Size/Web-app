@@ -30,6 +30,7 @@ const CSS = `
     --fs: 'DM Sans', sans-serif;
     --ease: cubic-bezier(0.22, 1, 0.36, 1);
     --nav-h: 64px;
+    --mobile-tab-h: 80px;
   }
 
   /* ── Shell ── */
@@ -75,6 +76,7 @@ const CSS = `
   }
   .tn-brand:hover .tn-brand-mark { transform: rotate(-4deg) scale(1.05); }
   .tn-brand-copy {
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -83,6 +85,9 @@ const CSS = `
   .tn-brand-name {
     font-family: var(--fd); font-size: 20px; font-weight: 600;
     color: var(--ink); letter-spacing: -0.3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .tn-brand-tagline {
     font-size: 10px; font-weight: 600;
@@ -93,13 +98,32 @@ const CSS = `
 
   /* ── Nav links ── */
   .tn-links {
-    display: flex; align-items: center; gap: 2px;
-    flex: 1;
-    position: relative;
+    position: fixed !important;
+    top: auto !important;
+    left: 50%;
+    right: auto;
+    bottom: 10px !important;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    width: min(560px, calc(100vw - 28px));
+    height: 66px;
+    padding: 6px;
+    overflow: visible;
+    background: rgba(250,250,248,0.94);
+    backdrop-filter: blur(18px) saturate(1.35);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 18px;
+    box-shadow: 0 16px 38px rgba(13,13,13,0.14);
+    transform: translateX(-50%);
+    z-index: 500;
+    will-change: transform;
   }
 
   /* Sliding indicator pill (absolutely positioned) */
   .tn-indicator {
+    display: none;
     position: absolute;
     background: var(--ink);
     border-radius: 8px;
@@ -112,19 +136,29 @@ const CSS = `
 
   .tn-link {
     position: relative; z-index: 1;
-    display: flex; align-items: center; gap: 7px;
-    padding: 8px 14px; border-radius: 8px;
-    font-family: var(--fs); font-size: 13.5px; font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    height: 54px;
+    padding: 7px 4px;
+    border-radius: 13px;
+    font-family: var(--fs); font-size: 10.5px; font-weight: 500;
+    line-height: 1;
     color: var(--ash); text-decoration: none;
     transition: color 0.2s;
     white-space: nowrap;
     border: none; background: none; cursor: pointer;
+    text-align: center;
   }
-  .tn-link svg { width: 15px; height: 15px; flex-shrink: 0; transition: color 0.2s; }
+  .tn-link svg { width: 18px; height: 18px; flex-shrink: 0; transition: color 0.2s; }
   .tn-link:hover:not(.tn-active) { color: var(--ink); }
   .tn-link:hover:not(.tn-active) svg { color: var(--ink); }
 
   .tn-link.tn-active {
+    background: var(--ink);
     color: var(--white);
   }
   .tn-link.tn-active svg { color: var(--white); }
@@ -406,7 +440,8 @@ const CSS = `
 
   @media (max-width: 960px) {
     :root {
-      --nav-h: 126px;
+      --nav-h: 76px;
+      --mobile-tab-h: 80px;
     }
 
     .tn-shell {
@@ -415,10 +450,10 @@ const CSS = `
     }
 
     .tn-inner {
-      padding: 10px 16px 12px;
+      padding: 10px 16px;
       gap: 12px;
       flex-wrap: wrap;
-      align-items: flex-start;
+      align-items: center;
     }
 
     .tn-brand {
@@ -430,6 +465,10 @@ const CSS = `
       display: none;
     }
 
+    .tn-cta-btn {
+      display: none;
+    }
+
     .tn-subject-sub {
       display: none;
     }
@@ -438,30 +477,16 @@ const CSS = `
       display: none;
     }
 
-    .tn-links {
-      display: flex;
-      order: 3;
-      flex: 1 1 100%;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 2px;
-      scrollbar-width: none;
-    }
     .tn-links::-webkit-scrollbar { display: none; }
 
     .tn-indicator {
       display: none;
     }
 
-    .tn-link {
-      flex-shrink: 0;
-      border: 1px solid var(--cloud);
-      background: var(--white);
-    }
-
     .tn-link.tn-active {
       background: var(--ink);
       border-color: var(--ink);
+      color: var(--white);
     }
 
     .tn-actions {
@@ -492,22 +517,21 @@ const CSS = `
 
   @media (max-width: 640px) {
     :root {
-      --nav-h: 152px;
+      --nav-h: 72px;
+      --mobile-tab-h: 80px;
     }
 
     .tn-inner {
-      padding: 10px 12px 12px;
+      padding: 10px 12px;
       gap: 8px;
-      align-items: flex-start;
-    }
-
-    .tn-cta-btn {
-      display: none;
+      align-items: center;
+      flex-wrap: nowrap;
     }
 
     .tn-brand {
       min-width: 0;
-      margin-right: 0;
+      margin-right: auto;
+      gap: 8px;
     }
 
     .tn-brand-name {
@@ -519,9 +543,18 @@ const CSS = `
     }
 
     .tn-actions {
-      width: 100%;
-      justify-content: flex-start;
-      gap: 6px;
+      width: auto;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: nowrap;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .tn-icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
     }
 
     .tn-subject-label {
@@ -530,7 +563,7 @@ const CSS = `
 
     .tn-user-wrap {
       position: relative;
-      flex: 1 1 calc(100% - 42px);
+      flex: 0 1 150px;
       min-width: 0;
       z-index: 4;
     }
@@ -538,6 +571,7 @@ const CSS = `
     .tn-user-btn {
       width: 100%;
       max-width: none;
+      min-height: 40px;
       padding: 5px 8px 5px 6px;
       gap: 8px;
     }
@@ -553,30 +587,30 @@ const CSS = `
     }
 
     .tn-links {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 8px;
-      width: 100%;
-      overflow: visible;
-      padding-bottom: 0;
+      width: calc(100vw - 24px);
+    }
+  }
+
+  @media (max-width: 390px) {
+    .tn-brand-name {
+      max-width: 118px;
+      font-size: 16px;
     }
 
-    .tn-link {
-      min-width: 0;
-      justify-content: center;
-      gap: 0;
-      padding: 10px 6px;
-      font-size: 11.5px;
-      text-align: center;
-    }
-
-    .tn-link svg {
+    .tn-brand-tagline {
       display: none;
+    }
+
+    .tn-user-wrap {
+      flex-basis: 118px;
     }
   }
 `;
 
-if (!document.getElementById('tn-styles')) {
+const topNavStyles = document.getElementById('tn-styles');
+if (topNavStyles) {
+  topNavStyles.textContent = CSS;
+} else {
   const s = document.createElement('style');
   s.id = 'tn-styles';
   s.textContent = CSS;
@@ -755,12 +789,40 @@ export function TopNav({
       .join('')
       .toUpperCase() || 'ME';
 
-  return (
-    <header className="tn-shell">
-      {/* Scroll progress line */}
-      <div className="tn-progress-line" style={{ width: `${scrollPct}%` }} />
+  const navLinks = (
+    <nav className="tn-links" ref={linksRef} aria-label="Primary navigation">
+      {/* Sliding indicator */}
+      <div
+        className="tn-indicator"
+        style={{
+          left:    indicatorStyle.left,
+          width:   indicatorStyle.width,
+          opacity: indicatorStyle.opacity,
+        }}
+      />
 
-      <div className="tn-inner">
+      {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
+        const active = location.pathname === to || location.pathname.startsWith(`${to}/`);
+        return (
+          <NavLink
+            key={to}
+            to={to}
+            className={`tn-link${active ? ' tn-active' : ''}`}>
+            <Icon />
+            {label}
+          </NavLink>
+        );
+      })}
+    </nav>
+  );
+
+  return (
+    <>
+      <header className="tn-shell">
+        {/* Scroll progress line */}
+        <div className="tn-progress-line" style={{ width: `${scrollPct}%` }} />
+
+        <div className="tn-inner">
 
         {/* Brand */}
         <NavLink to="/app/home" className="tn-brand">
@@ -770,32 +832,6 @@ export function TopNav({
             <span className="tn-brand-tagline">Find Your Perfect Fit</span>
           </div>
         </NavLink>
-
-        {/* Nav links with sliding indicator */}
-        <div className="tn-links" ref={linksRef}>
-          {/* Sliding indicator */}
-          <div
-            className="tn-indicator"
-            style={{
-              left:    indicatorStyle.left,
-              width:   indicatorStyle.width,
-              opacity: indicatorStyle.opacity,
-            }}
-          />
-
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
-            const active = location.pathname === to || location.pathname.startsWith(`${to}/`);
-            return (
-              <NavLink
-                key={to}
-                to={to}
-                className={`tn-link${active ? ' tn-active' : ''}`}>
-                <Icon />
-                {label}
-              </NavLink>
-            );
-          })}
-        </div>
 
         {/* Right actions */}
         <div className="tn-actions">
@@ -901,8 +937,10 @@ export function TopNav({
 
         </div>
 
-      </div>
-    </header>
+        </div>
+      </header>
+      {navLinks}
+    </>
   );
 }
 

@@ -24,7 +24,19 @@ Legacy customer accounts were intentionally reset. Seller and super-admin identi
 
 ## Local development
 
-1. Copy `backend/.env.example` to `backend/.env` and fill in the server values.
+1. Start a database for the backend.
+
+   For local Postgres:
+
+```bash
+cd backend
+docker compose up -d postgres
+```
+
+   This exposes PostgreSQL at `jdbc:postgresql://localhost:54322/postgres` with username `postgres` and password `postgres`, matching the backend defaults.
+
+   For Supabase instead, copy `backend/.env.example` to `backend/.env` and fill in the database and Supabase values.
+
 2. Copy `frontend/.env.example` to `frontend/.env` and set the backend URL and Cloudinary values.
 3. Start the backend:
 
