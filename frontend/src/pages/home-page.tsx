@@ -11,7 +11,6 @@ import {
 } from '@/lib/fit-feedback';
 import { getClothingTemplate, normalizeGender } from '@/lib/measurement';
 import { resolveBrandDisplay, type EnrichedRecommendation } from '@/lib/recommendation-view';
-import { submitSiteFeedback } from '@/lib/site-feedback';
 import type { BrandRecommendation } from '@/lib/size-recommendation';
 import { getCategoryBadge, useRecommendationData } from '@/lib/use-recommendation-data';
 
@@ -259,6 +258,7 @@ const CSS = `
     animation: hp-fadeUp 0.5s 0.18s var(--ease) both;
   }
   .hp-mobile-summary { display: contents; }
+  .hp-results-scroll { display: contents; }
   .hp-filter-section {
     display: flex;
     align-items: center;
@@ -285,14 +285,19 @@ const CSS = `
     background: var(--ink); border-color: var(--ink); color: var(--white);
   }
   .hp-pill.is-add {
-    border-style: dashed; color: var(--sage-deep);
-    border-color: var(--sage-dark); background: var(--sage-light);
+    border-color: var(--cloud);
+    background: var(--white);
+    color: var(--ash);
   }
-  .hp-pill.is-add:hover { background: var(--sage); }
+  .hp-pill.is-add:hover { background: var(--cloud); color: var(--ink); }
   .hp-pill-count {
-    background: rgba(255,255,255,0.2); border-radius: 999px;
+    background: var(--cloud); color: var(--ash); border-radius: 999px;
     padding: 0 6px; font-size: 10px; font-weight: 800;
     min-width: 18px; text-align: center;
+  }
+  .hp-pill.is-active .hp-pill-count {
+    background: #2A2A2A;
+    color: var(--white);
   }
   .hp-pill:not(.is-active) .hp-pill-count {
     background: var(--cloud); color: var(--ash);
@@ -410,7 +415,7 @@ const CSS = `
     display: flex; align-items: center; gap: 4px;
   }
   .hp-card-score-badge.perfect { background: var(--ink); color: var(--white); }
-  .hp-card-score-badge.great   { background: var(--sage-light); color: var(--sage-deep); border: 1px solid var(--sage-dark); }
+  .hp-card-score-badge.great   { background: var(--cloud); color: var(--ash); }
   .hp-card-score-badge.fair    { background: var(--cloud); color: var(--ash); }
   .hp-card-score-badge.unavailable { background: var(--cloud); color: var(--ash); }
 
@@ -422,7 +427,7 @@ const CSS = `
     min-height: 160px;
   }
   .hp-card-brand { font-size: 11px; font-weight: 700; color: var(--ash); letter-spacing: 0.4px; text-transform: uppercase; margin-bottom: 4px; }
-  .hp-card-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; line-height: 1.35; }
+  .hp-card-title { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 6px; line-height: 1.35; }
   .hp-card-sub { font-size: 12px; color: var(--ash); margin-bottom: 12px; }
 
   .hp-card-footer {
@@ -441,8 +446,8 @@ const CSS = `
   .hp-card-fit-pill {
     font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
   }
-  .hp-card-fit-pill.perfect { background: rgba(13,13,13,0.07); color: var(--ink); }
-  .hp-card-fit-pill.great   { background: var(--sage-light); color: var(--sage-deep); }
+  .hp-card-fit-pill.perfect { background: var(--cloud); color: var(--ink); }
+  .hp-card-fit-pill.great   { background: var(--cloud); color: var(--ash); }
   .hp-card-fit-pill.fair    { background: var(--cloud); color: var(--ash); }
   .hp-card-unavailable { font-size: 11px; line-height: 1.4; color: var(--ash); font-weight: 600; }
   .hp-card-action {
@@ -453,17 +458,17 @@ const CSS = `
     min-height: 30px;
     margin-top: 12px;
     padding: 0 11px;
-    border: 1px solid var(--cloud);
+    border: 1px solid var(--ink);
     border-radius: 999px;
-    background: var(--paper);
-    color: var(--ink);
+    background: var(--ink);
+    color: var(--white);
     font-size: 11px;
     font-weight: 800;
     line-height: 1;
     transition: background 0.18s, border-color 0.18s, color 0.18s;
   }
   .hp-product-card:hover .hp-card-action {
-    background: var(--ink);
+    background: #2A2A2A;
     border-color: var(--ink);
     color: var(--white);
   }
@@ -642,63 +647,6 @@ const CSS = `
     border-radius: 18px; overflow: hidden;
   }
 
-  /* ── Tip banner ── */
-  .hp-tip {
-    display: flex; align-items: center; gap: 16px;
-    background: var(--sage-light);
-    border: 1px solid var(--sage-dark);
-    border-radius: 14px; padding: 18px 22px;
-    animation: hp-fadeUp 0.5s 0.35s var(--ease) both;
-  }
-  .hp-tip-icon {
-    width: 40px; height: 40px; border-radius: 10px;
-    background: rgba(163,191,161,0.4);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .hp-tip-icon svg { width: 18px; height: 18px; color: var(--sage-deep); }
-  .hp-tip-title { font-size: 13.5px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
-  .hp-tip-sub { font-size: 12.5px; color: var(--sage-deep); line-height: 1.5; }
-  .hp-tip-btn {
-    margin-left: auto; flex-shrink: 0;
-    font-family: var(--fs); font-size: 12.5px; font-weight: 700;
-    color: var(--ink); background: var(--white);
-    border: 1px solid var(--sage-dark); border-radius: 8px;
-    padding: 8px 16px; cursor: pointer; white-space: nowrap;
-    display: inline-flex; align-items: center; justify-content: center;
-    transition: all 0.15s;
-  }
-  .hp-tip-btn:hover { background: var(--ink); color: var(--white); border-color: var(--ink); }
-
-  /* ── Overall public feedback ── */
-  .hp-public-feedback {
-    display: grid;
-    grid-template-columns: minmax(230px, 0.75fr) minmax(320px, 1.25fr);
-    gap: 32px;
-    padding: 30px;
-    border-radius: 20px;
-    background: var(--ink);
-    color: var(--white);
-    animation: hp-fadeUp 0.5s 0.4s var(--ease) both;
-  }
-  .hp-public-feedback-eyebrow { color: var(--sage); font-size: 10px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; }
-  .hp-public-feedback-title { margin-top: 8px; font-family: var(--fd); font-size: 32px; font-weight: 700; line-height: 1.05; letter-spacing: -0.5px; }
-  .hp-public-feedback-copy { max-width: 380px; margin-top: 10px; color: rgba(255,255,255,0.5); font-size: 12.5px; line-height: 1.65; }
-  .hp-public-feedback-form { display: grid; gap: 13px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; background: rgba(255,255,255,0.06); }
-  .hp-public-feedback-label { color: rgba(255,255,255,0.72); font-size: 11px; font-weight: 700; }
-  .hp-public-feedback-stars { display: flex; gap: 6px; }
-  .hp-public-feedback-star { padding: 0; border: 0; background: transparent; color: rgba(255,255,255,0.2); font-size: 25px; line-height: 1; cursor: pointer; transition: color 0.15s, transform 0.15s; }
-  .hp-public-feedback-star:hover { transform: translateY(-1px); }
-  .hp-public-feedback-star.active { color: var(--sage); }
-  .hp-public-feedback-textarea { width: 100%; min-height: 88px; resize: vertical; padding: 11px 12px; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; background: rgba(255,255,255,0.08); color: var(--white); font: 12.5px/1.55 var(--fs); outline: none; }
-  .hp-public-feedback-textarea::placeholder { color: rgba(255,255,255,0.3); }
-  .hp-public-feedback-textarea:focus { border-color: var(--sage-dark); box-shadow: 0 0 0 3px rgba(195,216,193,0.08); }
-  .hp-public-feedback-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: rgba(255,255,255,0.36); font-size: 10px; line-height: 1.4; }
-  .hp-public-feedback-submit { min-height: 41px; border: 1px solid var(--sage-dark); border-radius: 9px; background: var(--sage-light); color: var(--ink); font-family: var(--fs); font-size: 12px; font-weight: 800; cursor: pointer; }
-  .hp-public-feedback-submit:disabled { cursor: not-allowed; opacity: 0.4; }
-  .hp-public-feedback-error { color: #ffaaa2; font-size: 11px; }
-  .hp-public-feedback-success { display: grid; place-items: center; min-height: 190px; padding: 26px; border: 1px solid rgba(195,216,193,0.28); border-radius: 15px; background: rgba(195,216,193,0.1); color: var(--sage); font-size: 13px; font-weight: 700; text-align: center; }
-
   @media (max-width: 1200px) {
     .hp-stats-row {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -748,7 +696,6 @@ const CSS = `
       padding: 24px 20px 96px;
     }
 
-    .hp-public-feedback { grid-template-columns: 1fr; }
   }
 
   @media (max-width: 640px) {
@@ -772,23 +719,50 @@ const CSS = `
       justify-content: center;
     }
 
+    .hp-root,
+    .hp-main {
+      min-height: 0;
+    }
+
     .hp-body {
-      padding: 8px 12px calc(104px + env(safe-area-inset-bottom, 0px));
-      gap: 12px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      height: calc(100dvh - var(--nav-h, 72px) - var(--mobile-tab-h, 80px) - env(safe-area-inset-bottom, 0px));
+      min-height: 0;
+      overflow: hidden;
+      padding: 0 12px;
+      gap: 8px;
     }
 
     .hp-mobile-summary {
-      position: sticky;
-      top: var(--nav-h, 72px);
+      position: relative;
+      top: auto;
       z-index: 35;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      margin: -10px -12px 0;
+      margin: 0 -12px;
       padding: 8px 12px 10px;
       background: var(--paper);
       backdrop-filter: none;
       border-bottom: 1px solid rgba(0,0,0,0.07);
+      box-shadow: 0 8px 18px rgba(13,13,13,0.05);
+    }
+
+    .hp-results-scroll {
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 0 0 12px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .hp-results-scroll::-webkit-scrollbar {
+      display: none;
     }
 
     .hp-stats-row {
@@ -856,8 +830,7 @@ const CSS = `
     }
 
     .hp-section-header,
-    .hp-measurement-prompt,
-    .hp-tip {
+    .hp-measurement-prompt {
       flex-direction: column;
       align-items: flex-start;
     }
@@ -865,16 +838,6 @@ const CSS = `
     .hp-filter-divider {
       display: none;
     }
-
-    .hp-tip-btn {
-      margin-left: 0;
-      width: 100%;
-      justify-content: center;
-    }
-
-    .hp-public-feedback { padding: 22px; gap: 22px; }
-    .hp-public-feedback-form { padding: 16px; }
-    .hp-public-feedback-meta { align-items: flex-start; flex-direction: column; }
 
     .hp-measurement-prompt-btn {
       width: auto;
@@ -1188,6 +1151,21 @@ function formatMeasurementKeys(keys: string[]) {
   if (labels.length < 2) return labels[0] ?? 'Primary measurement';
   return `${labels.slice(0, -1).join(', ')} or ${labels[labels.length - 1]}`;
 }
+function prettifyBrandName(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (trimmed === trimmed.toUpperCase()) {
+    return trimmed.toLowerCase().replace(/\b[a-z]/g, letter => letter.toUpperCase());
+  }
+  return trimmed;
+}
+function combineBrandAndProduct(brand: string, title: string) {
+  const cleanBrand = prettifyBrandName(brand);
+  const cleanTitle = title.trim();
+  if (!cleanBrand) return cleanTitle;
+  if (!cleanTitle || cleanTitle.toLowerCase().startsWith(cleanBrand.toLowerCase())) return cleanTitle || cleanBrand;
+  return `${cleanBrand} ${cleanTitle}`;
+}
 function normalizeMeasurementKeyForPrompt(key: string) {
   return key.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
@@ -1241,17 +1219,22 @@ function ProductCard({ card, onOpen }: { card: EnrichedRecommendation; onOpen: (
   const measurementUnavailable = !isRecommendationAvailable(card);
   const unavailableMeasurements = formatMeasurementKeys(card.unavailablePrimaryMeasurementKeys);
   const image = card.imageUrl || card.seller?.photoURL || null;
+  const primaryLabel = combineBrandAndProduct(card.brandDisplay, card.title);
+  const visibleSubCategory =
+    card.subCategory?.trim() && card.subCategory.trim().toLowerCase() !== card.title.trim().toLowerCase()
+      ? card.subCategory.trim()
+      : null;
   return (
     <button
       type="button"
       className="hp-product-card"
       aria-label={measurementUnavailable
-        ? `View ${card.brandDisplay} ${card.title} measurement availability details`
-        : `View ${card.brandDisplay} ${card.title} recommendation details`}
+        ? `View ${primaryLabel} measurement availability details`
+        : `View ${primaryLabel} recommendation details`}
       onClick={onOpen}>
       <div className="hp-card-image">
         {image
-          ? <img src={image} alt={card.title} />
+          ? <img src={image} alt={primaryLabel} />
           : <div className="hp-card-image-placeholder"><Ico.Shirt /></div>
         }
         <div className={`hp-card-score-badge ${cls}`}>
@@ -1259,9 +1242,8 @@ function ProductCard({ card, onOpen }: { card: EnrichedRecommendation; onOpen: (
         </div>
       </div>
       <div className="hp-card-body">
-        <div className="hp-card-brand">{card.brandDisplay}</div>
-        <div className="hp-card-title">{card.title}</div>
-        {card.subCategory && <div className="hp-card-sub">{card.subCategory}</div>}
+        <div className="hp-card-title">{primaryLabel}</div>
+        {visibleSubCategory && <div className="hp-card-sub">{visibleSubCategory}</div>}
         <div className="hp-card-footer">
           {measurementUnavailable ? (
             <span className="hp-card-unavailable">Primary measurement unavailable: {unavailableMeasurements} is not included in this chart.</span>
@@ -1525,91 +1507,6 @@ function RecommendationDetailsModal({
   );
 }
 
-function PublicFeedbackPanel() {
-  const [rating, setRating] = useState(0);
-  const [message, setMessage] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const normalizedMessage = message.trim();
-
-  const handleSubmit = async () => {
-    if (!rating || normalizedMessage.length < 10 || submitting) return;
-
-    setSubmitting(true);
-    setError(null);
-    try {
-      await submitSiteFeedback(rating, normalizedMessage);
-      setSubmitted(true);
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Unable to publish your feedback.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <section className="hp-public-feedback" aria-labelledby="hp-public-feedback-title">
-      <div>
-        <div className="hp-public-feedback-eyebrow">Your voice matters</div>
-        <h2 className="hp-public-feedback-title" id="hp-public-feedback-title">Share your MatchMySize experience</h2>
-        <p className="hp-public-feedback-copy">
-          Tell future shoppers what you think about MatchMySize overall. This is separate from feedback about a specific size recommendation.
-        </p>
-      </div>
-      {submitted ? (
-        <div className="hp-public-feedback-success" role="status">
-          Thank you. Your review is now available in the customer stories section of our landing page.
-        </div>
-      ) : (
-        <div className="hp-public-feedback-form">
-          <div>
-            <div className="hp-public-feedback-label">Your rating</div>
-            <div className="hp-public-feedback-stars" role="group" aria-label="Overall rating">
-              {[1, 2, 3, 4, 5].map(value => (
-                <button
-                  className={`hp-public-feedback-star ${value <= rating ? 'active' : ''}`}
-                  type="button"
-                  key={value}
-                  aria-label={`${value} ${value === 1 ? 'star' : 'stars'}`}
-                  aria-pressed={rating === value}
-                  onClick={() => setRating(value)}
-                >
-                  ★
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="hp-public-feedback-label" htmlFor="hp-public-feedback-message">Your feedback</label>
-            <textarea
-              className="hp-public-feedback-textarea"
-              id="hp-public-feedback-message"
-              maxLength={500}
-              value={message}
-              onChange={event => setMessage(event.target.value)}
-              placeholder="What was useful, and what could we improve?"
-            />
-          </div>
-          <div className="hp-public-feedback-meta">
-            <span>This will be public using only your first name and last initial.</span>
-            <span>{message.length} / 500</span>
-          </div>
-          {error && <div className="hp-public-feedback-error" role="alert">{error}</div>}
-          <button
-            className="hp-public-feedback-submit"
-            type="button"
-            disabled={!rating || normalizedMessage.length < 10 || submitting}
-            onClick={() => void handleSubmit()}
-          >
-            {submitting ? 'Publishing…' : 'Publish feedback'}
-          </button>
-        </div>
-      )}
-    </section>
-  );
-}
-
 /* ─────────────────────────────────────────────
    Skeleton card
 ───────────────────────────────────────────── */
@@ -1638,7 +1535,7 @@ export function HomePage() {
   const { user } = useAuth();
   const {
     profile, sellers, sections, categoryOptions, measurementProfiles,
-    normalizedGender, activeSectionKey, loading, error,
+    activeSectionKey, loading, error,
   } = useRecommendationData(user?.uid);
 
   const [search,       setSearch]       = useState('');
@@ -1819,94 +1716,78 @@ export function HomePage() {
                 </div>
               </div>
             </div>
-          </div>
 
-          {hasOnlyPrimaryMeasurements && (
-            <div className="hp-measurement-prompt">
-              <div className="hp-measurement-prompt-icon"><Ico.Bulb /></div>
-              <div className="hp-measurement-prompt-copy">
-                <div className="hp-measurement-prompt-title">{measurementPromptText}</div>
+            {hasOnlyPrimaryMeasurements && (
+              <div className="hp-measurement-prompt">
+                <div className="hp-measurement-prompt-icon"><Ico.Bulb /></div>
+                <div className="hp-measurement-prompt-copy">
+                  <div className="hp-measurement-prompt-title">{measurementPromptText}</div>
+                </div>
+                <button
+                  type="button"
+                  className="hp-measurement-prompt-btn"
+                  aria-label={measurementCtaLabel}
+                  onClick={() => navigate(editMeasurementsPath)}>
+                  Add
+                </button>
               </div>
-              <button
-                type="button"
-                className="hp-measurement-prompt-btn"
-                aria-label={measurementCtaLabel}
-                onClick={() => navigate(editMeasurementsPath)}>
-                Add
-              </button>
-            </div>
-          )}
+            )}
 
-          {/* Section header */}
-          <div className="hp-section-header">
-            <div className="hp-section-heading">
-              <div className="hp-section-title-row">
-                <span className="hp-section-title">{selectedSection?.label ?? 'Recommended'}</span>
-                <span className="hp-section-count">{totalCards}</span>
-              </div>
-              <div className="hp-section-sub">
-                {unavailableCardCount
-                  ? `${unavailableCardCount} brand ${unavailableCardCount === 1 ? 'does' : 'do'} not provide your primary measurement for this clothing item. Open the card for details.`
-                  : 'Reliable results need a comparable key measurement and a score of at least 60%.'}
-              </div>
-            </div>
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="hp-error">
-              <Ico.Alert /> {error}
-            </div>
-          )}
-
-          {/* Grid */}
-          {loading ? (
-            <div className="hp-grid">
-              {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
-            </div>
-          ) : cards.length ? (
-            <div className="hp-grid">
-              {cards.map(card => <ProductCard key={card.id} card={card} onOpen={() => setSelectedCard(card)} />)}
-            </div>
-          ) : (
-            <div className="hp-empty">
-              <div className="hp-empty-icon">📏</div>
-              <div className="hp-empty-title">{hasUnfilteredRecommendations ? 'No matching results' : emptyState.title}</div>
-              <div className="hp-empty-sub">
-                {hasUnfilteredRecommendations
-                  ? 'Try clearing the search or choosing a different fit filter.'
-                  : emptyState.description}
-              </div>
-              <button className="hp-empty-btn" onClick={() => {
-                if (hasUnfilteredRecommendations) {
-                  setSearch('');
-                  setMatchFilter('all');
-                  return;
-                }
-                navigate('/app/add-preference');
-              }}>
-                {hasUnfilteredRecommendations ? 'Clear filters' : measurementCtaLabel || emptyState.action}
-              </button>
-            </div>
-          )}
-
-          {/* Tip banner */}
-          {normalizedGender !== 'unknown' && (
-            <div className="hp-tip">
-              <div className="hp-tip-icon"><Ico.Bulb /></div>
-              <div>
-                <div className="hp-tip-title">Explore more clothing categories</div>
-                <div className="hp-tip-sub">
-                  Add measurements for another category to unlock recommendations across all your wardrobe types.
+            {/* Section header */}
+            <div className="hp-section-header">
+              <div className="hp-section-heading">
+                <div className="hp-section-title-row">
+                  <span className="hp-section-title">{selectedSection?.label ?? 'Recommended'}</span>
+                  <span className="hp-section-count">{totalCards}</span>
+                </div>
+                <div className="hp-section-sub">
+                  {unavailableCardCount
+                    ? `${unavailableCardCount} brand ${unavailableCardCount === 1 ? 'does' : 'do'} not provide your primary measurement for this clothing item. Open the card for details.`
+                    : 'Reliable results need a comparable key measurement and a score of at least 60%.'}
                 </div>
               </div>
-              <button className="hp-tip-btn" onClick={() => navigate('/app/add-preference')}>
-                Add category
-              </button>
             </div>
-          )}
+          </div>
 
-          <PublicFeedbackPanel />
+          <div className="hp-results-scroll">
+            {/* Error */}
+            {error && (
+              <div className="hp-error">
+                <Ico.Alert /> {error}
+              </div>
+            )}
+
+            {/* Grid */}
+            {loading ? (
+              <div className="hp-grid">
+                {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+              </div>
+            ) : cards.length ? (
+              <div className="hp-grid">
+                {cards.map(card => <ProductCard key={card.id} card={card} onOpen={() => setSelectedCard(card)} />)}
+              </div>
+            ) : (
+              <div className="hp-empty">
+                <div className="hp-empty-icon">📏</div>
+                <div className="hp-empty-title">{hasUnfilteredRecommendations ? 'No matching results' : emptyState.title}</div>
+                <div className="hp-empty-sub">
+                  {hasUnfilteredRecommendations
+                    ? 'Try clearing the search or choosing a different fit filter.'
+                    : emptyState.description}
+                </div>
+                <button className="hp-empty-btn" onClick={() => {
+                  if (hasUnfilteredRecommendations) {
+                    setSearch('');
+                    setMatchFilter('all');
+                    return;
+                  }
+                  navigate('/app/add-preference');
+                }}>
+                  {hasUnfilteredRecommendations ? 'Clear filters' : measurementCtaLabel || emptyState.action}
+                </button>
+              </div>
+            )}
+          </div>
 
         </div>
       </div>
