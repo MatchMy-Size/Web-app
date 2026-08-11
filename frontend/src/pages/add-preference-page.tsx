@@ -977,6 +977,13 @@ function sanitizeMeasurementValues(values: Record<string, string>) {
   );
 }
 
+function inferGenderFromProfileKey(profileKey: string | null | undefined): CustomerGender | null {
+  if (!profileKey) return null;
+  if (profileKey.startsWith('men_')) return 'men';
+  if (profileKey.startsWith('women_')) return 'women';
+  return null;
+}
+
 function EditMeasurementSection({
   title,
   note,
@@ -1032,9 +1039,9 @@ export function AddPreferencePage() {
   const navigate = useNavigate();
   const { user }  = useAuth();
   const { brandCount } = useCatalogSummary();
-  const { selectedSubject } = useProfileSubject();
+  const { selectedSubject, profilesLoading } = useProfileSubject();
   const [searchParams] = useSearchParams();
-  const { profile, loading: profileLoading } = useRecommendationData(user?.uid);
+  const { profile } = useRecommendationData(user?.uid);
 
   const initialProfileKey = searchParams.get('profileKey');
   const isEditRequest = !!initialProfileKey;
@@ -1052,6 +1059,7 @@ export function AddPreferencePage() {
   const [measurementWarning, setMeasurementWarning] = useState<MeasurementValidationWarning | null>(null);
   const [pendingWarningAction, setPendingWarningAction] = useState<'advance' | 'save' | null>(null);
   const [acceptedWarnings, setAcceptedWarnings] = useState<Record<string, number>>({});
+  const [hydratedEditKey, setHydratedEditKey] = useState<string | null>(null);
 
   const measurementProfiles = useMemo(
     () => (profile ? extractMeasurementProfiles(profile) : []),
@@ -1062,7 +1070,11 @@ export function AddPreferencePage() {
     return measurementProfiles.find(e => e.profileKey === initialProfileKey) ?? null;
   }, [initialProfileKey, measurementProfiles]);
 
-  const storedGender   = normalizeGender(editingProfile?.gender) ?? normalizeGender(profile?.gender) ?? null;
+  const storedGender =
+    normalizeGender(editingProfile?.gender) ??
+    inferGenderFromProfileKey(editingProfile?.profileKey) ??
+    normalizeGender(profile?.gender) ??
+    null;
   const normalizedGender = chosenGender ?? storedGender;
 
   const options = useMemo(() => {
@@ -1084,23 +1096,56 @@ export function AddPreferencePage() {
   const returnLabel   = selectedSubject?.type === 'family' || isEditRequest ? 'Measurements' : 'Home';
   const requiresGenderStep = !storedGender;
   const isEditing = !!editingProfile;
+  const editHydrationKey =
+    isEditRequest && selectedSubject?.key && editingProfile
+      ? `${selectedSubject.key}:${editingProfile.profileKey}`
+      : null;
+  const editFormReady =
+    isEditRequest &&
+    isEditing &&
+    !!template &&
+    !!editHydrationKey &&
+    hydratedEditKey === editHydrationKey;
+  const editIsLoading =
+    isEditRequest &&
+    (profilesLoading || (isEditing && !!editHydrationKey && hydratedEditKey !== editHydrationKey));
 
   useEffect(() => {
-    if (!editingProfile) return;
+    if (!isEditRequest) return;
+    setChoice(null);
+    setMeasurements({});
+    setStepIndex(0);
+    setError(null);
+    setMeasurementWarning(null);
+    setPendingWarningAction(null);
+    setAcceptedWarnings({});
+    setHydratedEditKey(null);
+    setPhase('guide');
+  }, [initialProfileKey, isEditRequest]);
+
+  useEffect(() => {
+    if (!editingProfile || !editHydrationKey || hydratedEditKey === editHydrationKey) return;
     setChoice(editingProfile.preferredClothing);
     setMeasurements(Object.fromEntries(
       Object.entries(editingProfile.measurements).map(([k, v]) => [k, String(v)])
     ));
+    setStepIndex(0);
+    setError(null);
+    setMeasurementWarning(null);
+    setPendingWarningAction(null);
+    setAcceptedWarnings({});
     setPhase('guide');
-  }, [editingProfile]);
+    setHydratedEditKey(editHydrationKey);
+  }, [editingProfile, editHydrationKey, hydratedEditKey]);
 
   useEffect(() => { setChosenGender(storedGender ?? null); }, [selectedSubject?.key, storedGender]);
 
   useEffect(() => {
+    if (isEditRequest) return;
     setChoice(initialChoice); setMeasurements({}); setStepIndex(0); setError(null);
     setMeasurementWarning(null); setPendingWarningAction(null); setAcceptedWarnings({});
     setPhase(initialChoice ? 'guide' : 'choose');
-  }, [initialChoice, selectedSubject?.key]);
+  }, [initialChoice, selectedSubject?.key, isEditRequest]);
 
   const showError = (msg: string) => { setError(msg); setErrorKey(k => k + 1); };
 
@@ -1278,7 +1323,7 @@ export function AddPreferencePage() {
 
       {isEditRequest ? (
         <div className="ap-edit-simple">
-          {isEditing && template ? (
+          {editFormReady ? (
             <>
               <div className="ap-edit-hero">
                 <div>
@@ -1331,14 +1376,20 @@ export function AddPreferencePage() {
             <div className="ap-no-gender">
               <div className="ap-no-gender-icon"><Ico.Ruler /></div>
               <div className="ap-no-gender-title">
-                {profileLoading ? 'Loading measurements' : 'Measurement profile not found'}
+                {editIsLoading
+                  ? 'Loading measurements'
+                  : isEditing && !template
+                    ? 'Cannot edit this category'
+                    : 'Measurement profile not found'}
               </div>
               <div className="ap-no-gender-sub">
-                {profileLoading
+                {editIsLoading
                   ? 'Getting your saved measurements ready.'
+                  : isEditing && !template
+                    ? 'This saved category is missing sizing information. Add the category again to refresh it.'
                   : 'This profile may have been removed or is unavailable for the selected person.'}
               </div>
-              {!profileLoading && (
+              {!editIsLoading && (
                 <button className="ap-btn-next" type="button" onClick={() => navigate('/app/measurements')}>
                   Go to measurements
                 </button>

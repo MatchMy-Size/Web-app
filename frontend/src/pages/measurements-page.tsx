@@ -1,8 +1,15 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/context/auth-context';
 import { useProfileSubject } from '@/context/profile-subject-context';
+import {
+  DEFAULT_MEASUREMENT_LABELS,
+  getClothingTemplate,
+  normalizeGender,
+  type ClothingChoice,
+  type CustomerGender,
+} from '@/lib/measurement';
+import type { CustomerMeasurementProfile } from '@/lib/recommendation-view';
 import { useRecommendationData } from '@/lib/use-recommendation-data';
 
 /* ─────────────────────────────────────────────
@@ -728,6 +735,11 @@ const CSS = `
     display: flex;
     flex-direction: column;
     gap: 14px;
+    width: 100%;
+  }
+
+  .mw-card-flow {
+    width: 100%;
   }
 
   .mw-sidebar,
@@ -735,63 +747,94 @@ const CSS = `
     min-width: 0;
   }
 
-  .mw-summary-card {
-    display: flex;
-    gap: 10px;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    padding: 0 0 4px;
+  .mw-category-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    overflow: visible;
+    padding: 0;
     border: 0;
     border-radius: 0;
     background: transparent;
     animation: none;
-    scrollbar-width: none;
   }
 
-  .mw-summary-card::-webkit-scrollbar {
-    display: none;
-  }
-
-  .mw-profile-list-item {
-    flex: 0 0 auto;
-    width: auto;
-    min-height: 44px;
+  .mw-category-card {
+    width: 100%;
+    max-width: none;
+    min-height: 148px;
     margin: 0;
-    padding: 0 16px;
-    gap: 8px;
+    padding: 14px;
     border: 1px solid var(--cloud);
-    border-radius: 999px;
+    border-radius: 16px;
     background: var(--white);
-    color: var(--ash);
+    color: var(--ink);
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+    text-align: left;
+    font-family: var(--fs);
+    cursor: pointer;
+    transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s, background 0.18s;
+  }
+
+  .mw-category-card:hover {
+    background: var(--white);
+    border-color: var(--mist);
+    transform: translateY(-1px);
+  }
+
+  .mw-category-card.is-default {
+    border-color: var(--cloud);
+    background: var(--white);
+    color: var(--ink);
     box-shadow: none;
   }
 
-  .mw-profile-list-item:hover {
-    background: var(--white);
+  .mw-category-card.is-missing {
+    border-color: var(--sage-dark);
+    background: linear-gradient(180deg, var(--sage-light), #F4FAF2);
+    color: var(--ink);
   }
 
-  .mw-profile-list-item.selected {
-    border-color: var(--ink);
-    background: var(--ink);
-    color: var(--white);
-    box-shadow: none;
+  .mw-category-card.is-missing:hover {
+    border-color: var(--sage-deep);
+    background: linear-gradient(180deg, var(--sage-light), #F4FAF2);
   }
 
-  .mw-profile-list-emoji,
-  .mw-profile-list-count,
-  .mw-profile-list-item svg {
-    display: none;
+  .mw-category-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
   }
 
-  .mw-profile-list-body {
-    flex: 0 0 auto;
+  .mw-category-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--paper);
+    border: 1px solid var(--cloud);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
   }
 
-  .mw-profile-list-name,
-  .mw-profile-list-item.selected .mw-profile-list-name {
-    color: inherit;
-    font-size: 14px;
+  .mw-category-card.is-default .mw-category-icon {
+    background: var(--paper);
+    border-color: var(--cloud);
+  }
+
+  .mw-category-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 19px;
+    font-weight: 800;
+    line-height: 1.1;
   }
 
   .mw-profile-default-dot {
@@ -801,9 +844,99 @@ const CSS = `
     box-shadow: none;
   }
 
-  .mw-profile-list-item.selected .mw-profile-default-dot {
+  .mw-category-card.is-default .mw-profile-default-dot {
+    background: var(--sage-deep);
+    opacity: 1;
+  }
+
+  .mw-category-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 46px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: var(--cloud);
+    color: var(--ash);
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .mw-category-card.is-missing .mw-category-status {
     background: var(--white);
-    opacity: 0.75;
+    color: var(--sage-deep);
+  }
+
+  .mw-category-card.is-default .mw-category-status {
+    background: var(--sage-light);
+    color: var(--sage-deep);
+  }
+
+  .mw-body-part-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 28px;
+  }
+
+  .mw-body-part {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: var(--paper);
+    border: 1px solid var(--cloud);
+    color: var(--slate);
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .mw-body-part strong {
+    margin-left: 6px;
+    color: inherit;
+    font-weight: 900;
+  }
+
+  .mw-body-part.is-filled {
+    background: var(--cloud);
+    color: var(--ink);
+  }
+
+  .mw-body-part.is-primary {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--white);
+  }
+
+  .mw-category-card.is-default .mw-body-part {
+    background: var(--paper);
+    border-color: var(--cloud);
+    color: var(--slate);
+  }
+
+  .mw-category-card.is-default .mw-body-part.is-primary,
+  .mw-category-card.is-default .mw-body-part.is-filled {
+    background: var(--cloud);
+    border-color: var(--cloud);
+    color: var(--ink);
+  }
+
+  .mw-category-foot {
+    margin-top: auto;
+    color: var(--ash);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .mw-category-card.is-missing .mw-category-foot {
+    color: var(--sage-deep);
+  }
+
+  .mw-category-card.is-default .mw-category-foot {
+    color: var(--ash);
   }
 
   .mw-detail-panel {
@@ -981,10 +1114,21 @@ const CSS = `
       gap: 12px;
     }
 
-    .mw-summary-card {
-      margin-inline: -18px;
-      padding: 0 18px 4px;
-      scroll-padding-inline: 18px;
+    .mw-category-grid {
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-inline: 0;
+      padding: 0;
+    }
+
+    .mw-category-card {
+      min-height: 142px;
+      padding: 14px;
+      border-radius: 15px;
+    }
+
+    .mw-category-name {
+      font-size: 18px;
     }
 
     .mw-simple-card {
@@ -1058,6 +1202,36 @@ function clothingEmoji(key: string | null) {
   return '📏';
 }
 
+const fallbackMeasurementLabel = (key: string) =>
+  DEFAULT_MEASUREMENT_LABELS[key as keyof typeof DEFAULT_MEASUREMENT_LABELS] ??
+  key
+    .replace(/[_-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, char => char.toUpperCase());
+
+function categoryMeasurementParts(
+  gender: CustomerGender | null,
+  choice: ClothingChoice,
+  savedProfile: CustomerMeasurementProfile | null,
+) {
+  const template = getClothingTemplate(gender, choice);
+  if (template) {
+    return template.fields.map(field => ({
+      key: field.key,
+      label: field.label,
+      isPrimary: field.isPrimary,
+    }));
+  }
+
+  const primaryKeys = savedProfile?.primaryMeasurementKeys ?? [];
+  return Object.keys(savedProfile?.measurements ?? {}).map(key => ({
+    key,
+    label: fallbackMeasurementLabel(key),
+    isPrimary: primaryKeys.includes(key),
+  }));
+}
+
 /* ─────────────────────────────────────────────
    Detail panel for selected profile
 ───────────────────────────────────────────── */
@@ -1123,22 +1297,16 @@ export function MeasurementsPage() {
   const navigate = useNavigate();
   const { user }  = useAuth();
   const { selectedSubject } = useProfileSubject();
-  const { measurementProfiles, profile } = useRecommendationData(user?.uid);
+  const { categoryOptions, measurementProfiles, normalizedGender, profile } = useRecommendationData(user?.uid);
   const activeKey = typeof profile?.activeMeasurementProfileKey === 'string'
     ? profile.activeMeasurementProfileKey : null;
   const unit = (profile?.unit as 'cm' | 'in') ?? 'cm';
 
-  const [selectedKey, setSelectedKey] = useState<string | null>(
-    () => activeKey ?? measurementProfiles[0]?.profileKey ?? null
-  );
-
-  useEffect(() => {
-    setSelectedKey(activeKey ?? measurementProfiles[0]?.profileKey ?? null);
-  }, [activeKey, measurementProfiles, selectedSubject?.key]);
-
-  const selectedProfile = measurementProfiles.find(p => p.profileKey === selectedKey)
-    ?? measurementProfiles[0]
-    ?? null;
+  const customerGender =
+    normalizeGender(normalizedGender) ??
+    normalizeGender(profile?.gender) ??
+    normalizeGender(measurementProfiles[0]?.gender);
+  const hasAvailableCategories = categoryOptions.length > 0;
 
   return (
     <div className="mw-root">
@@ -1163,7 +1331,7 @@ export function MeasurementsPage() {
       <div className="mw-page">
 
         {/* Empty state */}
-        {!measurementProfiles.length && (
+        {!measurementProfiles.length && !hasAvailableCategories && (
           <div className="mw-empty">
             <div className="mw-empty-icon">📏</div>
             <div className="mw-empty-title">
@@ -1182,65 +1350,59 @@ export function MeasurementsPage() {
           </div>
         )}
 
-        {/* Two-column grid */}
-        {measurementProfiles.length > 0 && (
+        {/* Category cards */}
+        {(measurementProfiles.length > 0 || hasAvailableCategories) && (
           <div className="mw-grid">
-
-            {/* ── Sidebar ── */}
-            <aside className="mw-sidebar">
-
-              {/* Profile list */}
-              <div className="mw-summary-card">
-                <div className="mw-summary-header">
-                  <div className="mw-summary-header-icon"><Ico.Ruler /></div>
-                  <span className="mw-summary-header-title">
-                    {measurementProfiles.length} profile{measurementProfiles.length !== 1 ? 's' : ''}
-                  </span>
-                </div>
-                {measurementProfiles.map(p => {
-                  const isSelected = p.profileKey === (selectedProfile?.profileKey);
-                  const isDefault  = p.profileKey === activeKey;
+            <div className="mw-card-flow">
+              <div className="mw-category-grid">
+                {categoryOptions.map(option => {
+                  const savedProfile = measurementProfiles.find(p => p.preferredClothing === option.key) ?? null;
+                  const isDefault  = !!savedProfile && savedProfile.profileKey === activeKey;
+                  const cardGender = normalizeGender(savedProfile?.gender) ?? customerGender;
+                  const parts = categoryMeasurementParts(cardGender, option.key, savedProfile);
+                  const statusLabel = isDefault ? 'Default' : savedProfile ? 'Added' : 'Add';
+                  const savedCount = Object.keys(savedProfile?.measurements ?? {}).length;
+                  const cardUnit = savedProfile?.unit === 'in' || savedProfile?.unit === 'cm'
+                    ? savedProfile.unit
+                    : unit;
                   return (
                     <button
-                      key={p.profileKey}
-                      className={`mw-profile-list-item${isSelected ? ' selected' : ''}`}
-                      onClick={() => setSelectedKey(p.profileKey)}>
-                      <div className="mw-profile-list-emoji">
-                        {clothingEmoji(p.preferredClothing)}
+                      key={option.key}
+                      className={`mw-category-card ${savedProfile ? 'is-added' : 'is-missing'}${isDefault ? ' is-default' : ''}`}
+                      onClick={() => navigate(
+                        savedProfile
+                          ? `/app/add-preference?profileKey=${savedProfile.profileKey}`
+                          : `/app/add-preference?choice=${option.key}`
+                      )}>
+                      <div className="mw-category-card-top">
+                        <div className="mw-category-icon">{clothingEmoji(option.key)}</div>
+                        <span className="mw-category-status">{statusLabel}</span>
                       </div>
-                      <div className="mw-profile-list-body">
-                        <div className="mw-profile-list-name">{p.preferredClothingLabel}</div>
-                        <div className="mw-profile-list-count">
-                          {Object.keys(p.measurements ?? {}).length} measurements
-                        </div>
+                      <div className="mw-category-name">{option.label}</div>
+                      <div className="mw-body-part-grid">
+                        {parts.map(part => {
+                          const savedValue = savedProfile?.measurements?.[part.key];
+                          const hasValue = savedValue !== undefined && savedValue !== null && String(savedValue).trim().length > 0;
+                          return (
+                            <span
+                              key={part.key}
+                              className={`mw-body-part${part.isPrimary ? ' is-primary' : ''}${hasValue ? ' is-filled' : ''}`}>
+                              {part.label}
+                              {hasValue && <strong>{String(savedValue)} {cardUnit}</strong>}
+                            </span>
+                          );
+                        })}
                       </div>
-                      {isDefault && <div className="mw-profile-default-dot" title="Default" />}
-                      <Ico.Chevron />
+                      <div className="mw-category-foot">
+                        {savedProfile
+                          ? `${savedCount} saved · Tap to edit`
+                          : 'Add measurements'}
+                      </div>
                     </button>
                   );
                 })}
               </div>
-
-            </aside>
-
-            {/* ── Detail panel ── */}
-            <div className="mw-detail-wrap">
-              {selectedProfile ? (
-                <ProfileDetail
-                  key={selectedProfile.profileKey}
-                  entry={selectedProfile}
-                  isDefault={selectedProfile.profileKey === activeKey}
-                  unit={unit}
-                  onEdit={() => navigate(`/app/add-preference?profileKey=${selectedProfile.profileKey}`)}
-                />
-              ) : (
-                <div className="mw-no-selection">
-                  <div className="mw-no-selection-icon">📐</div>
-                  <div className="mw-no-selection-text">Select a profile from the left to view details</div>
-                </div>
-              )}
             </div>
-
           </div>
         )}
 
