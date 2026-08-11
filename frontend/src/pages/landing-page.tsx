@@ -1248,7 +1248,7 @@
 
 
 
-import { useEffect, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 
 import appStoreIcon from '@/assets/images/appstore.png';
 import cameraIcon from '@/assets/images/camera.png';
@@ -1265,6 +1265,7 @@ import tshirtIcon from '@/assets/images/t-shirt.png';
 import { AppLogo } from '@/components/app-logo';
 import { BRAND_LOGOS } from '@/lib/brand-logos';
 import { useCatalogSummary } from '@/lib/catalog-summary';
+import { getPublicSiteFeedback, type PublicSiteFeedback } from '@/lib/site-feedback';
 
 /* ─────────────────────────────────────────────
    Google Fonts
@@ -1716,6 +1717,16 @@ const CSS = `
   .lp-brand-pill { background: var(--paper); border: 1px solid var(--cloud); border-radius: 12px; padding: 14px 10px; text-align: center; font-size: 13px; font-weight: 600; color: var(--ash); transition: all 0.2s; cursor: default; }
   .lp-brand-pill:hover { background: var(--white); border-color: var(--ink); color: var(--ink); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.07); }
 
+  /* Customer stories */
+  .lp-testimonials { background: var(--paper); }
+  .lp-testimonials-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 50px; }
+  .lp-testimonial-card { display: flex; flex-direction: column; min-height: 240px; padding: 28px; border: 1px solid var(--cloud); border-radius: 20px; background: var(--white); box-shadow: 0 16px 46px rgba(13,13,13,0.045); animation: lp-fadeUp 0.55s var(--ease) both; }
+  .lp-testimonial-stars { color: var(--sage-deep); font-size: 15px; letter-spacing: 2px; }
+  .lp-testimonial-quote { margin: 18px 0 28px; color: var(--ink); font-family: var(--fd); font-size: 23px; font-weight: 600; line-height: 1.35; }
+  .lp-testimonial-author { display: flex; align-items: center; gap: 11px; margin-top: auto; color: var(--ash); font-size: 12px; font-weight: 700; }
+  .lp-testimonial-avatar { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: var(--white); font-size: 12px; font-weight: 800; }
+  .lp-testimonial-verified { display: block; margin-top: 1px; color: var(--sage-deep); font-size: 9px; font-weight: 800; letter-spacing: 0.45px; text-transform: uppercase; }
+
   /* App section */
   .lp-app-section { padding: 110px 56px; background: var(--ink); position: relative; overflow: hidden; }
   .lp-app-bg-glow-1 { position: absolute; top: -120px; left: -80px; width: 500px; height: 500px; border-radius: 50%; background: rgba(195,216,193,0.06); pointer-events: none; }
@@ -1856,6 +1867,7 @@ const CSS = `
   @keyframes fb-scroll    { from{transform:translateX(0)} to{transform:translateX(calc(-50% - 12px))} }
 
   @media (max-width: 1100px) {
+    .lp-testimonials-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     body .lp-how-grid {
       grid-template-columns: 1fr;
       gap: 40px;
@@ -1881,6 +1893,7 @@ const CSS = `
     .fb-scene { height: 330px; }
     .fb-track, .fb-group { gap: 16px; }
     .fb-logo { width: 190px; height: 124px; }
+    .lp-testimonials-grid { grid-template-columns: 1fr; }
     @keyframes fb-scroll { from{transform:translateX(0)} to{transform:translateX(calc(-50% - 8px))} }
   }
 
@@ -2196,6 +2209,7 @@ function PhoneResult() {
 ───────────────────────────────────────────── */
 export function LandingPage() {
   const { brandCount, brandNames } = useCatalogSummary();
+  const [publicFeedback, setPublicFeedback] = useState<PublicSiteFeedback[]>([]);
   const features = getFeatures(brandCount);
   const stats = getStats(brandCount);
   const brands = brandNames.length ? brandNames : BRAND_LOGOS.map((brand) => brand.name);
@@ -2210,6 +2224,20 @@ export function LandingPage() {
     return () => io.disconnect();
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    void getPublicSiteFeedback()
+      .then(feedback => {
+        if (active) setPublicFeedback(feedback);
+      })
+      .catch(() => {
+        if (active) setPublicFeedback([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <div className="lp-body">
 
@@ -2221,7 +2249,7 @@ export function LandingPage() {
             <span className="lp-logo-tagline">Find Your Perfect Fit</span>
           </div>
         </a>
-        <ul className="lp-nav-links"><li><a href="#how">How it works</a></li><li><a href="#features">Features</a></li><li><a href="#app">Mobile app</a></li><li><a href="#brands">Brands</a></li></ul>
+        <ul className="lp-nav-links"><li><a href="#how">How it works</a></li><li><a href="#features">Features</a></li><li><a href="#app">Mobile app</a></li><li><a href="#brands">Brands</a></li>{publicFeedback.length > 0 && <li><a href="#reviews">Reviews</a></li>}</ul>
         <div className="lp-nav-cta"><button className="lp-btn-ghost" onClick={()=>window.location.href='/auth/login'}>Sign in</button><button className="lp-btn-ink" onClick={()=>window.location.href='/auth/register'}>Get started →</button></div>
       </nav>
 
@@ -2314,6 +2342,30 @@ export function LandingPage() {
           <p className="lp-reveal" style={{marginTop:32,fontSize:13,color:'var(--ash)',textAlign:'center'}}>{brandCount} active brands with live sizing data.</p>
         </div>
       </section>
+
+      {publicFeedback.length > 0 && (
+        <section className="lp-section lp-testimonials" id="reviews">
+          <div className="lp-section-inner">
+            <div className="lp-eyebrow"><div className="lp-eyebrow-line"/><span>Customer stories</span></div>
+            <h2 className="lp-section-title">What our customers <em>really think</em></h2>
+            <p className="lp-section-sub">Public feedback shared by registered MatchMySize customers.</p>
+            <div className="lp-testimonials-grid">
+              {publicFeedback.map((feedback, index) => (
+                <article className="lp-testimonial-card" key={feedback.id} style={{animationDelay: `${Math.min(index, 5) * 0.08}s`}}>
+                  <div className="lp-testimonial-stars" aria-label={`${feedback.rating} out of 5 stars`}>
+                    {'★'.repeat(feedback.rating)}<span style={{color:'var(--cloud)'}}>{'★'.repeat(5 - feedback.rating)}</span>
+                  </div>
+                  <blockquote className="lp-testimonial-quote">“{feedback.message}”</blockquote>
+                  <div className="lp-testimonial-author">
+                    <div className="lp-testimonial-avatar" aria-hidden="true">{feedback.displayName.charAt(0).toUpperCase()}</div>
+                    <div>{feedback.displayName}<span className="lp-testimonial-verified">Registered customer</span></div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="lp-cta">
         <div className="lp-cta-glow"/>

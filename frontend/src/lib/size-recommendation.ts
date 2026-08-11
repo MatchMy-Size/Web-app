@@ -22,13 +22,19 @@ export type BrandRecommendation = {
   id: string;
   brand: string;
   title: string;
+  recommendedSize: string | null;
   sizeLabel: string;
   sizeKey: number | null;
   category: string;
   subCategory: string;
   unit: string;
   averagePoint: number | null;
+  score: number;
   matchScore: number;
+  explanation: string;
+  reasons: string[];
+  missingMeasurements: string[];
+  comparableMeasurements: string[];
   imageUrl: string | null;
   commonMeasurementCount: number;
   primaryMatchedCount: number;
@@ -36,6 +42,7 @@ export type BrandRecommendation = {
   availability: 'recommended' | 'primary-measurement-unavailable';
   unavailablePrimaryMeasurementKeys: string[];
   confidence: 'high' | 'limited';
+  confidenceExplanation: string;
   sellerUserId: string | null;
 };
 
@@ -472,6 +479,24 @@ const getSizeKey = (record: BrandSizeMeasurementRecord) => {
   return numeric === null ? null : Math.trunc(numeric);
 };
 
+const formatMeasurementKey = (key: string) => {
+  const normalized = normalizeMeasurementKey(key);
+  if (normalized === 'inseam') return 'inseam';
+  if (normalized === 'outseam') return 'outseam';
+  return normalized.replace(/([a-z])([A-Z])/g, '$1 $2');
+};
+
+const formatMeasurementList = (keys: string[]) => {
+  const labels = Array.from(new Set(keys.map(formatMeasurementKey))).filter(Boolean);
+  if (!labels.length) return 'the available measurements';
+  if (labels.length === 1) return labels[0];
+  if (labels.length === 2) return `${labels[0]} and ${labels[1]}`;
+  return `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`;
+};
+
+const capitalizeFirst = (value: string) =>
+  value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+
 const getImageUrl = (record: BrandSizeMeasurementRecord) => {
   const direct = firstText(
     record.imageUrl,
@@ -660,6 +685,9 @@ export const buildBrandRecommendationResult = ({
         (key) => key in brandMeasurements
       );
       const allCommonCount = allCommonKeys.length;
+      const missingMeasurements = Object.keys(brandMeasurements).filter(
+        (key) => !(key in customerMeasurements)
+      );
 
       const averageScore =
         customerAverage !== null && brandAverage !== null
@@ -716,28 +744,67 @@ export const buildBrandRecommendationResult = ({
         groupClothing === 'shirt'
           ? allCommonKeys.length >= 2 && allCommonKeys.some((key) => SHIRT_HIGH_CONFIDENCE_KEYS.has(key))
           : primaryResult.coverage === 1 && primaryResult.commonCount > 0;
+      const primaryMeasurementUnavailable =
+        primaryResult.expectedCount > 0 && primaryResult.commonCount === 0;
+      const sizeLabel = getSizeLabel(entry);
+      const matchScore = Number(clampScore(rawScore).toFixed(1));
+      const confidence = hasHighConfidenceData ? 'high' as const : 'limited' as const;
+      const confidenceExplanation = confidence === 'high'
+        ? `${capitalizeFirst(formatMeasurementList(allCommonKeys))} ${allCommonKeys.length === 1 ? 'was' : 'were'} compared.`
+        : primaryMeasurementUnavailable
+          ? `${capitalizeFirst(formatMeasurementList(unavailablePrimaryMeasurementKeys))} ${unavailablePrimaryMeasurementKeys.length === 1 ? 'is' : 'are'} missing from this brand's chart.`
+          : missingMeasurements.length
+            ? `${capitalizeFirst(formatMeasurementList(missingMeasurements))} ${missingMeasurements.length === 1 ? 'is' : 'are'} missing from your profile.`
+            : 'Not enough key measurements were available for a high-confidence result.';
+      const explanation = primaryMeasurementUnavailable
+        ? `No size can be recommended because this chart does not provide ${formatMeasurementList(unavailablePrimaryMeasurementKeys)}.`
+        : `${sizeLabel} is the closest available size based on ${formatMeasurementList(allCommonKeys)}.`;
+      const reasons = [
+        allCommonKeys.length
+          ? `Compared ${formatMeasurementList(allCommonKeys)} in centimetres.`
+          : null,
+        primaryMeasurementUnavailable
+          ? `The chart is missing the required ${formatMeasurementList(unavailablePrimaryMeasurementKeys)} measurement.`
+          : null,
+        missingMeasurements.length
+          ? `Add ${formatMeasurementList(missingMeasurements)} to improve recommendation confidence.`
+          : null,
+        !primaryMeasurementUnavailable && confidence === 'high'
+          ? 'Confidence is high because the key fit measurements were comparable.'
+          : null,
+        !primaryMeasurementUnavailable && confidence === 'limited' && !missingMeasurements.length
+          ? 'Confidence is limited because not every key fit measurement was comparable.'
+          : null,
+      ].filter((reason): reason is string => Boolean(reason));
 
       return {
         id: entry.id,
         brand,
         title: getTitle(entry),
-        sizeLabel: getSizeLabel(entry),
+        recommendedSize: primaryMeasurementUnavailable ? null : sizeLabel,
+        sizeLabel,
         sizeKey,
         category: getCategoryLabel(entry),
         subCategory: getSubCategoryLabel(entry),
         unit: 'cm',
         averagePoint: brandAverage,
+        score: matchScore,
+        matchScore,
+        explanation,
+        reasons,
+        missingMeasurements,
+        comparableMeasurements: allCommonKeys,
         imageUrl: getImageUrl(entry) ?? getBrandLogoSource(entry.logoKey, brand),
         commonMeasurementCount: allCommonCount,
         primaryMatchedCount: primaryResult.commonCount,
         primaryExpectedCount: primaryResult.expectedCount,
         availability:
-          primaryResult.expectedCount > 0 && primaryResult.commonCount === 0
+          primaryMeasurementUnavailable
             ? 'primary-measurement-unavailable'
             : 'recommended',
         unavailablePrimaryMeasurementKeys,
-        confidence: hasHighConfidenceData ? 'high' : 'limited',
-        matchScore: Number(clampScore(rawScore).toFixed(1)),
+        confidence,
+        confidenceExplanation,
         sellerUserId,
         rankPrimaryCoverage: primaryResult.coverage,
         rankPrimaryScore: primaryResult.score ?? 0,

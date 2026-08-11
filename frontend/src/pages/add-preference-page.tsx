@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import manImage from '@/assets/images/man.png';
 import womenImage from '@/assets/images/women.png';
+import { MeasurementValidationDialog } from '@/components/measurement-validation-dialog';
 import { useAuth } from '@/context/auth-context';
 import { useProfileSubject } from '@/context/profile-subject-context';
 import {
@@ -16,6 +17,10 @@ import {
 } from '@/lib/measurement';
 import { saveCustomerMeasurementProfile } from '@/lib/customer-profile';
 import { saveFamilyMemberMeasurementProfile } from '@/lib/family-members';
+import {
+  validateMeasurements,
+  type MeasurementValidationWarning,
+} from '@/lib/measurement-validation';
 import {
   buildFallbackOptions,
   extractMeasurementProfiles,
@@ -628,6 +633,9 @@ export function AddPreferencePage() {
   const [dir,          setDir]          = useState<'fwd' | 'back'>('fwd');
   const [phase,        setPhase]        = useState<'choose' | 'guide'>(initialChoice ? 'guide' : 'choose');
   const [chosenGender, setChosenGender] = useState<CustomerGender | null>(null);
+  const [measurementWarning, setMeasurementWarning] = useState<MeasurementValidationWarning | null>(null);
+  const [pendingWarningAction, setPendingWarningAction] = useState<'advance' | 'save' | null>(null);
+  const [acceptedWarnings, setAcceptedWarnings] = useState<Record<string, number>>({});
 
   const measurementProfiles = useMemo(
     () => (profile ? extractMeasurementProfiles(profile) : []),
@@ -674,6 +682,7 @@ export function AddPreferencePage() {
 
   useEffect(() => {
     setChoice(initialChoice); setMeasurements({}); setStepIndex(0); setError(null);
+    setMeasurementWarning(null); setPendingWarningAction(null); setAcceptedWarnings({});
     setPhase(initialChoice ? 'guide' : 'choose');
   }, [initialChoice, selectedSubject?.key]);
 
@@ -683,18 +692,76 @@ export function AddPreferencePage() {
     setDir(direction); setError(null); fn();
   };
 
-  const handleSave = async () => {
+  const persistMeasurements = async (measurementValues: Record<string, string>) => {
     if (!user || !template || !choice || !normalizedGender) return;
     const preferredClothingLabel =
       options.find(o => o.key === choice)?.label ?? template.label;
     const measurementPayload = {
       gender: normalizedGender, preferredClothing: choice, preferredClothingLabel,
       measurementProfileKey: editingProfile?.profileKey ?? template.profileKey,
-      unit, measurements,
+      unit, measurements: measurementValues,
       primaryMeasurementKeys: template.fields.filter(f => f.isPrimary).map(f => f.key),
       measurementDisplayNames: Object.fromEntries(template.fields.map(f => [f.key, f.label])),
       setAsActive: true,
     };
+
+    if (selectedSubject?.type === 'family') {
+      await saveFamilyMemberMeasurementProfile({ ownerUid: user.uid, familyMemberId: selectedSubject.id, ...measurementPayload });
+    } else {
+      await saveCustomerMeasurementProfile({ uid: user.uid, ...measurementPayload });
+    }
+    navigate(returnPath);
+  };
+
+  const saveAfterValidation = async (measurementValues: Record<string, string>) => {
+    try {
+      setSaving(true); setError(null);
+      await persistMeasurements(measurementValues);
+    } catch (e) {
+      showError(e instanceof Error ? e.message : 'Unable to save measurements.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const firstUnacceptedWarning = (warnings: MeasurementValidationWarning[]) =>
+    warnings.find(warning => acceptedWarnings[warning.field] !== warning.enteredValue);
+
+  const handleNextStep = async () => {
+    if (!currentStep) return;
+    const rawValue = measurements[currentStep.key] ?? '';
+    const parsedValue = Number.parseFloat(rawValue);
+    if (currentStep.isPrimary && (!Number.isFinite(parsedValue) || parsedValue <= 0)) {
+      showError(`${currentStep.label} is required.`);
+      return;
+    }
+
+    if (rawValue.trim()) {
+      try {
+        setSaving(true); setError(null);
+        const validation = await validateMeasurements({
+          unit,
+          measurements: { [currentStep.key]: rawValue },
+        });
+        const warning = firstUnacceptedWarning(validation.warnings);
+        if (warning) {
+          setMeasurementWarning(warning);
+          setPendingWarningAction('advance');
+          return;
+        }
+      } catch (e) {
+        showError(e instanceof Error ? e.message : 'Unable to validate this measurement.');
+        return;
+      } finally {
+        setSaving(false);
+      }
+    }
+
+    goStep('fwd', () => setStepIndex(i => i + 1));
+  };
+
+  const handleSave = async () => {
+    if (!user || !template || !choice || !normalizedGender) return;
     const primaryKeys = template.fields.filter(f => f.isPrimary).map(f => f.key);
     for (const key of primaryKeys) {
       const p = Number.parseFloat(measurements[key] ?? '');
@@ -702,12 +769,14 @@ export function AddPreferencePage() {
     }
     try {
       setSaving(true); setError(null);
-      if (selectedSubject?.type === 'family') {
-        await saveFamilyMemberMeasurementProfile({ ownerUid: user.uid, familyMemberId: selectedSubject.id, ...measurementPayload });
-      } else {
-        await saveCustomerMeasurementProfile({ uid: user.uid, ...measurementPayload });
+      const validation = await validateMeasurements({ unit, measurements });
+      const warning = firstUnacceptedWarning(validation.warnings);
+      if (warning) {
+        setMeasurementWarning(warning);
+        setPendingWarningAction('save');
+        return;
       }
-      navigate(returnPath);
+      await persistMeasurements(measurements);
     } catch (e) {
       showError(e instanceof Error ? e.message : 'Unable to save measurements.');
     } finally {
@@ -1070,9 +1139,8 @@ export function AddPreferencePage() {
                     {saving ? <><div className="ap-spinner"/>Saving…</> : <><Ico.CheckCircle />Save preference</>}
                   </button>
                 ) : (
-                  <button className="ap-btn-next"
-                    onClick={() => goStep('fwd', () => { setError(null); setStepIndex(i => i + 1); })}>
-                    Next step <Ico.Arrow />
+                  <button className="ap-btn-next" disabled={saving} onClick={handleNextStep}>
+                    {saving ? <><div className="ap-spinner"/>Checking…</> : <>Next step <Ico.Arrow /></>}
                   </button>
                 )}
               </div>
@@ -1082,6 +1150,52 @@ export function AddPreferencePage() {
 
         </main>
       </div>
+
+      <MeasurementValidationDialog
+        warning={measurementWarning}
+        onEditValue={() => {
+          setMeasurementWarning(null);
+          setPendingWarningAction(null);
+        }}
+        onKeepEnteredValue={() => {
+          const warning = measurementWarning;
+          const action = pendingWarningAction;
+          if (!warning || !action) return;
+          setAcceptedWarnings(current => ({
+            ...current,
+            [warning.field]: warning.enteredValue,
+          }));
+          setMeasurementWarning(null);
+          setPendingWarningAction(null);
+          if (action === 'advance') {
+            goStep('fwd', () => setStepIndex(i => i + 1));
+          } else {
+            void saveAfterValidation(measurements);
+          }
+        }}
+        onUseSuggestedValue={() => {
+          const warning = measurementWarning;
+          const action = pendingWarningAction;
+          if (!warning || !action) return;
+          const correctedMeasurements = {
+            ...measurements,
+            [warning.field]: String(warning.suggestedValue),
+          };
+          setMeasurements(correctedMeasurements);
+          setAcceptedWarnings(current => {
+            const next = { ...current };
+            delete next[warning.field];
+            return next;
+          });
+          setMeasurementWarning(null);
+          setPendingWarningAction(null);
+          if (action === 'advance') {
+            goStep('fwd', () => setStepIndex(i => i + 1));
+          } else {
+            void saveAfterValidation(correctedMeasurements);
+          }
+        }}
+      />
     </div>
   );
 }
