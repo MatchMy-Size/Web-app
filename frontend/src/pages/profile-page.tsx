@@ -5,9 +5,6 @@ import { useAuth } from '@/context/auth-context';
 import { useProfileSubject } from '@/context/profile-subject-context';
 import { createFamilyMember } from '@/lib/family-members';
 import { signOutUser } from '@/lib/auth-api';
-import { BRAND_LOGOS } from '@/lib/brand-logos';
-import { useCatalogSummary } from '@/lib/catalog-summary';
-import { extractMeasurementProfiles } from '@/lib/recommendation-view';
 import { useRecommendationData } from '@/lib/use-recommendation-data';
 
 /* ─────────────────────────────────────────────
@@ -512,9 +509,321 @@ const CSS = `
     100% { opacity: 0.7; transform: scale(1.04) translate(10px, -8px); }
   }
   @keyframes wp-spin { to { transform: rotate(360deg); } }
+
+  /* Simplified profile hub */
+  .wp-simple-page {
+    width: min(760px, 100%);
+    margin: 0 auto;
+    padding: 24px 24px calc(110px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .wp-simple-hero {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px;
+    background: var(--white);
+    border: 1px solid var(--cloud);
+    border-radius: 18px;
+  }
+
+  .wp-simple-avatar {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    font-family: var(--fd);
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .wp-simple-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .wp-simple-id {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .wp-simple-name {
+    font-family: var(--fd);
+    font-size: 31px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .wp-simple-contact {
+    margin-top: 7px;
+    color: var(--ash);
+    font-size: 13px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .wp-simple-edit {
+    min-height: 40px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--ink);
+    color: var(--white);
+    font-family: var(--fs);
+    font-size: 13px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .wp-simple-edit svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .wp-simple-section {
+    background: var(--white);
+    border: 1px solid var(--cloud);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .wp-simple-section-title {
+    padding: 14px 16px 8px;
+    color: var(--ash);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+
+  .wp-simple-row {
+    width: 100%;
+    min-height: 58px;
+    padding: 12px 16px;
+    border: 0;
+    border-top: 1px solid var(--cloud);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+    font-family: var(--fs);
+    cursor: pointer;
+  }
+
+  .wp-simple-row:first-of-type {
+    border-top: 0;
+  }
+
+  .wp-simple-row:hover {
+    background: var(--paper);
+  }
+
+  .wp-simple-row-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: var(--paper);
+    border: 1px solid var(--cloud);
+    color: var(--ash);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .wp-simple-row-icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .wp-simple-row-icon.accent {
+    background: var(--sage-light);
+    border-color: var(--sage-dark);
+    color: var(--sage-deep);
+  }
+
+  .wp-simple-row-icon.danger {
+    background: rgba(176,64,64,0.07);
+    border-color: rgba(176,64,64,0.15);
+    color: var(--red);
+  }
+
+  .wp-simple-row-copy {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .wp-simple-row-label {
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .wp-simple-row-sub {
+    margin-top: 2px;
+    color: var(--ash);
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .wp-simple-row.danger .wp-simple-row-label {
+    color: var(--red);
+  }
+
+  .wp-simple-chevron {
+    color: var(--mist);
+    flex-shrink: 0;
+  }
+
+  .wp-simple-chevron svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .wp-simple-badge {
+    flex-shrink: 0;
+    min-width: 24px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: var(--sage-light);
+    color: var(--sage-deep);
+    font-size: 11px;
+    font-weight: 800;
+    text-align: center;
+  }
+
+  .wp-family-mini-form {
+    padding: 12px 16px 16px;
+    border-top: 1px solid var(--cloud);
+    display: grid;
+    gap: 10px;
+  }
+
+  .wp-family-mini-form input {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1.5px solid var(--cloud);
+    border-radius: 12px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--fs);
+    font-size: 14px;
+    outline: none;
+  }
+
+  .wp-family-mini-form input:focus {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 3px rgba(13,13,13,0.06);
+  }
+
+  .wp-family-mini-actions {
+    display: flex;
+    gap: 9px;
+  }
+
+  .wp-family-mini-primary,
+  .wp-family-mini-secondary {
+    min-height: 42px;
+    border-radius: 12px;
+    font-family: var(--fs);
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .wp-family-mini-primary {
+    flex: 1;
+    border: 0;
+    background: var(--ink);
+    color: var(--white);
+  }
+
+  .wp-family-mini-primary:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .wp-family-mini-secondary {
+    padding: 0 14px;
+    border: 1.5px solid var(--cloud);
+    background: var(--white);
+    color: var(--ash);
+  }
+
+  .wp-family-mini-error {
+    color: var(--red);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  @media (max-width: 640px) {
+    .wp-simple-page {
+      padding: 16px 18px calc(110px + env(safe-area-inset-bottom, 0px));
+      gap: 12px;
+    }
+
+    .wp-simple-hero {
+      align-items: flex-start;
+      padding: 15px;
+      border-radius: 16px;
+    }
+
+    .wp-simple-avatar {
+      width: 54px;
+      height: 54px;
+      font-size: 20px;
+    }
+
+    .wp-simple-name {
+      font-size: 27px;
+      white-space: normal;
+    }
+
+    .wp-simple-edit {
+      width: 40px;
+      padding: 0;
+      font-size: 0;
+    }
+
+    .wp-simple-edit svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .wp-simple-row {
+      min-height: 56px;
+      padding: 11px 14px;
+    }
+  }
 `;
 
-if (!document.getElementById('wp-styles')) {
+const profilePageStyles = document.getElementById('wp-styles');
+if (profilePageStyles) {
+  profilePageStyles.textContent = CSS;
+} else {
   const s = document.createElement('style');
   s.id = 'wp-styles';
   s.textContent = CSS;
@@ -565,10 +874,8 @@ function clothingEmoji(key: string | null) {
 export function ProfilePage() {
   const navigate   = useNavigate();
   const { user }   = useAuth();
-  const { brandCount, brandNames } = useCatalogSummary();
   const { familyMembers, selectedSubject, selectFamilyMember, selectSelf } = useProfileSubject();
   const { profile, measurementProfiles } = useRecommendationData(user?.uid, { subject: 'self' });
-  const [activeTab,  setActiveTab]  = useState<'overview' | 'measurements' | 'brands'>('overview');
   const [signingOut, setSigningOut] = useState(false);
   const [showFamilyForm, setShowFamilyForm] = useState(false);
   const [familyName, setFamilyName] = useState('');
@@ -585,40 +892,8 @@ export function ProfilePage() {
     [profile]
   );
 
-  const role     = String(profile?.role ?? 'customer');
-  const email    = String(profile?.email ?? '');
+  const email    = String(profile?.email ?? user?.email ?? '');
   const phone    = String(profile?.phoneNumber ?? '');
-  const prefLabel = String(profile?.preferredClothingLabel ?? profile?.preferredClothing ?? '');
-
-  const totalMeasurements = measurementProfiles.reduce(
-    (a, p) => a + Object.keys(p.measurements ?? {}).length, 0
-  );
-
-  const activeProfile = measurementProfiles.find(
-    p => p.profileKey === profile?.activeMeasurementProfileKey
-  );
-  const visibleBrands = brandNames.length
-    ? brandNames.slice(0, 8)
-    : BRAND_LOGOS.slice(0, 8).map((brand) => brand.name);
-  const additionalBrandCount = Math.max(brandCount - visibleBrands.length, 0);
-  const familySummaries = useMemo(
-    () =>
-      familyMembers.map((member) => {
-        const profiles = extractMeasurementProfiles(member);
-        const measurementCount = profiles.reduce(
-          (count, entry) => count + Object.keys(entry.measurements ?? {}).length,
-          0
-        );
-
-        return {
-          member,
-          profileCount: profiles.length,
-          measurementCount,
-          isSelected: selectedSubject?.type === 'family' && selectedSubject.id === member.id,
-        };
-      }),
-    [familyMembers, selectedSubject]
-  );
 
   const openFamilyMeasurements = (memberId: string, route: '/app/measurements' | '/app/add-preference') => {
     selectFamilyMember(memberId);
@@ -662,400 +937,196 @@ export function ProfilePage() {
 
   return (
     <div className="wp-root">
-
-      {/* ══ COVER BANNER ══ */}
-      <div className="wp-cover">
-        <div className="wp-cover-mesh" />
-        <div className="wp-cover-grid" />
-        <div className="wp-cover-circle-1" />
-        <div className="wp-cover-circle-2" />
-        <button className="wp-cover-edit-btn" onClick={() => navigate('/app/profile/edit')}>
-          <Ico.Camera /> Edit cover
-        </button>
-      </div>
-
-      {/* ══ IDENTITY ROW ══ */}
-      <div className="wp-identity-row">
-        {/* Avatar (absolutely overlaps cover) */}
-        <div className="wp-avatar-wrap">
-          <div className="wp-avatar-ring" />
-          <div className="wp-avatar">
+      <main className="wp-simple-page">
+        <section className="wp-simple-hero">
+          <div className="wp-simple-avatar">
             {profile?.photoURL
               ? <img src={profile.photoURL} alt={fullName} />
               : <span className="wp-avatar-initials">{initials}</span>
             }
           </div>
-          <div className="wp-online-dot" />
-        </div>
-
-        <div className="wp-identity-meta">
-          <div className="wp-identity-left">
-            <div className="wp-role-pill">
-              <div className="wp-role-dot" />
-              <span className="wp-role-text">{role}</span>
-            </div>
-            <div className="wp-fullname">{fullName}</div>
-            <div className="wp-contact">
-              {email && (
-                <span className="wp-contact-item"><Ico.Mail /> {email}</span>
-              )}
-              {phone && (
-                <span className="wp-contact-item"><Ico.Phone /> {phone}</span>
-              )}
-              {!email && !phone && (
-                <span style={{ color: 'var(--mist)', fontSize: 13 }}>No contact info</span>
-              )}
+          <div className="wp-simple-id">
+            <div className="wp-simple-name">{fullName}</div>
+            <div className="wp-simple-contact">
+              {email || phone || 'No contact info'}
             </div>
           </div>
+          <button className="wp-simple-edit" type="button" onClick={() => navigate('/app/profile/edit')}>
+            <Ico.Edit /> Edit
+          </button>
+        </section>
 
-          <div className="wp-identity-actions">
-            <button className="wp-btn-outline" onClick={() => navigate('/app/profile/details')}>
-              <Ico.User /> View details
-            </button>
-            <button className="wp-btn-edit" onClick={() => navigate('/app/profile/edit')}>
-              <Ico.Edit /> Edit profile
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ══ TAB BAR ══ */}
-      <div className="wp-tab-bar">
-        <div className="wp-tab-bar-inner">
-          {(['overview', 'measurements', 'brands'] as const).map(tab => (
-            <button
-              key={tab}
-              className={`wp-tab${activeTab === tab ? ' active' : ''}`}
-              onClick={() => setActiveTab(tab)}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ══ PAGE BODY ══ */}
-      <div className="wp-page-body">
-
-        {/* ── LEFT SIDEBAR ── */}
-        <aside className="wp-sidebar">
-
-          {/* About card */}
-          <div className="wp-info-card">
-            <div className="wp-info-card-header">
-              <div className="wp-info-card-icon"><Ico.User /></div>
-              <span className="wp-info-card-title">About</span>
+        <section className="wp-simple-section">
+          <div className="wp-simple-section-title">Account</div>
+          <button className="wp-simple-row" type="button" onClick={() => navigate('/app/profile/details')}>
+            <div className="wp-simple-row-icon"><Ico.User /></div>
+            <div className="wp-simple-row-copy">
+              <div className="wp-simple-row-label">Personal details</div>
+              <div className="wp-simple-row-sub">Name, email, phone, and profile photo</div>
             </div>
-            <div className="wp-info-row">
-              <div className="wp-info-row-icon"><Ico.User /></div>
-              <div className="wp-info-row-body">
-                <div className="wp-info-row-label">Full name</div>
-                <div className={`wp-info-row-value${!fullName || fullName === 'User' ? ' empty' : ''}`}>
-                  {fullName !== 'User' ? fullName : '—'}
-                </div>
+            <div className="wp-simple-chevron"><Ico.Chevron /></div>
+          </button>
+          <button className="wp-simple-row" type="button" onClick={() => navigate('/app/change-password')}>
+            <div className="wp-simple-row-icon"><Ico.Shield /></div>
+            <div className="wp-simple-row-copy">
+              <div className="wp-simple-row-label">Change password</div>
+              <div className="wp-simple-row-sub">Update your account password</div>
+            </div>
+            <div className="wp-simple-chevron"><Ico.Chevron /></div>
+          </button>
+          <button className="wp-simple-row" type="button" onClick={() => navigate('/app/settings')}>
+            <div className="wp-simple-row-icon"><Ico.Settings /></div>
+            <div className="wp-simple-row-copy">
+              <div className="wp-simple-row-label">Notifications</div>
+              <div className="wp-simple-row-sub">Manage alerts and account preferences</div>
+            </div>
+            <div className="wp-simple-chevron"><Ico.Chevron /></div>
+          </button>
+        </section>
+
+        <section className="wp-simple-section">
+          <div className="wp-simple-section-title">Measurements</div>
+          <button
+            className="wp-simple-row"
+            type="button"
+            onClick={() => {
+              selectSelf();
+              navigate('/app/measurements');
+            }}>
+            <div className="wp-simple-row-icon accent"><Ico.Ruler /></div>
+            <div className="wp-simple-row-copy">
+              <div className="wp-simple-row-label">My measurements</div>
+              <div className="wp-simple-row-sub">
+                {measurementProfiles.length
+                  ? `${measurementProfiles.length} clothing categories saved`
+                  : 'Add your first clothing category'}
               </div>
             </div>
-            <div className="wp-info-row">
-              <div className="wp-info-row-icon"><Ico.Mail /></div>
-              <div className="wp-info-row-body">
-                <div className="wp-info-row-label">Email</div>
-                <div className={`wp-info-row-value${!email ? ' empty' : ''}`}>{email || '—'}</div>
-              </div>
-            </div>
-            <div className="wp-info-row">
-              <div className="wp-info-row-icon"><Ico.Phone /></div>
-              <div className="wp-info-row-body">
-                <div className="wp-info-row-label">Phone</div>
-                <div className={`wp-info-row-value${!phone ? ' empty' : ''}`}>{phone || '—'}</div>
-              </div>
-            </div>
-            {prefLabel && (
-              <div className="wp-info-row">
-                <div className="wp-info-row-icon accent"><Ico.Bag /></div>
-                <div className="wp-info-row-body">
-                  <div className="wp-info-row-label">Default preference</div>
-                  <div className="wp-pref-tag">👕 {prefLabel}</div>
-                </div>
-              </div>
+            {measurementProfiles.length > 0 && (
+              <span className="wp-simple-badge">{measurementProfiles.length}</span>
             )}
-            <div className="wp-info-row">
-              <div className="wp-info-row-icon accent"><Ico.Shield /></div>
-              <div className="wp-info-row-body">
-                <div className="wp-info-row-label">Account role</div>
-                <div className="wp-info-row-value" style={{ textTransform: 'capitalize' }}>{role}</div>
-              </div>
+            <div className="wp-simple-chevron"><Ico.Chevron /></div>
+          </button>
+          <button
+            className="wp-simple-row"
+            type="button"
+            onClick={() => {
+              selectSelf();
+              navigate('/app/add-preference');
+            }}>
+            <div className="wp-simple-row-icon accent"><Ico.Plus /></div>
+            <div className="wp-simple-row-copy">
+              <div className="wp-simple-row-label">Add measurements</div>
+              <div className="wp-simple-row-sub">Add another clothing category</div>
             </div>
-          </div>
+            <div className="wp-simple-chevron"><Ico.Chevron /></div>
+          </button>
+        </section>
 
-          {/* Navigation links */}
-          <div className="wp-links-card">
-            <div className="wp-info-card-header" style={{ padding: '14px 20px 10px' }}>
-              <div className="wp-info-card-icon"><Ico.Settings /></div>
-              <span className="wp-info-card-title">Account</span>
-            </div>
-            {[
-              { icon: Ico.Ruler, label: 'Measurements', sub: `${measurementProfiles.length} profiles`, badge: measurementProfiles.length || undefined, to: '/app/measurements' },
-              { icon: Ico.Settings, label: 'App settings', sub: 'Password, preferences', to: '/app/settings' },
-              { icon: Ico.Help, label: 'Help & FAQ', sub: 'How to measure, tips', to: '' },
-              { icon: Ico.Shield, label: 'Privacy policy', sub: 'How we use your data', to: '' },
-            ].map(({ icon: Icon, label, sub, badge, to }) => (
+        <section className="wp-simple-section">
+          <div className="wp-simple-section-title">Family</div>
+          {familyMembers.map((member) => {
+            const isSelected = selectedSubject?.type === 'family' && selectedSubject.id === member.id;
+            return (
               <button
-                key={label}
-                className="wp-link-row"
-                onClick={() => {
-                  if (label === 'Measurements') {
-                    selectSelf();
-                  }
-                  if (to) navigate(to);
-                }}>
-                <div className="wp-link-icon"><Icon /></div>
-                <div style={{ flex: 1 }}>
-                  <div className="wp-link-label">{label}</div>
-                  <div className="wp-link-sub">{sub}</div>
-                </div>
-                {badge !== undefined && <span className="wp-link-badge">{badge}</span>}
-                <div className="wp-link-chevron"><Ico.Chevron /></div>
-              </button>
-            ))}
-          </div>
-
-          {/* Sign out */}
-          <div className="wp-signout-card">
-            <button className="wp-link-row" onClick={handleSignOut} style={{ background: 'none' }}>
-              <div className="wp-link-icon danger"><Ico.Logout /></div>
-              <div style={{ flex: 1 }}>
-                <div className="wp-link-label danger">
-                  {signingOut ? 'Signing out…' : 'Sign out'}
-                </div>
-                <div className="wp-link-sub">Returns you to the login screen</div>
-              </div>
-              {!signingOut && <div className="wp-link-chevron"><Ico.Chevron /></div>}
-            </button>
-          </div>
-
-          <div className="wp-version" style={{ marginTop: 4 }}>MatchMySize · v1.0.0</div>
-        </aside>
-
-        {/* ── MAIN CONTENT ── */}
-        <main className="wp-main">
-
-          {/* Stats row */}
-          <div className="wp-stats-grid">
-            <div className="wp-stat-card accent">
-              <div className="wp-stat-icon"><Ico.Bag /></div>
-              <div className="wp-stat-label">Brands unlocked</div>
-              <div className="wp-stat-num">500<span>+</span></div>
-            </div>
-            <div className="wp-stat-card">
-              <div className="wp-stat-icon"><Ico.Ruler /></div>
-              <div className="wp-stat-label">Saved profiles</div>
-              <div className="wp-stat-num">{measurementProfiles.length}</div>
-            </div>
-            <div className="wp-stat-card">
-              <div className="wp-stat-icon"><Ico.Star /></div>
-              <div className="wp-stat-label">Measurements</div>
-              <div className="wp-stat-num">{totalMeasurements}</div>
-            </div>
-          </div>
-
-          {/* Measurement profiles */}
-          <div className="wp-section-card">
-            <div className="wp-section-card-header">
-              <div className="wp-section-card-title-row">
-                <div className="wp-section-card-icon"><Ico.Ruler /></div>
-                <span className="wp-section-card-heading">Measurement profiles</span>
-              </div>
-              <button
-                className="wp-section-card-action"
-                onClick={() => {
-                  selectSelf();
-                  navigate('/app/add-preference');
-                }}>
-                <Ico.Plus /> Add
-              </button>
-            </div>
-
-            {measurementProfiles.length === 0 ? (
-              <div className="wp-meas-empty">
-                <div className="wp-meas-empty-icon">📏</div>
-                <div className="wp-meas-empty-title">No profiles yet</div>
-                <div className="wp-meas-empty-sub">
-                  Add your first clothing category to start getting personalised size recommendations.
-                </div>
-                <button
-                  onClick={() => {
-                    selectSelf();
-                    navigate('/app/add-preference');
-                  }}
-                  style={{ marginTop: 8, fontFamily: 'var(--fs)', fontSize: 13, fontWeight: 700, color: 'var(--white)', background: 'var(--ink)', border: 'none', borderRadius: 9, padding: '9px 20px', cursor: 'pointer' }}>
-                  Add a preference
-                </button>
-              </div>
-            ) : (
-              measurementProfiles.map(p => {
-                const isDefault = p.profileKey === profile?.activeMeasurementProfileKey;
-                const count = Object.keys(p.measurements ?? {}).length;
-                const filledSegs = Math.min(Math.round((count / 8) * 4), 4);
-                return (
-                  <div key={p.profileKey} className="wp-meas-row">
-                    <div className="wp-meas-emoji">{clothingEmoji(p.preferredClothing)}</div>
-                    <div className="wp-meas-row-body">
-                      <div className="wp-meas-row-name">{p.preferredClothingLabel}</div>
-                      <div className="wp-meas-row-sub">{count} measurements</div>
-                    </div>
-                    <div className="wp-meas-bars">
-                      {[0,1,2,3].map(i => (
-                        <div key={i} className={`wp-meas-bar-seg${i < filledSegs ? ' filled' : ''}`} />
-                      ))}
-                    </div>
-                    {isDefault && <div className="wp-default-tag">Default</div>}
-                    <button
-                      className="wp-meas-row-edit"
-                      onClick={() => {
-                        selectSelf();
-                        navigate(`/app/add-preference?profileKey=${p.profileKey}`);
-                      }}>
-                      <Ico.Edit /> Edit
-                    </button>
+                key={member.id}
+                className="wp-simple-row"
+                type="button"
+                onClick={() => openFamilyMeasurements(member.id, '/app/measurements')}>
+                <div className="wp-simple-row-icon"><Ico.User /></div>
+                <div className="wp-simple-row-copy">
+                  <div className="wp-simple-row-label">{member.firstName}</div>
+                  <div className="wp-simple-row-sub">
+                    {member.relation}{isSelected ? ' · selected' : ''}
                   </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* Family profiles */}
-          <div className="wp-section-card">
-            <div className="wp-section-card-header">
-              <div className="wp-section-card-title-row">
-                <div className="wp-section-card-icon"><Ico.User /></div>
-                <span className="wp-section-card-heading">Family profiles</span>
+                </div>
+                {isSelected && <span className="wp-simple-badge">On</span>}
+                <div className="wp-simple-chevron"><Ico.Chevron /></div>
+              </button>
+            );
+          })}
+          <button
+            className="wp-simple-row"
+            type="button"
+            onClick={() => {
+              setFamilyError(null);
+              setShowFamilyForm((open) => !open);
+            }}>
+            <div className="wp-simple-row-icon accent"><Ico.Plus /></div>
+            <div className="wp-simple-row-copy">
+              <div className="wp-simple-row-label">Add family member</div>
+              <div className="wp-simple-row-sub">
+                {familyMembers.length
+                  ? `${familyMembers.length} family profile${familyMembers.length === 1 ? '' : 's'} saved`
+                  : 'Create a profile for someone else'}
               </div>
-              <div className="wp-family-header-actions">
-                {selectedSubject?.type === 'family' && (
-                  <button className="wp-btn-outline" onClick={selectSelf}>
-                    <Ico.User /> Use my profile
-                  </button>
-                )}
+            </div>
+            <div className="wp-simple-chevron"><Ico.Chevron /></div>
+          </button>
+
+          {showFamilyForm && (
+            <div className="wp-family-mini-form">
+              <input
+                value={familyName}
+                onChange={(event) => setFamilyName(event.target.value)}
+                placeholder="Name"
+              />
+              <input
+                value={familyRelation}
+                onChange={(event) => setFamilyRelation(event.target.value)}
+                placeholder="Relation"
+              />
+              {familyError && <div className="wp-family-mini-error">{familyError}</div>}
+              <div className="wp-family-mini-actions">
                 <button
-                  className="wp-section-card-action"
+                  className="wp-family-mini-primary"
+                  type="button"
+                  disabled={familySaving}
+                  onClick={handleAddFamilyMember}>
+                  {familySaving ? 'Saving...' : 'Save member'}
+                </button>
+                <button
+                  className="wp-family-mini-secondary"
+                  type="button"
                   onClick={() => {
+                    setShowFamilyForm(false);
                     setFamilyError(null);
-                    setShowFamilyForm((open) => !open);
+                    setFamilyName('');
+                    setFamilyRelation('');
                   }}>
-                  <Ico.Plus /> {showFamilyForm ? 'Close' : 'Add member'}
+                  Cancel
                 </button>
               </div>
             </div>
+          )}
+        </section>
 
-            {showFamilyForm && (
-              <div className="wp-family-form">
-                <div className="wp-family-form-grid">
-                  <input
-                    className="wp-family-form-input"
-                    value={familyName}
-                    onChange={(event) => setFamilyName(event.target.value)}
-                    placeholder="Family member name"
-                  />
-                  <input
-                    className="wp-family-form-input"
-                    value={familyRelation}
-                    onChange={(event) => setFamilyRelation(event.target.value)}
-                    placeholder="Relation"
-                  />
-                </div>
-
-                {familyError && (
-                  <div className="wp-family-form-error">
-                    {familyError}
-                  </div>
-                )}
-
-                <div className="wp-family-form-actions">
-                  <button
-                    className="wp-btn-edit"
-                    onClick={handleAddFamilyMember}
-                    disabled={familySaving}
-                    style={{ height: 42 }}>
-                    <Ico.Plus /> {familySaving ? 'Saving…' : 'Save member'}
-                  </button>
-                  <button
-                    className="wp-btn-outline"
-                    onClick={() => {
-                      setShowFamilyForm(false);
-                      setFamilyError(null);
-                      setFamilyName('');
-                      setFamilyRelation('');
-                    }}
-                    style={{ height: 42 }}>
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {familySummaries.length === 0 ? (
-              <div className="wp-meas-empty">
-                <div className="wp-meas-empty-icon"><Ico.User /></div>
-                <div className="wp-meas-empty-title">No family profiles yet</div>
-                <div className="wp-meas-empty-sub">
-                  Add a parent, child, or partner profile here. They reuse your account without OTP or a separate sign-in.
-                </div>
-              </div>
-            ) : (
-              familySummaries.map(({ member, profileCount, measurementCount, isSelected }) => (
-                <div key={member.id} className="wp-meas-row">
-                  <div className="wp-meas-emoji"><Ico.User /></div>
-                  <div className="wp-meas-row-body">
-                    <div className="wp-meas-row-name">{member.firstName}</div>
-                    <div className="wp-meas-row-sub">
-                      {member.relation} · {profileCount} categories · {measurementCount} measurements
-                    </div>
-                  </div>
-                  {isSelected && <div className="wp-default-tag">Selected</div>}
-                  {!isSelected && (
-                    <button
-                      className="wp-meas-row-edit"
-                      onClick={() => selectFamilyMember(member.id)}>
-                      <Ico.User /> Use
-                    </button>
-                  )}
-                  <button
-                    className="wp-meas-row-edit"
-                    onClick={() => {
-                      openFamilyMeasurements(
-                        member.id,
-                        profileCount === 0 ? '/app/add-preference' : '/app/measurements'
-                      );
-                    }}>
-                    <Ico.Ruler /> {profileCount === 0 ? 'Add measurements' : 'Measurements'}
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Brands section */}
-          <div className="wp-section-card wp-brands-section">
-            <div className="wp-section-card-header">
-              <div className="wp-section-card-title-row">
-                <div className="wp-section-card-icon"><Ico.Star /></div>
-                <span className="wp-section-card-heading">Supported brands</span>
-              </div>
-              <button className="wp-section-card-action" onClick={() => navigate('/app/home')}>
-                View all →
-              </button>
+        <section className="wp-simple-section">
+          <div className="wp-simple-section-title">App</div>
+          <button className="wp-simple-row" type="button" onClick={() => navigate('/app/settings')}>
+            <div className="wp-simple-row-icon"><Ico.Settings /></div>
+            <div className="wp-simple-row-copy">
+              <div className="wp-simple-row-label">Settings</div>
+              <div className="wp-simple-row-sub">App preferences and account controls</div>
             </div>
-            <div className="wp-brands-grid">
-              {visibleBrands.map(b => (
-                <div key={b} className="wp-brand-chip">{b}</div>
-              ))}
+            <div className="wp-simple-chevron"><Ico.Chevron /></div>
+          </button>
+          <button
+            className="wp-simple-row danger"
+            type="button"
+            disabled={signingOut}
+            onClick={handleSignOut}>
+            <div className="wp-simple-row-icon danger"><Ico.Logout /></div>
+            <div className="wp-simple-row-copy">
+              <div className="wp-simple-row-label">
+                {signingOut ? 'Signing out...' : 'Sign out'}
+              </div>
+              <div className="wp-simple-row-sub">Return to the login screen</div>
             </div>
-            <div className="wp-brands-more">
-              <a href="/app/home">{additionalBrandCount > 0 ? `+ ${additionalBrandCount} more brands` : `${brandCount} active brands`}</a> across all clothing categories
-            </div>
-          </div>
-
-        </main>
-      </div>
+            {!signingOut && <div className="wp-simple-chevron"><Ico.Chevron /></div>}
+          </button>
+        </section>
+      </main>
     </div>
   );
 }

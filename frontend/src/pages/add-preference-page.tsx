@@ -1668,13 +1668,11 @@ export function AddPreferencePage() {
 
               {/* Actions */}
               <div className="ap-actions" style={{ marginTop: 8 }}>
-                <button className="ap-btn-back"
-                  onClick={() => goStep('back', () => {
-                    if (stepIndex === 0) setPhase('choose');
-                    else setStepIndex(i => i - 1);
-                  })}>
-                  {stepIndex === 0 ? 'Change type' : 'Previous'}
-                </button>
+                {stepIndex > 0 && (
+                  <button className="ap-btn-back" onClick={() => goStep('back', () => setStepIndex(i => i - 1))}>
+                    Previous
+                  </button>
+                )}
 
                 {stepIndex === template.fields.length - 1 ? (
                   <button className="ap-btn-next success" disabled={saving} onClick={handleSave}>

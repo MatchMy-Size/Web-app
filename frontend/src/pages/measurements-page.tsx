@@ -1,4 +1,7 @@
 import { useNavigate } from 'react-router-dom';
+import type { IconType } from 'react-icons';
+import { GiShorts } from 'react-icons/gi';
+import { PiCoatHanger, PiDress, PiPants, PiShirtFolded, PiTShirt } from 'react-icons/pi';
 
 import { useAuth } from '@/context/auth-context';
 import { useProfileSubject } from '@/context/profile-subject-context';
@@ -816,15 +819,28 @@ const CSS = `
     border-radius: 12px;
     background: var(--paper);
     border: 1px solid var(--cloud);
+    color: var(--ink);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+  }
+
+  .mw-category-icon svg {
+    width: 22px;
+    height: 22px;
+    display: block;
+  }
+
+  .mw-category-card.is-missing .mw-category-icon {
+    background: rgba(255,255,255,0.62);
+    border-color: rgba(122,158,120,0.28);
+    color: var(--sage-deep);
   }
 
   .mw-category-card.is-default .mw-category-icon {
     background: var(--paper);
     border-color: var(--cloud);
+    color: var(--ink);
   }
 
   .mw-category-name {
@@ -1187,19 +1203,30 @@ const Ico = {
 /* ─────────────────────────────────────────────
    Helpers
 ───────────────────────────────────────────── */
-const CLOTHING_EMOJI: Record<string, string> = {
-  tops:'👕', shirts:'👔', tshirts:'👕', blouses:'👚',
-  bottoms:'👖', trousers:'👖', jeans:'👖', shorts:'🩳',
-  dresses:'👗', skirts:'🩱', suits:'🤵', jackets:'🧥',
-  coats:'🧥', shoes:'👟', sneakers:'👟', boots:'🥾', default:'📏',
-};
-function clothingEmoji(key: string | null) {
-  if (!key) return '📏';
+const CLOTHING_ICONS: Array<[string, IconType]> = [
+  ['tshirt', PiTShirt],
+  ['tee', PiTShirt],
+  ['shirt', PiShirtFolded],
+  ['blouse', PiShirtFolded],
+  ['trouser', PiPants],
+  ['pant', PiPants],
+  ['jean', PiPants],
+  ['short', GiShorts],
+  ['dress', PiDress],
+];
+
+function clothingIcon(key: string | null) {
+  if (!key) return PiCoatHanger;
   const k = key.toLowerCase();
-  for (const [token, emoji] of Object.entries(CLOTHING_EMOJI)) {
-    if (k.includes(token)) return emoji;
+  for (const [token, Icon] of CLOTHING_ICONS) {
+    if (k.includes(token)) return Icon;
   }
-  return '📏';
+  return PiCoatHanger;
+}
+
+function ClothingCategoryIcon({ categoryKey }: { categoryKey: string | null }) {
+  const Icon = clothingIcon(categoryKey);
+  return <Icon aria-hidden="true" focusable="false" />;
 }
 
 const fallbackMeasurementLabel = (key: string) =>
@@ -1375,7 +1402,7 @@ export function MeasurementsPage() {
                           : `/app/add-preference?choice=${option.key}`
                       )}>
                       <div className="mw-category-card-top">
-                        <div className="mw-category-icon">{clothingEmoji(option.key)}</div>
+                        <div className="mw-category-icon"><ClothingCategoryIcon categoryKey={option.key} /></div>
                         <span className="mw-category-status">{statusLabel}</span>
                       </div>
                       <div className="mw-category-name">{option.label}</div>

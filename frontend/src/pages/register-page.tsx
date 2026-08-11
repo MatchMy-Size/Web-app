@@ -8,6 +8,9 @@ import {
   type ReactNode,
 } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import type { IconType } from 'react-icons';
+import { GiShorts } from 'react-icons/gi';
+import { PiCoatHanger, PiDress, PiPants, PiShirtFolded, PiTShirt } from 'react-icons/pi';
 
 import manImage from '@/assets/images/man.png';
 import womenImage from '@/assets/images/women.png';
@@ -255,14 +258,14 @@ const CSS = `
     width: 42px; height: 42px; border-radius: 10px;
     background: var(--paper); border: 1px solid var(--cloud);
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; font-size: 18px;
+    flex-shrink: 0; font-size: 18px; color: var(--sage-deep);
     transition: all 0.2s;
   }
   .rp-choice-card.is-selected .rp-choice-icon {
     background: var(--ink); border-color: var(--ink);
     color: var(--white);
   }
-  .rp-choice-icon svg { width: 17px; height: 17px; }
+  .rp-choice-icon svg { width: 22px; height: 22px; }
 
   .rp-choice-text { flex: 1; }
   .rp-choice-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
@@ -888,6 +891,32 @@ const PHASE_META: Record<Phase, { label: string; desc: string; icon: () => JSX.E
   form:       { label: 'Your account', desc: 'Name, email & password', icon: Ico.Form  },
 };
 
+const CLOTHING_ICONS: Array<[string, IconType]> = [
+  ['tshirt', PiTShirt],
+  ['tee', PiTShirt],
+  ['shirt', PiShirtFolded],
+  ['blouse', PiShirtFolded],
+  ['trouser', PiPants],
+  ['pant', PiPants],
+  ['jean', PiPants],
+  ['short', GiShorts],
+  ['dress', PiDress],
+];
+
+function clothingIcon(key: string | null) {
+  if (!key) return PiCoatHanger;
+  const normalized = key.toLowerCase();
+  for (const [token, Icon] of CLOTHING_ICONS) {
+    if (normalized.includes(token)) return Icon;
+  }
+  return PiCoatHanger;
+}
+
+function ClothingCategoryIcon({ categoryKey }: { categoryKey: string | null }) {
+  const Icon = clothingIcon(categoryKey);
+  return <Icon aria-hidden="true" focusable="false" />;
+}
+
 const parsePositiveNumber = (v: unknown) => {
   const p = Number.parseFloat(String(v ?? ''));
   return Number.isFinite(p) && p > 0 ? p : null;
@@ -1219,7 +1248,7 @@ export function RegisterPage() {
                     selected={clothing === opt.key}
                     title={opt.label}
                     sub={opt.subtitle}
-                    icon={<Ico.Bag />}
+                    icon={<ClothingCategoryIcon categoryKey={opt.key} />}
                     onClick={() => setClothing(opt.key)}
                   />
                 ))}
