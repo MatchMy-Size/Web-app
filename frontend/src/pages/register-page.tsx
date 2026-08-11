@@ -1226,7 +1226,7 @@ export function RegisterPage() {
               </div>
               <div className="rp-actions">
                 <button className="rp-btn-back" onClick={() => go('gender', 'back')}>
-                  <Ico.Back /> Back
+                  Back
                 </button>
                 <button
                   className="rp-btn-next"
@@ -1301,7 +1301,7 @@ export function RegisterPage() {
 
               <div className="rp-actions">
                 <button className="rp-btn-back" onClick={handleGuidePrev}>
-                  <Ico.Back /> Back
+                  Back
                 </button>
                 <button className="rp-btn-next" onClick={handleGuideNext}>
                   {stepIndex === steps.length - 1 ? <>Continue <Ico.Arrow /></> : <>Next <Ico.Arrow /></>}
@@ -1409,7 +1409,7 @@ export function RegisterPage() {
 
                   <div className="rp-actions" style={{ marginTop: 8 }}>
                     <button type="button" className="rp-btn-back" onClick={() => go('guide', 'back')}>
-                      <Ico.Back /> Back
+                      Back
                     </button>
                     <button type="submit" className="rp-btn-next" disabled={loading}>
                       {loading

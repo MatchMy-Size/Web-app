@@ -445,7 +445,7 @@ export function ProfileEditPage() {
       {/* ── Topbar ── */}
       <div className="pe-topbar">
         <button className="pe-back-btn" onClick={() => navigate('/app/profile/details')}>
-          <Ico.Back /> Profile details
+          Profile details
         </button>
         <div className="pe-topbar-divider" />
         <span className="pe-topbar-title">Edit profile</span>

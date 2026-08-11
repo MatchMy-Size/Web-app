@@ -282,7 +282,7 @@ export function SettingsPage() {
       {/* ── Topbar ── */}
       <div className="sp-topbar">
         <button className="sp-back-btn" onClick={() => navigate('/app/profile')}>
-          <Ico.Back /> Profile
+          Profile
         </button>
         <div className="sp-topbar-divider" />
         <span className="sp-topbar-title">Settings</span>

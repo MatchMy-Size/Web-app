@@ -338,7 +338,7 @@ export function ProfileDetailsPage() {
       {/* ── Topbar ── */}
       <div className="pd-topbar">
         <button className="pd-back-btn" onClick={() => navigate('/app/profile')}>
-          <Ico.Back /> Profile
+          Profile
         </button>
         <div className="pd-topbar-divider" />
         <span className="pd-topbar-title">Profile details</span>

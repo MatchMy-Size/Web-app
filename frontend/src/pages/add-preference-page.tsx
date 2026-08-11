@@ -14,6 +14,7 @@ import {
   normalizeGender,
   type ClothingChoice,
   type CustomerGender,
+  type MeasurementField,
 } from '@/lib/measurement';
 import { saveCustomerMeasurementProfile } from '@/lib/customer-profile';
 import { saveFamilyMemberMeasurementProfile } from '@/lib/family-members';
@@ -499,6 +500,207 @@ const CSS = `
   .ap-edit-banner-label { font-size: 11px; font-weight: 700; color: var(--sage-deep); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 2px; }
   .ap-edit-banner-value { font-size: 14px; font-weight: 700; color: var(--ink); }
 
+  /* Simple edit mode */
+  .ap-edit-simple {
+    width: min(780px, 100%);
+    margin: 0 auto;
+    padding: 38px 48px 112px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .ap-edit-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+  }
+  .ap-edit-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    color: var(--sage-deep);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+  }
+  .ap-edit-eyebrow::before {
+    content: '';
+    width: 28px;
+    height: 1.5px;
+    background: var(--sage-deep);
+  }
+  .ap-edit-title {
+    font-family: var(--fd);
+    font-size: clamp(31px, 5vw, 46px);
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.8px;
+    line-height: 1.05;
+  }
+  .ap-edit-title em {
+    color: var(--sage-deep);
+    font-style: italic;
+  }
+  .ap-edit-sub {
+    max-width: 520px;
+    margin-top: 8px;
+    color: var(--ash);
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .ap-edit-unit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 58px;
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--white);
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .ap-edit-card {
+    background: var(--white);
+    border: 1px solid var(--cloud);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+  .ap-edit-section {
+    border-bottom: 1px solid var(--cloud);
+  }
+  .ap-edit-section:last-child {
+    border-bottom: none;
+  }
+  .ap-edit-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px 10px;
+  }
+  .ap-edit-section-title {
+    color: var(--ash);
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.65px;
+    text-transform: uppercase;
+  }
+  .ap-edit-section-note {
+    color: var(--ash);
+    font-size: 11px;
+  }
+  .ap-edit-field {
+    display: grid;
+    grid-template-columns: minmax(120px, 1fr) minmax(140px, 190px);
+    align-items: center;
+    gap: 14px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--cloud);
+  }
+  .ap-edit-field-copy {
+    min-width: 0;
+  }
+  .ap-edit-field-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .ap-edit-required-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ink);
+  }
+  .ap-edit-field-tip {
+    margin-top: 3px;
+    color: var(--ash);
+    font-size: 11.5px;
+    line-height: 1.4;
+  }
+  .ap-edit-input-wrap {
+    display: flex;
+    align-items: center;
+    height: 44px;
+    overflow: hidden;
+    border: 1.5px solid var(--cloud);
+    border-radius: 12px;
+    background: var(--paper);
+    transition: border-color 0.18s, box-shadow 0.18s;
+  }
+  .ap-edit-input-wrap:focus-within {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 3px rgba(13,13,13,0.06);
+  }
+  .ap-edit-input {
+    min-width: 0;
+    flex: 1;
+    height: 100%;
+    padding: 0 13px;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--fd);
+    font-size: 24px;
+    font-weight: 700;
+  }
+  .ap-edit-input::placeholder {
+    color: var(--mist);
+    font-family: var(--fs);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .ap-edit-input-unit {
+    height: 100%;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-left: 1px solid var(--cloud);
+    color: var(--ash);
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .ap-edit-actions {
+    display: flex;
+    gap: 10px;
+  }
+  .ap-edit-secondary,
+  .ap-edit-save {
+    min-height: 48px;
+    border-radius: 12px;
+    font-family: var(--fs);
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .ap-edit-secondary {
+    flex: 0 0 auto;
+    padding: 0 18px;
+    border: 1.5px solid var(--cloud);
+    background: var(--white);
+    color: var(--ash);
+  }
+  .ap-edit-save {
+    flex: 1;
+    border: 0;
+    background: var(--ink);
+    color: var(--white);
+    box-shadow: 0 4px 16px rgba(13,13,13,0.16);
+  }
+  .ap-edit-save:disabled {
+    cursor: not-allowed;
+    opacity: 0.48;
+  }
+
   /* No gender */
   .ap-no-gender {
     display: flex; flex-direction: column; align-items: center; gap: 14px;
@@ -511,6 +713,160 @@ const CSS = `
   .ap-no-gender-sub { font-size: 14px; color: var(--ash); max-width: 320px; line-height: 1.65; }
 
   @media (max-width: 760px) {
+    .ap-topbar {
+      height: auto;
+      min-height: 62px;
+      padding: 10px 14px;
+      gap: 8px;
+    }
+    .ap-topbar-divider {
+      display: none;
+    }
+    .ap-topbar-back {
+      padding: 8px 0;
+    }
+    .ap-topbar-title {
+      margin-left: auto;
+      font-size: 18px;
+    }
+    .ap-topbar-right {
+      display: none;
+    }
+    .ap-progress-bar {
+      top: 62px;
+    }
+    .ap-layout {
+      grid-template-columns: 1fr;
+      padding: 18px 16px calc(112px + env(safe-area-inset-bottom, 0px));
+      gap: 22px;
+    }
+    .ap-sidebar {
+      display: none;
+    }
+    .ap-main {
+      gap: 18px;
+    }
+    .ap-page-header {
+      margin-bottom: 18px !important;
+    }
+    .ap-page-title {
+      font-size: 31px;
+    }
+    .ap-page-sub {
+      font-size: 13px;
+    }
+    .ap-choice-grid {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .ap-choice-card {
+      padding: 16px;
+      border-radius: 14px;
+    }
+    .ap-guide-layout {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    .ap-guide-cover {
+      display: none;
+    }
+    .ap-guide-body {
+      padding: 16px;
+    }
+    .ap-field-tabs {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      margin-bottom: 14px;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .ap-field-tabs::-webkit-scrollbar {
+      display: none;
+    }
+    .ap-field-tab {
+      flex: 0 0 auto;
+    }
+    .ap-text-input {
+      height: 58px;
+      font-size: 28px;
+    }
+    .ap-input-unit {
+      height: 58px;
+    }
+    .ap-actions {
+      position: sticky;
+      bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+      z-index: 20;
+      padding-top: 8px;
+      background: var(--paper);
+    }
+    .ap-btn-back,
+    .ap-btn-next {
+      min-height: 46px;
+      height: auto;
+    }
+
+    .ap-edit-simple {
+      width: 100%;
+      padding: 18px 14px calc(112px + env(safe-area-inset-bottom, 0px));
+      gap: 14px;
+    }
+    .ap-edit-hero {
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .ap-edit-title {
+      font-size: 31px;
+    }
+    .ap-edit-sub {
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+    .ap-edit-unit {
+      min-width: 50px;
+      height: 34px;
+      padding: 0 12px;
+    }
+    .ap-edit-card {
+      border-radius: 14px;
+    }
+    .ap-edit-section-head {
+      padding: 12px 13px 9px;
+    }
+    .ap-edit-section-note {
+      display: none;
+    }
+    .ap-edit-field {
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 11px 13px 12px;
+    }
+    .ap-edit-field-label {
+      font-size: 12.5px;
+    }
+    .ap-edit-field-tip {
+      display: none;
+    }
+    .ap-edit-input-wrap {
+      height: 42px;
+    }
+    .ap-edit-input {
+      font-size: 23px;
+    }
+    .ap-edit-actions {
+      position: sticky;
+      bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+      z-index: 20;
+      padding-top: 8px;
+      background: var(--paper);
+    }
+    .ap-edit-secondary {
+      display: none;
+    }
+    .ap-edit-save {
+      min-height: 48px;
+    }
+
     .ap-gender-grid {
       grid-template-columns: 1fr;
       gap: 12px;
@@ -570,7 +926,10 @@ const CSS = `
   @keyframes ap-growBar { from{width:0} to{width:var(--w)} }
 `;
 
-if (!document.getElementById('ap-styles')) {
+const addPreferenceStyles = document.getElementById('ap-styles');
+if (addPreferenceStyles) {
+  addPreferenceStyles.textContent = CSS;
+} else {
   const s = document.createElement('style');
   s.id = 'ap-styles';
   s.textContent = CSS;
@@ -610,6 +969,62 @@ function PhaseWrap({ phaseKey, dir, children }: { phaseKey: string; dir: 'fwd' |
   return <div ref={ref}>{children}</div>;
 }
 
+function sanitizeMeasurementValues(values: Record<string, string>) {
+  return Object.fromEntries(
+    Object.entries(values)
+      .map(([key, value]) => [key, value.trim()] as const)
+      .filter(([, value]) => value.length > 0)
+  );
+}
+
+function EditMeasurementSection({
+  title,
+  note,
+  fields,
+  measurements,
+  unit,
+  onChange,
+}: {
+  title: string;
+  note: string;
+  fields: MeasurementField[];
+  measurements: Record<string, string>;
+  unit: 'cm' | 'in';
+  onChange: (key: string, value: string) => void;
+}) {
+  if (!fields.length) return null;
+
+  return (
+    <section className="ap-edit-section">
+      <div className="ap-edit-section-head">
+        <div className="ap-edit-section-title">{title}</div>
+        <div className="ap-edit-section-note">{note}</div>
+      </div>
+      {fields.map(field => (
+        <label className="ap-edit-field" key={field.key}>
+          <div className="ap-edit-field-copy">
+            <div className="ap-edit-field-label">
+              {field.isPrimary && <span className="ap-edit-required-dot" aria-hidden="true" />}
+              {field.label}
+            </div>
+            <div className="ap-edit-field-tip">{field.tip}</div>
+          </div>
+          <div className="ap-edit-input-wrap">
+            <input
+              className="ap-edit-input"
+              inputMode="decimal"
+              placeholder={field.isPrimary ? 'Required' : 'Optional'}
+              value={measurements[field.key] ?? ''}
+              onChange={event => onChange(field.key, event.target.value)}
+            />
+            <span className="ap-edit-input-unit">{unit}</span>
+          </div>
+        </label>
+      ))}
+    </section>
+  );
+}
+
 /* ─────────────────────────────────────────────
    Main component
 ───────────────────────────────────────────── */
@@ -619,9 +1034,10 @@ export function AddPreferencePage() {
   const { brandCount } = useCatalogSummary();
   const { selectedSubject } = useProfileSubject();
   const [searchParams] = useSearchParams();
-  const { profile } = useRecommendationData(user?.uid);
+  const { profile, loading: profileLoading } = useRecommendationData(user?.uid);
 
   const initialProfileKey = searchParams.get('profileKey');
+  const isEditRequest = !!initialProfileKey;
   const initialChoice     = normalizeClothingChoice(searchParams.get('choice'));
 
   const [choice,       setChoice]       = useState<ClothingChoice | null>(initialChoice);
@@ -664,8 +1080,8 @@ export function AddPreferencePage() {
 
   const subjectLabel  = selectedSubject?.type === 'family'
     ? `${selectedSubject.label} · ${selectedSubject.subtitle}` : 'your profile';
-  const returnPath    = selectedSubject?.type === 'family' ? '/app/measurements' : '/app/home';
-  const returnLabel   = selectedSubject?.type === 'family' ? 'Measurements' : 'Home';
+  const returnPath    = selectedSubject?.type === 'family' || isEditRequest ? '/app/measurements' : '/app/home';
+  const returnLabel   = selectedSubject?.type === 'family' || isEditRequest ? 'Measurements' : 'Home';
   const requiresGenderStep = !storedGender;
   const isEditing = !!editingProfile;
 
@@ -694,12 +1110,13 @@ export function AddPreferencePage() {
 
   const persistMeasurements = async (measurementValues: Record<string, string>) => {
     if (!user || !template || !choice || !normalizedGender) return;
+    const cleanedMeasurements = sanitizeMeasurementValues(measurementValues);
     const preferredClothingLabel =
       options.find(o => o.key === choice)?.label ?? template.label;
     const measurementPayload = {
       gender: normalizedGender, preferredClothing: choice, preferredClothingLabel,
       measurementProfileKey: editingProfile?.profileKey ?? template.profileKey,
-      unit, measurements: measurementValues,
+      unit, measurements: cleanedMeasurements,
       primaryMeasurementKeys: template.fields.filter(f => f.isPrimary).map(f => f.key),
       measurementDisplayNames: Object.fromEntries(template.fields.map(f => [f.key, f.label])),
       setAsActive: true,
@@ -762,21 +1179,22 @@ export function AddPreferencePage() {
 
   const handleSave = async () => {
     if (!user || !template || !choice || !normalizedGender) return;
+    const cleanedMeasurements = sanitizeMeasurementValues(measurements);
     const primaryKeys = template.fields.filter(f => f.isPrimary).map(f => f.key);
     for (const key of primaryKeys) {
-      const p = Number.parseFloat(measurements[key] ?? '');
+      const p = Number.parseFloat(cleanedMeasurements[key] ?? '');
       if (!Number.isFinite(p) || p <= 0) { showError(`${DEFAULT_MEASUREMENT_LABELS[key]} is required.`); return; }
     }
     try {
       setSaving(true); setError(null);
-      const validation = await validateMeasurements({ unit, measurements });
+      const validation = await validateMeasurements({ unit, measurements: cleanedMeasurements });
       const warning = firstUnacceptedWarning(validation.warnings);
       if (warning) {
         setMeasurementWarning(warning);
         setPendingWarningAction('save');
         return;
       }
-      await persistMeasurements(measurements);
+      await persistMeasurements(cleanedMeasurements);
     } catch (e) {
       showError(e instanceof Error ? e.message : 'Unable to save measurements.');
     } finally {
@@ -813,14 +1231,15 @@ export function AddPreferencePage() {
       {/* ── Topbar ── */}
       <div className="ap-topbar">
         <button className="ap-topbar-back" onClick={() => navigate(returnPath)}>
-          <Ico.Back /> {returnLabel}
+          {returnLabel}
         </button>
         <div className="ap-topbar-divider" />
         <span className="ap-topbar-title">
-          {isEditing ? 'Edit measurements' : 'Add preference'}
+          {isEditRequest ? 'Edit measurements' : 'Add preference'}
         </span>
 
         {/* Step indicators */}
+        {!isEditRequest && (
         <div className="ap-topbar-right">
           <div className="ap-step-track">
             {requiresGenderStep && (
@@ -847,17 +1266,90 @@ export function AddPreferencePage() {
             </div>
           </div>
         </div>
+        )}
       </div>
 
       {/* Progress bar */}
-      {phase === 'guide' && totalFields > 0 && (
+      {!isEditRequest && phase === 'guide' && totalFields > 0 && (
         <div className="ap-progress-bar">
           <div className="ap-progress-fill" style={{ width: `${progressPct}%` }} />
         </div>
       )}
 
-      {/* ── Two-column layout ── */}
-      <div className="ap-layout">
+      {isEditRequest ? (
+        <div className="ap-edit-simple">
+          {isEditing && template ? (
+            <>
+              <div className="ap-edit-hero">
+                <div>
+                  <div className="ap-edit-eyebrow">Quick edit</div>
+                  <h1 className="ap-edit-title">
+                    Edit <em>{editingProfile?.preferredClothingLabel ?? template.label}</em>
+                  </h1>
+                  <p className="ap-edit-sub">
+                    Update any saved value directly. Required fields keep recommendations working; optional fields improve fit accuracy.
+                  </p>
+                </div>
+                <div className="ap-edit-unit">{unit}</div>
+              </div>
+
+              <div className="ap-edit-card">
+                <EditMeasurementSection
+                  title="Required"
+                  note="Needed for recommendations"
+                  fields={template.fields.filter(field => field.isPrimary)}
+                  measurements={measurements}
+                  unit={unit}
+                  onChange={(key, value) => setMeasurements(current => ({ ...current, [key]: value }))}
+                />
+                <EditMeasurementSection
+                  title="Improve accuracy"
+                  note="Optional"
+                  fields={template.fields.filter(field => !field.isPrimary)}
+                  measurements={measurements}
+                  unit={unit}
+                  onChange={(key, value) => setMeasurements(current => ({ ...current, [key]: value }))}
+                />
+              </div>
+
+              {error && (
+                <div className="ap-error" key={errorKey} style={{ animation: 'ap-shake 0.4s var(--ease)' }}>
+                  <Ico.Alert /> {error}
+                </div>
+              )}
+
+              <div className="ap-edit-actions">
+                <button className="ap-edit-secondary" type="button" onClick={() => navigate(returnPath)}>
+                  Cancel
+                </button>
+                <button className="ap-edit-save" type="button" disabled={saving} onClick={handleSave}>
+                  {saving ? 'Saving...' : 'Save changes'}
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="ap-no-gender">
+              <div className="ap-no-gender-icon"><Ico.Ruler /></div>
+              <div className="ap-no-gender-title">
+                {profileLoading ? 'Loading measurements' : 'Measurement profile not found'}
+              </div>
+              <div className="ap-no-gender-sub">
+                {profileLoading
+                  ? 'Getting your saved measurements ready.'
+                  : 'This profile may have been removed or is unavailable for the selected person.'}
+              </div>
+              {!profileLoading && (
+                <button className="ap-btn-next" type="button" onClick={() => navigate('/app/measurements')}>
+                  Go to measurements
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+      <>
+        {/* ── Two-column layout ── */}
+        <div className="ap-layout">
 
         {/* ── LEFT SIDEBAR ── */}
         <aside className="ap-sidebar">
@@ -1011,7 +1503,7 @@ export function AddPreferencePage() {
               <div className="ap-actions" style={{ marginTop: 8 }}>
                 {requiresGenderStep && (
                   <button className="ap-btn-back" onClick={() => goStep('back', () => setChosenGender(null))}>
-                    <Ico.Back /> Change model
+                    Change model
                   </button>
                 )}
                 <button className="ap-btn-next" disabled={!choice}
@@ -1130,7 +1622,6 @@ export function AddPreferencePage() {
                     if (stepIndex === 0) setPhase('choose');
                     else setStepIndex(i => i - 1);
                   })}>
-                  <Ico.Back />
                   {stepIndex === 0 ? 'Change type' : 'Previous'}
                 </button>
 
@@ -1150,6 +1641,8 @@ export function AddPreferencePage() {
 
         </main>
       </div>
+      </>
+      )}
 
       <MeasurementValidationDialog
         warning={measurementWarning}

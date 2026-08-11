@@ -513,7 +513,7 @@ function PasswordFlow({ mode }: { mode: PasswordFlowMode }) {
           className="cp-back-btn"
           onClick={() => navigate(isPasswordReset ? '/auth/login' : '/app/settings')}
         >
-          <Ico.Back /> {isPasswordReset ? 'Back to sign in' : 'Back to settings'}
+          {isPasswordReset ? 'Back to sign in' : 'Back to settings'}
         </button>
         <div className="cp-topbar-divider" />
         <span className="cp-topbar-title">{isPasswordReset ? 'Reset password' : 'Change password'}</span>
@@ -639,7 +639,7 @@ function PasswordFlow({ mode }: { mode: PasswordFlowMode }) {
 
               <div className="cp-actions">
                 <button className="cp-btn-back" onClick={() => go('verify', 'back')}>
-                  <Ico.Back /> Back
+                  Back
                 </button>
                 <button
                   className="cp-btn-next"
@@ -740,7 +740,7 @@ function PasswordFlow({ mode }: { mode: PasswordFlowMode }) {
 
               <div className="cp-actions">
                 <button className="cp-btn-back" onClick={() => go('otp', 'back')}>
-                  <Ico.Back /> Back
+                  Back
                 </button>
                 <button
                   className={`cp-btn-next${pwMatch ? ' success' : ''}`}
