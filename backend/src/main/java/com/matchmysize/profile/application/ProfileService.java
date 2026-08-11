@@ -162,6 +162,7 @@ public class ProfileService {
     @Transactional
     public String createFamilyMember(AppUser appUser, Map<String, Object> payload) {
         var firstName = requiredText(payload.get("firstName"), "Name is required.");
+        var gender = normalizeFamilyGender(payload.get("gender"));
         var relation = requiredText(payload.get("relation"), "Relation is required.");
         var memberKey = "fm_" + UUID.randomUUID().toString().replace("-", "");
         var data = new LinkedHashMap<String, Object>();
@@ -172,10 +173,13 @@ public class ProfileService {
         data.put("relation", relation);
         data.put("role", "family_member");
         data.put("subjectType", "family");
+        data.put("gender", gender);
         data.put("phoneNumber", null);
         data.put("email", null);
         data.put("photoURL", null);
         data.put("unit", "cm");
+        data.put("preferredClothing", null);
+        data.put("preferredClothingLabel", null);
         data.put("measurements", Map.of());
         data.put("measurementProfiles", Map.of());
         data.put("activeMeasurementProfileKey", null);
@@ -231,6 +235,15 @@ public class ProfileService {
         data.put("updatedAt", Instant.now().toString());
         profiles.saveFamilyMember(appUser.id(), memberKey, data);
         return data;
+    }
+
+    @Transactional
+    public Map<String, Object> deleteFamilyMember(AppUser appUser, String memberKey) {
+        var deleted = profiles.deleteFamilyMember(appUser.id(), memberKey);
+        if (deleted == 0) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "family_member_not_found", "Family member not found.");
+        }
+        return Map.of("deleted", true);
     }
 
     private ProfileRepository.FamilyMember getFamilyMember(AppUser appUser, String memberKey) {
@@ -404,6 +417,14 @@ public class ProfileService {
         var text = text(value);
         if (text == null) throw new ApiException(HttpStatus.BAD_REQUEST, "validation_error", message);
         return text;
+    }
+
+    private String normalizeFamilyGender(Object value) {
+        var gender = requiredText(value, "Gender is required.");
+        if (!"men".equals(gender) && !"women".equals(gender)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "validation_error", "Choose a valid gender.");
+        }
+        return gender;
     }
 
     private boolean isProtectedIdentityField(String key) {

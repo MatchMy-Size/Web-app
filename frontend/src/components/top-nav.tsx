@@ -405,6 +405,27 @@ const CSS = `
     height: 14px;
     flex-shrink: 0;
   }
+  .tn-subject-toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    z-index: 700;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: var(--ink);
+    box-shadow: 0 14px 34px rgba(13,13,13,0.24);
+    color: var(--white);
+    font-family: var(--fs);
+    font-size: 12.5px;
+    font-weight: 800;
+    line-height: 1.2;
+    text-align: center;
+    pointer-events: none;
+    animation: tn-toastIn 0.22s var(--ease) both;
+  }
 
   .tn-user-wrap {
     position: relative;
@@ -433,6 +454,10 @@ const CSS = `
   @keyframes tn-pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
     50%       { opacity: 0.6; transform: scale(0.85); }
+  }
+  @keyframes tn-toastIn {
+    from { opacity: 0; transform: translate(-50%, 8px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
   }
 
   /* ── Page offset so content starts below nav ── */
@@ -512,6 +537,13 @@ const CSS = `
       min-width: 0;
       padding-right: 8px;
       max-width: min(220px, 34vw);
+    }
+  }
+
+  @media (min-width: 961px) {
+    .tn-subject-toast {
+      top: calc(var(--nav-h) + 12px);
+      bottom: auto;
     }
   }
 
@@ -716,12 +748,14 @@ export function TopNav({
   onSearch,
   showAddCta = false,
 }: TopNavProps) {
-  const { selectedSubject, subjectOptions, setSelectedSubjectKey } = useProfileSubject();
+  const { selectedSubject, subjectOptions, setSelectedSubjectKey, selectSelf } = useProfileSubject();
   const location = useLocation();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [subjectMenuOpen, setSubjectMenuOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [subjectToast, setSubjectToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
 
   const { linksRef, indicatorStyle } = useSlidingIndicator(location.pathname);
   const scrollPct = useScrollProgress();
@@ -735,6 +769,7 @@ export function TopNav({
     if (signingOut) return;
     setSigningOut(true);
     setSubjectMenuOpen(false);
+    selectSelf();
     try {
       await signOutUser();
     } catch {
@@ -744,6 +779,23 @@ export function TopNav({
       setSigningOut(false);
     }
   };
+
+  const showSubjectToast = (message: string) => {
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+    setSubjectToast(message);
+    toastTimerRef.current = window.setTimeout(() => {
+      setSubjectToast(null);
+      toastTimerRef.current = null;
+    }, 1800);
+  };
+
+  useEffect(() => () => {
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+  }, []);
 
   // Keyboard shortcut: / to focus search
   const searchRef = useRef<HTMLInputElement>(null);
@@ -900,7 +952,14 @@ export function TopNav({
                       role="menuitemradio"
                       aria-checked={active}
                       onClick={() => {
-                        setSelectedSubjectKey(option.key);
+                        if (!active) {
+                          setSelectedSubjectKey(option.key);
+                          showSubjectToast(
+                            option.type === 'family'
+                              ? `Now viewing ${option.label}'s fit profile`
+                              : 'Now viewing your fit profile'
+                          );
+                        }
                         setSubjectMenuOpen(false);
                       }}>
                       <div className="tn-subject-avatar">{optionInitials}</div>
@@ -940,6 +999,11 @@ export function TopNav({
         </div>
       </header>
       {navLinks}
+      {subjectToast && (
+        <div className="tn-subject-toast" role="status" aria-live="polite">
+          {subjectToast}
+        </div>
+      )}
     </>
   );
 }

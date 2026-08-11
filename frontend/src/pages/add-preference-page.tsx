@@ -274,6 +274,24 @@ const CSS = `
   .ap-choice-card.selected .ap-choice-icon svg { color: var(--white); }
   .ap-choice-card-title { font-size: 14.5px; font-weight: 700; color: var(--ink); }
   .ap-choice-card-sub   { font-size: 12.5px; color: var(--ash); line-height: 1.4; margin-top: -4px; }
+  .ap-choice-empty {
+    padding: 22px;
+    border: 1.5px solid var(--cloud);
+    border-radius: 16px;
+    background: var(--white);
+    color: var(--ash);
+    display: grid;
+    gap: 7px;
+  }
+  .ap-choice-empty-title {
+    color: var(--ink);
+    font-size: 15px;
+    font-weight: 800;
+  }
+  .ap-choice-empty-sub {
+    font-size: 13px;
+    line-height: 1.55;
+  }
   .ap-gender-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 18px;
@@ -1085,6 +1103,18 @@ export function AddPreferencePage() {
     savedOptions.forEach(o => { if (!merged.has(o.key)) merged.set(o.key, o); });
     return Array.from(merged.values());
   }, [measurementProfiles, normalizedGender]);
+  const savedChoiceKeys = useMemo(() => {
+    const keys = new Set<ClothingChoice>();
+    measurementProfiles.forEach((entry) => {
+      const savedChoice = normalizeClothingChoice(entry.preferredClothing);
+      if (savedChoice) keys.add(savedChoice);
+    });
+    return keys;
+  }, [measurementProfiles]);
+  const addableOptions = useMemo(() => {
+    if (isEditRequest || initialChoice) return options;
+    return options.filter((option) => !savedChoiceKeys.has(option.key));
+  }, [initialChoice, isEditRequest, options, savedChoiceKeys]);
 
   const template    = useMemo(() => getClothingTemplate(normalizedGender, choice), [choice, normalizedGender]);
   const currentStep = template?.fields[stepIndex] ?? null;
@@ -1537,19 +1567,26 @@ export function AddPreferencePage() {
                 <p className="ap-page-sub">Choose a clothing category to add measurements for {subjectLabel}. You can add more categories later.</p>
               </div>
 
-              <div className="ap-choice-grid">
-                {options.map(opt => (
-                  <div
-                    key={opt.key}
-                    className={`ap-choice-card${choice === opt.key ? ' selected' : ''}`}
-                    onClick={() => setChoice(opt.key)}>
-                    <div className="ap-check-circle"><Ico.Check /></div>
-                    <div className="ap-choice-icon"><Ico.Bag /></div>
-                    <div className="ap-choice-card-title">{opt.label}</div>
-                    {opt.subtitle && <div className="ap-choice-card-sub">{opt.subtitle}</div>}
-                  </div>
-                ))}
-              </div>
+              {addableOptions.length > 0 ? (
+                <div className="ap-choice-grid">
+                  {addableOptions.map(opt => (
+                    <div
+                      key={opt.key}
+                      className={`ap-choice-card${choice === opt.key ? ' selected' : ''}`}
+                      onClick={() => setChoice(opt.key)}>
+                      <div className="ap-check-circle"><Ico.Check /></div>
+                      <div className="ap-choice-icon"><Ico.Bag /></div>
+                      <div className="ap-choice-card-title">{opt.label}</div>
+                      {opt.subtitle && <div className="ap-choice-card-sub">{opt.subtitle}</div>}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="ap-choice-empty">
+                  <div className="ap-choice-empty-title">All categories are already added.</div>
+                  <div className="ap-choice-empty-sub">Open Measurements to edit saved categories or review this profile.</div>
+                </div>
+              )}
 
               <div className="ap-actions" style={{ marginTop: 8 }}>
                 {requiresGenderStep && (
@@ -1557,7 +1594,7 @@ export function AddPreferencePage() {
                     Change model
                   </button>
                 )}
-                <button className="ap-btn-next" disabled={!choice}
+                <button className="ap-btn-next" disabled={!choice || addableOptions.length === 0}
                   onClick={() => goStep('fwd', () => { setStepIndex(0); setPhase('guide'); })}>
                   Continue <Ico.Arrow />
                 </button>
