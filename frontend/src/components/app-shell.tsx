@@ -18,6 +18,7 @@ const CSS = `
     --cloud: #EFEFEF;
     --white: #FFFFFF;
     --nav-h: 64px;
+    --mobile-tab-h: 80px;
     --ease: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
@@ -33,6 +34,7 @@ const CSS = `
   .as-offset {
     flex: 1;
     padding-top: var(--nav-h);
+    padding-bottom: calc(var(--mobile-tab-h) + env(safe-area-inset-bottom, 0px));
     display: flex;
     flex-direction: column;
   }
@@ -82,7 +84,7 @@ const CSS = `
   /* ── Scroll-to-top fade button ── */
   .as-scroll-top {
     position: fixed;
-    right: 32px; bottom: 32px;
+    right: 32px; bottom: calc(var(--mobile-tab-h) + 32px + env(safe-area-inset-bottom, 0px));
     width: 40px; height: 40px;
     border-radius: 50%;
     background: var(--ink);
@@ -104,9 +106,25 @@ const CSS = `
   .as-inner {
     width: 100%;
   }
+
+  @media (max-width: 960px) {
+    .as-scroll-top {
+      right: 18px;
+      bottom: calc(var(--mobile-tab-h) + 18px + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  @media (max-width: 640px) {
+    :root {
+      --nav-h: 72px;
+    }
+  }
 `;
 
-if (!document.getElementById('as-styles')) {
+const appShellStyles = document.getElementById('as-styles');
+if (appShellStyles) {
+  appShellStyles.textContent = CSS;
+} else {
   const s = document.createElement('style');
   s.id = 'as-styles';
   s.textContent = CSS;

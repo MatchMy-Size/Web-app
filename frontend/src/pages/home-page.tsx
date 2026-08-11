@@ -258,6 +258,13 @@ const CSS = `
     display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
     animation: hp-fadeUp 0.5s 0.18s var(--ease) both;
   }
+  .hp-mobile-summary { display: contents; }
+  .hp-filter-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
   .hp-filter-label {
     font-size: 11px; font-weight: 700; color: var(--ash);
     text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap;
@@ -390,6 +397,12 @@ const CSS = `
   .hp-card-image-placeholder {
     font-size: 40px; opacity: 0.25;
   }
+  .hp-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 12px;
+  }
   .hp-card-score-badge {
     position: absolute; top: 10px; right: 10px;
     border-radius: 999px; padding: 4px 10px;
@@ -432,6 +445,28 @@ const CSS = `
   .hp-card-fit-pill.great   { background: var(--sage-light); color: var(--sage-deep); }
   .hp-card-fit-pill.fair    { background: var(--cloud); color: var(--ash); }
   .hp-card-unavailable { font-size: 11px; line-height: 1.4; color: var(--ash); font-weight: 600; }
+  .hp-card-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-start;
+    min-height: 30px;
+    margin-top: 12px;
+    padding: 0 11px;
+    border: 1px solid var(--cloud);
+    border-radius: 999px;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    transition: background 0.18s, border-color 0.18s, color 0.18s;
+  }
+  .hp-product-card:hover .hp-card-action {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--white);
+  }
 
   /* ── Recommendation details modal ── */
   .hp-modal-backdrop {
@@ -738,20 +773,91 @@ const CSS = `
     }
 
     .hp-body {
-      padding: 20px 16px 96px;
-      gap: 20px;
+      padding: 8px 12px calc(104px + env(safe-area-inset-bottom, 0px));
+      gap: 12px;
     }
 
-    .hp-stats-row,
+    .hp-mobile-summary {
+      position: sticky;
+      top: var(--nav-h, 72px);
+      z-index: 35;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: -10px -12px 0;
+      padding: 8px 12px 10px;
+      background: var(--paper);
+      backdrop-filter: none;
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+    }
+
+    .hp-stats-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+    }
+
+    .hp-stat-card-total,
+    .hp-stat-card-brands {
+      display: none;
+    }
+
+    .hp-stat-card {
+      min-width: 0;
+      border-radius: 10px;
+      padding: 10px 11px;
+      box-shadow: 0 6px 16px rgba(13,13,13,0.04);
+    }
+
+    .hp-stat-card:hover {
+      transform: none;
+      box-shadow: 0 6px 16px rgba(13,13,13,0.04);
+    }
+
+    .hp-stat-label {
+      margin-bottom: 5px;
+      font-size: 9px;
+      letter-spacing: 0.45px;
+    }
+
+    .hp-stat-num {
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    .hp-stat-sub {
+      margin-top: 3px;
+      font-size: 10px;
+      line-height: 1.35;
+    }
+
     .hp-grid {
       grid-template-columns: 1fr;
+      gap: 8px;
     }
 
-    .hp-filter-bar,
+    .hp-filter-bar {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .hp-filter-section {
+      display: grid;
+      grid-template-columns: 68px minmax(0, 1fr);
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .hp-filter-label {
+      font-size: 10px;
+    }
+
     .hp-section-header,
     .hp-measurement-prompt,
-    .hp-tip,
-    .hp-card-footer {
+    .hp-tip {
       flex-direction: column;
       align-items: flex-start;
     }
@@ -771,24 +877,210 @@ const CSS = `
     .hp-public-feedback-meta { align-items: flex-start; flex-direction: column; }
 
     .hp-measurement-prompt-btn {
-      width: 100%;
+      width: auto;
       margin-left: 0;
+      min-height: 26px;
+      padding: 0 9px;
+      border-radius: 999px;
+      font-size: 10.5px;
+      white-space: nowrap;
     }
 
     .hp-pill-group {
       width: 100%;
-    }
-
-    .hp-pill-group {
       gap: 8px;
     }
 
+    .hp-pill-scroll {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding: 0 16px 3px 0;
+      scroll-padding-right: 16px;
+      scroll-snap-type: x proximity;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .hp-pill-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
     .hp-pill {
+      flex: 0 0 auto;
       justify-content: center;
+      min-height: 36px;
+      padding: 7px 11px;
+      font-size: 11.5px;
+      scroll-snap-align: start;
+    }
+
+    .hp-section-header {
+      gap: 6px;
+      margin-top: 0;
+    }
+
+    .hp-section-title {
+      font-size: 24px;
+    }
+
+    .hp-section-sub {
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .hp-measurement-prompt {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr) auto;
+      align-items: center;
+      min-height: 40px;
+      padding: 7px 9px;
+      gap: 7px;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .hp-measurement-prompt-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+    }
+
+    .hp-measurement-prompt-icon svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .hp-measurement-prompt-copy {
+      min-width: 0;
+    }
+
+    .hp-measurement-prompt-title {
+      font-size: 11.5px;
+      line-height: 1.2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .hp-measurement-prompt-sub {
+      display: none;
+    }
+
+    .hp-product-card {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr);
+      min-height: 104px;
+      border-radius: 12px;
+    }
+
+    .hp-product-card:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
+    .hp-card-image {
+      height: 100%;
+      min-height: 104px;
+      aspect-ratio: auto;
+      border-right: 1px solid var(--cloud);
+    }
+
+    .hp-card-image img {
+      object-fit: contain;
+      padding: 8px;
+    }
+
+    .hp-card-score-badge {
+      top: auto;
+      right: 6px;
+      bottom: 6px;
+      max-width: calc(100% - 12px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 3px 7px;
+      font-size: 9.5px;
+    }
+
+    .hp-card-score-badge.unavailable {
+      display: none;
     }
 
     .hp-card-body {
       min-height: 0;
+      padding: 9px 11px;
+      justify-content: space-between;
+    }
+
+    .hp-card-brand {
+      margin-bottom: 3px;
+      font-size: 10px;
+    }
+
+    .hp-card-title {
+      margin-bottom: 3px;
+      font-size: 13px;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .hp-card-sub {
+      margin-bottom: 6px;
+      font-size: 11px;
+    }
+
+    .hp-card-footer {
+      flex-direction: row;
+      align-items: center;
+      padding-top: 6px;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .hp-card-size {
+      font-size: 23px;
+    }
+
+    .hp-card-size-label {
+      font-size: 10px;
+    }
+
+    .hp-card-fit-pill {
+      margin-left: auto;
+      padding: 4px 8px;
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .hp-card-unavailable {
+      font-size: 10.5px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .hp-card-action {
+      min-height: 27px;
+      margin-top: 6px;
+      padding: 0 9px;
+      font-size: 10px;
+    }
+
+    .hp-skeleton-card {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr);
+      border-radius: 12px;
+    }
+
+    .hp-skeleton-card > .hp-skeleton {
+      height: auto !important;
+      min-height: 104px;
     }
 
     .hp-modal-backdrop { padding: 14px; }
@@ -838,7 +1130,10 @@ const CSS = `
   }
 `;
 
-if (!document.getElementById('hp-styles')) {
+const homePageStyles = document.getElementById('hp-styles');
+if (homePageStyles) {
+  homePageStyles.textContent = CSS;
+} else {
   const s = document.createElement('style');
   s.id = 'hp-styles';
   s.textContent = CSS;
@@ -956,7 +1251,7 @@ function ProductCard({ card, onOpen }: { card: EnrichedRecommendation; onOpen: (
       onClick={onOpen}>
       <div className="hp-card-image">
         {image
-          ? <img src={image} alt={card.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ? <img src={image} alt={card.title} />
           : <div className="hp-card-image-placeholder"><Ico.Shirt /></div>
         }
         <div className={`hp-card-score-badge ${cls}`}>
@@ -980,6 +1275,7 @@ function ProductCard({ card, onOpen }: { card: EnrichedRecommendation; onOpen: (
             </>
           )}
         </div>
+        <span className="hp-card-action">View fit details</span>
       </div>
     </button>
   );
@@ -1393,7 +1689,14 @@ export function HomePage() {
   const additionalMeasurementText = additionalMeasurementLabels.length
     ? `add ${formatMeasurementKeys(additionalMeasurementLabels)} measurements`
     : 'add more measurements';
-  const extraMeasurementPrompt = `${additionalMeasurementText.charAt(0).toUpperCase()}${additionalMeasurementText.slice(1)} to improve the accuracy of your ${selectedClothingLabel.toLowerCase()} result.`;
+  const compactMeasurementText = additionalMeasurementLabels.length
+    ? formatMeasurementKeys(additionalMeasurementLabels.map(label => label.replace(/\s+length$/i, '')))
+    : 'more measurements';
+  const measurementPromptText = `Add ${compactMeasurementText.toLowerCase()} for better ${selectedClothingLabel.toLowerCase()} fits.`;
+  const measurementCtaLabel =
+    selectedClothingLabel && selectedClothingLabel !== 'this item'
+      ? `Add ${selectedClothingLabel.toLowerCase()} measurements`
+      : 'Add measurements';
   const editMeasurementParams = new URLSearchParams();
   if (selectedMeasurementProfile?.preferredClothing) {
     editMeasurementParams.set('choice', selectedMeasurementProfile.preferredClothing);
@@ -1451,64 +1754,70 @@ export function HomePage() {
         {/* Page body */}
         <div className="hp-body">
 
-          {/* Stats row */}
-          <div className="hp-stats-row">
-            <div className="hp-stat-card accent">
-              <div className="hp-stat-label">Total matches</div>
-              <div className="hp-stat-num">{totalCards}{totalCards > 0 && <span>+</span>}</div>
-              <div className="hp-stat-sub">Across all categories</div>
-            </div>
-            <div className="hp-stat-card">
-              <div className="hp-stat-label">Perfect fits</div>
-              <div className="hp-stat-num">{perfectCount}</div>
-              <div className="hp-stat-sub">Score ≥ 75%</div>
-            </div>
-            <div className="hp-stat-card">
-              <div className="hp-stat-label">Avg fit score</div>
-              <div className="hp-stat-num">{avgScore || '—'}<span>{avgScore ? '%' : ''}</span></div>
-              <div className="hp-stat-sub">Current category</div>
-            </div>
-            <div className="hp-stat-card">
-              <div className="hp-stat-label">Brands</div>
-              <div className="hp-stat-num">500<span>+</span></div>
-              <div className="hp-stat-sub">In our database</div>
-            </div>
-          </div>
-
-          {/* Category + match filter bar */}
-          <div className="hp-filter-bar">
-            <span className="hp-filter-label">Category</span>
-            <div className="hp-pill-group">
-              {categoryItems.map(item => (
-                <button
-                  key={item.value}
-                  className={`hp-pill${choiceFilter === item.value ? ' is-active' : ''}`}
-                  onClick={() => handleChoiceChange(item.value)}>
-                  {item.label}
-                  {item.badge !== undefined && (
-                    <span className="hp-pill-count">{item.badge}</span>
-                  )}
-                </button>
-              ))}
+          <div className="hp-mobile-summary">
+            {/* Stats row */}
+            <div className="hp-stats-row">
+              <div className="hp-stat-card hp-stat-card-total accent">
+                <div className="hp-stat-label">Total matches</div>
+                <div className="hp-stat-num">{totalCards}{totalCards > 0 && <span>+</span>}</div>
+                <div className="hp-stat-sub">Across all categories</div>
+              </div>
+              <div className="hp-stat-card hp-stat-card-perfect">
+                <div className="hp-stat-label">Perfect fits</div>
+                <div className="hp-stat-num">{perfectCount}</div>
+                <div className="hp-stat-sub">Score ≥ 75%</div>
+              </div>
+              <div className="hp-stat-card hp-stat-card-average">
+                <div className="hp-stat-label">Avg fit score</div>
+                <div className="hp-stat-num">{avgScore || '—'}<span>{avgScore ? '%' : ''}</span></div>
+                <div className="hp-stat-sub">Current category</div>
+              </div>
+              <div className="hp-stat-card hp-stat-card-brands">
+                <div className="hp-stat-label">Brands</div>
+                <div className="hp-stat-num">500<span>+</span></div>
+                <div className="hp-stat-sub">In our database</div>
+              </div>
             </div>
 
-            <div className="hp-filter-divider" />
-            <span className="hp-filter-label">Fit</span>
-            <div className="hp-pill-group">
-              {MATCH_FILTERS.map(f => {
-                const count = f.value === 'all' ? availableCards.length
-                  : f.value === 'perfect' ? cards.filter(isPerfectFit).length
-                  : cards.filter(isGreatFit).length;
-                return (
-                  <button
-                    key={f.value}
-                    className={`hp-pill${matchFilter === f.value ? ' is-active' : ''}`}
-                    onClick={() => setMatchFilter(f.value)}>
-                    {f.label}
-                    <span className="hp-pill-count">{count}</span>
-                  </button>
-                );
-              })}
+            {/* Category + match filter bar */}
+            <div className="hp-filter-bar">
+              <div className="hp-filter-section">
+                <span className="hp-filter-label">Category</span>
+                <div className="hp-pill-group hp-pill-scroll">
+                  {categoryItems.map(item => (
+                    <button
+                      key={item.value}
+                      className={`hp-pill${choiceFilter === item.value ? ' is-active' : ''}`}
+                      onClick={() => handleChoiceChange(item.value)}>
+                      {item.label}
+                      {item.badge !== undefined && (
+                        <span className="hp-pill-count">{item.badge}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="hp-filter-divider" />
+              <div className="hp-filter-section">
+                <span className="hp-filter-label">Fit</span>
+                <div className="hp-pill-group hp-pill-scroll">
+                  {MATCH_FILTERS.map(f => {
+                    const count = f.value === 'all' ? availableCards.length
+                      : f.value === 'perfect' ? cards.filter(isPerfectFit).length
+                      : cards.filter(isGreatFit).length;
+                    return (
+                      <button
+                        key={f.value}
+                        className={`hp-pill${matchFilter === f.value ? ' is-active' : ''}`}
+                        onClick={() => setMatchFilter(f.value)}>
+                        {f.label}
+                        <span className="hp-pill-count">{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1516,14 +1825,14 @@ export function HomePage() {
             <div className="hp-measurement-prompt">
               <div className="hp-measurement-prompt-icon"><Ico.Bulb /></div>
               <div className="hp-measurement-prompt-copy">
-                <div className="hp-measurement-prompt-title">Improve your {selectedClothingLabel} recommendation</div>
-                <div className="hp-measurement-prompt-sub">You have only your primary measurement saved. {extraMeasurementPrompt}</div>
+                <div className="hp-measurement-prompt-title">{measurementPromptText}</div>
               </div>
               <button
                 type="button"
                 className="hp-measurement-prompt-btn"
+                aria-label={measurementCtaLabel}
                 onClick={() => navigate(editMeasurementsPath)}>
-                Add measurements
+                Add
               </button>
             </div>
           )}
@@ -1576,7 +1885,7 @@ export function HomePage() {
                 }
                 navigate('/app/add-preference');
               }}>
-                {hasUnfilteredRecommendations ? 'Clear filters' : emptyState.action}
+                {hasUnfilteredRecommendations ? 'Clear filters' : measurementCtaLabel || emptyState.action}
               </button>
             </div>
           )}
