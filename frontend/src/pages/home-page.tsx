@@ -4,8 +4,14 @@ import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/context/auth-context';
 import rulerIcon from '@/assets/images/ruler.png';
+import {
+  submitFitFeedback,
+  type FitExperience,
+  type FitOutcome,
+} from '@/lib/fit-feedback';
 import { getClothingTemplate, normalizeGender } from '@/lib/measurement';
 import { resolveBrandDisplay, type EnrichedRecommendation } from '@/lib/recommendation-view';
+import { submitSiteFeedback } from '@/lib/site-feedback';
 import type { BrandRecommendation } from '@/lib/size-recommendation';
 import { getCategoryBadge, useRecommendationData } from '@/lib/use-recommendation-data';
 
@@ -521,11 +527,46 @@ const CSS = `
   .hp-modal-fit.fair { background: var(--cloud); color: var(--ash); }
   .hp-modal-unavailable { display: flex; align-items: flex-start; gap: 9px; margin-top: 18px; padding: 14px; border: 1px solid var(--cloud); border-radius: 12px; background: var(--paper); color: var(--ash); font-size: 13px; line-height: 1.5; }
   .hp-modal-unavailable svg { width: 17px; height: 17px; flex: 0 0 auto; margin-top: 1px; color: var(--sage-deep); }
+  .hp-modal-unavailable strong { display: block; margin-bottom: 3px; color: var(--ink); }
   .hp-modal-metrics { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-top: 16px; }
   .hp-modal-metric { padding: 13px 14px; border: 1px solid var(--cloud); border-radius: 12px; background: var(--paper); }
   .hp-modal-metric-label { color: var(--ash); font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
   .hp-modal-metric-value { margin-top: 3px; color: var(--ink); font-size: 14px; font-weight: 700; }
+  .hp-modal-confidence-note { display: flex; align-items: flex-start; gap: 10px; margin-top: 12px; padding: 13px 14px; border-radius: 12px; font-size: 12.5px; line-height: 1.5; }
+  .hp-modal-confidence-note.high { border: 1px solid var(--sage-dark); background: var(--sage-light); color: var(--sage-deep); }
+  .hp-modal-confidence-note.limited { border: 1px solid var(--cloud); background: var(--paper); color: var(--ash); }
+  .hp-modal-confidence-note strong { display: block; margin-bottom: 2px; color: var(--ink); font-size: 12px; }
+  .hp-modal-confidence-dot { width: 8px; height: 8px; margin-top: 5px; flex: 0 0 auto; border-radius: 50%; background: currentColor; }
+  .hp-modal-reasons { margin-top: 16px; padding: 15px 16px; border: 1px solid var(--cloud); border-radius: 12px; background: var(--paper); }
+  .hp-modal-reasons-title { color: var(--ink); font-size: 11px; font-weight: 800; letter-spacing: 0.55px; text-transform: uppercase; }
+  .hp-modal-reasons ul { display: grid; gap: 7px; margin: 10px 0 0; padding-left: 18px; color: var(--ash); font-size: 12.5px; line-height: 1.5; }
+  .hp-modal-missing { display: flex; align-items: flex-start; gap: 9px; margin-top: 12px; padding: 13px 14px; border: 1px solid var(--sage-dark); border-radius: 12px; background: var(--sage-light); color: var(--sage-deep); font-size: 12.5px; line-height: 1.5; }
+  .hp-modal-missing svg { width: 16px; height: 16px; flex: 0 0 auto; margin-top: 1px; }
+  .hp-modal-add-measurements { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; margin-top: 10px; padding: 0 12px; border: 1px solid var(--sage-deep); border-radius: 8px; background: var(--white); color: var(--sage-deep); font-family: var(--fs); font-size: 11px; font-weight: 800; cursor: pointer; }
+  .hp-modal-add-measurements:hover { background: var(--paper); }
   .hp-modal-note { margin-top: 14px; color: var(--ash); font-size: 11px; line-height: 1.55; }
+  .hp-fit-feedback { margin-top: 18px; padding: 17px; border: 1px solid var(--cloud); border-radius: 15px; background: var(--paper); }
+  .hp-fit-feedback-heading { color: var(--ink); font-size: 14px; font-weight: 800; }
+  .hp-fit-feedback-copy { margin-top: 4px; color: var(--ash); font-size: 12px; line-height: 1.5; }
+  .hp-fit-feedback-open { min-height: 38px; margin-top: 13px; padding: 0 15px; border: 0; border-radius: 9px; background: var(--ink); color: var(--white); font-family: var(--fs); font-size: 12px; font-weight: 800; cursor: pointer; }
+  .hp-fit-feedback-form { display: grid; gap: 14px; margin-top: 16px; }
+  .hp-fit-feedback-field { display: grid; gap: 8px; }
+  .hp-fit-feedback-label { color: var(--ink); font-size: 11px; font-weight: 800; letter-spacing: 0.35px; }
+  .hp-fit-feedback-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .hp-fit-feedback-options.outcomes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hp-fit-feedback-option { min-height: 38px; padding: 7px 9px; border: 1px solid var(--mist); border-radius: 9px; background: var(--white); color: var(--ash); font-family: var(--fs); font-size: 11px; font-weight: 700; cursor: pointer; transition: border-color 0.18s, background 0.18s, color 0.18s; }
+  .hp-fit-feedback-option:hover { border-color: var(--sage-dark); color: var(--ink); }
+  .hp-fit-feedback-option.active { border-color: var(--ink); background: var(--ink); color: var(--white); }
+  .hp-fit-feedback-note { width: 100%; min-height: 82px; resize: vertical; padding: 11px 12px; border: 1px solid var(--mist); border-radius: 9px; background: var(--white); color: var(--ink); font: 12px/1.5 var(--fs); outline: none; }
+  .hp-fit-feedback-note:focus { border-color: var(--sage-deep); box-shadow: 0 0 0 3px rgba(122,158,120,0.12); }
+  .hp-fit-feedback-count { color: var(--ash); font-size: 10px; text-align: right; }
+  .hp-fit-feedback-actions { display: flex; gap: 8px; }
+  .hp-fit-feedback-submit, .hp-fit-feedback-cancel { min-height: 39px; padding: 0 14px; border-radius: 9px; font-family: var(--fs); font-size: 11px; font-weight: 800; cursor: pointer; }
+  .hp-fit-feedback-submit { flex: 1; border: 0; background: var(--ink); color: var(--white); }
+  .hp-fit-feedback-submit:disabled { cursor: not-allowed; opacity: 0.45; }
+  .hp-fit-feedback-cancel { border: 1px solid var(--mist); background: var(--white); color: var(--ash); }
+  .hp-fit-feedback-error { color: var(--red); font-size: 11px; line-height: 1.45; }
+  .hp-fit-feedback-success { margin-top: 13px; padding: 12px 13px; border: 1px solid var(--sage-dark); border-radius: 10px; background: var(--sage-light); color: var(--sage-deep); font-size: 12px; font-weight: 700; line-height: 1.45; }
 
   /* ── Empty state ── */
   .hp-empty {
@@ -594,6 +635,35 @@ const CSS = `
   }
   .hp-tip-btn:hover { background: var(--ink); color: var(--white); border-color: var(--ink); }
 
+  /* ── Overall public feedback ── */
+  .hp-public-feedback {
+    display: grid;
+    grid-template-columns: minmax(230px, 0.75fr) minmax(320px, 1.25fr);
+    gap: 32px;
+    padding: 30px;
+    border-radius: 20px;
+    background: var(--ink);
+    color: var(--white);
+    animation: hp-fadeUp 0.5s 0.4s var(--ease) both;
+  }
+  .hp-public-feedback-eyebrow { color: var(--sage); font-size: 10px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; }
+  .hp-public-feedback-title { margin-top: 8px; font-family: var(--fd); font-size: 32px; font-weight: 700; line-height: 1.05; letter-spacing: -0.5px; }
+  .hp-public-feedback-copy { max-width: 380px; margin-top: 10px; color: rgba(255,255,255,0.5); font-size: 12.5px; line-height: 1.65; }
+  .hp-public-feedback-form { display: grid; gap: 13px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; background: rgba(255,255,255,0.06); }
+  .hp-public-feedback-label { color: rgba(255,255,255,0.72); font-size: 11px; font-weight: 700; }
+  .hp-public-feedback-stars { display: flex; gap: 6px; }
+  .hp-public-feedback-star { padding: 0; border: 0; background: transparent; color: rgba(255,255,255,0.2); font-size: 25px; line-height: 1; cursor: pointer; transition: color 0.15s, transform 0.15s; }
+  .hp-public-feedback-star:hover { transform: translateY(-1px); }
+  .hp-public-feedback-star.active { color: var(--sage); }
+  .hp-public-feedback-textarea { width: 100%; min-height: 88px; resize: vertical; padding: 11px 12px; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; background: rgba(255,255,255,0.08); color: var(--white); font: 12.5px/1.55 var(--fs); outline: none; }
+  .hp-public-feedback-textarea::placeholder { color: rgba(255,255,255,0.3); }
+  .hp-public-feedback-textarea:focus { border-color: var(--sage-dark); box-shadow: 0 0 0 3px rgba(195,216,193,0.08); }
+  .hp-public-feedback-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: rgba(255,255,255,0.36); font-size: 10px; line-height: 1.4; }
+  .hp-public-feedback-submit { min-height: 41px; border: 1px solid var(--sage-dark); border-radius: 9px; background: var(--sage-light); color: var(--ink); font-family: var(--fs); font-size: 12px; font-weight: 800; cursor: pointer; }
+  .hp-public-feedback-submit:disabled { cursor: not-allowed; opacity: 0.4; }
+  .hp-public-feedback-error { color: #ffaaa2; font-size: 11px; }
+  .hp-public-feedback-success { display: grid; place-items: center; min-height: 190px; padding: 26px; border: 1px solid rgba(195,216,193,0.28); border-radius: 15px; background: rgba(195,216,193,0.1); color: var(--sage); font-size: 13px; font-weight: 700; text-align: center; }
+
   @media (max-width: 1200px) {
     .hp-stats-row {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -642,6 +712,8 @@ const CSS = `
     .hp-body {
       padding: 24px 20px 96px;
     }
+
+    .hp-public-feedback { grid-template-columns: 1fr; }
   }
 
   @media (max-width: 640px) {
@@ -693,6 +765,10 @@ const CSS = `
       width: 100%;
       justify-content: center;
     }
+
+    .hp-public-feedback { padding: 22px; gap: 22px; }
+    .hp-public-feedback-form { padding: 16px; }
+    .hp-public-feedback-meta { align-items: flex-start; flex-direction: column; }
 
     .hp-measurement-prompt-btn {
       width: 100%;
@@ -840,9 +916,9 @@ function getRecommendationEmptyState(
       };
     case 'no-comparable-key-measurements':
       return {
-        title: 'No comparable size chart yet',
+        title: 'Primary measurement unavailable',
         description:
-          `The available brands do not include your key measurements for this category. ${additionalMeasurementGuidance} Or try another clothing category.`,
+          `The available brand charts do not include your primary measurement for this category. ${additionalMeasurementGuidance} Or try another clothing category.`,
         action: 'Add measurements',
       };
     case 'missing-measurements':
@@ -884,7 +960,7 @@ function ProductCard({ card, onOpen }: { card: EnrichedRecommendation; onOpen: (
           : <div className="hp-card-image-placeholder"><Ico.Shirt /></div>
         }
         <div className={`hp-card-score-badge ${cls}`}>
-          {measurementUnavailable ? 'Key data unavailable' : `${card.matchScore}%`}
+          {measurementUnavailable ? 'Primary measurement unavailable' : `${card.matchScore}%`}
         </div>
       </div>
       <div className="hp-card-body">
@@ -893,7 +969,7 @@ function ProductCard({ card, onOpen }: { card: EnrichedRecommendation; onOpen: (
         {card.subCategory && <div className="hp-card-sub">{card.subCategory}</div>}
         <div className="hp-card-footer">
           {measurementUnavailable ? (
-            <span className="hp-card-unavailable">{unavailableMeasurements} is not available in this size chart.</span>
+            <span className="hp-card-unavailable">Primary measurement unavailable: {unavailableMeasurements} is not included in this chart.</span>
           ) : (
             <>
               <div className="hp-card-size-wrap">
@@ -909,11 +985,53 @@ function ProductCard({ card, onOpen }: { card: EnrichedRecommendation; onOpen: (
   );
 }
 
-function RecommendationDetailsModal({ card, onClose }: { card: EnrichedRecommendation; onClose: () => void }) {
+function RecommendationDetailsModal({
+  card,
+  measurementProfileKey,
+  onClose,
+  onAddMeasurements,
+}: {
+  card: EnrichedRecommendation;
+  measurementProfileKey: string;
+  onClose: () => void;
+  onAddMeasurements: () => void;
+}) {
   const cls = getScoreClass(card);
   const measurementUnavailable = !isRecommendationAvailable(card);
   const unavailableMeasurements = formatMeasurementKeys(card.unavailablePrimaryMeasurementKeys);
+  const missingMeasurements = formatMeasurementKeys(card.missingMeasurements);
   const image = card.imageUrl || card.seller?.photoURL || null;
+  const [feedbackExpanded, setFeedbackExpanded] = useState(false);
+  const [experience, setExperience] = useState<FitExperience | null>(null);
+  const [outcome, setOutcome] = useState<FitOutcome | null>(null);
+  const [feedbackNote, setFeedbackNote] = useState('');
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+
+  const handleFeedbackSubmit = async () => {
+    if (!experience || !outcome || feedbackSubmitting) return;
+
+    setFeedbackSubmitting(true);
+    setFeedbackError(null);
+    try {
+      await submitFitFeedback({
+        catalogId: card.id,
+        measurementProfileKey,
+        experience,
+        outcome,
+        recommendationScore: card.score,
+        confidence: card.confidence,
+        note: feedbackNote.trim() || null,
+      });
+      setFeedbackSubmitted(true);
+      setFeedbackExpanded(false);
+    } catch (error) {
+      setFeedbackError(error instanceof Error ? error.message : 'Unable to save your fit feedback.');
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -939,7 +1057,7 @@ function RecommendationDetailsModal({ card, onClose }: { card: EnrichedRecommend
             : <div className="hp-modal-image-placeholder"><Ico.Shirt /></div>
           }
           <span className={`hp-modal-score ${cls}`}>
-            {measurementUnavailable ? 'Key data unavailable' : `${card.matchScore}% match`}
+            {measurementUnavailable ? 'Primary measurement unavailable' : `${card.matchScore}% match`}
           </span>
         </div>
         <div className="hp-modal-body">
@@ -948,28 +1066,29 @@ function RecommendationDetailsModal({ card, onClose }: { card: EnrichedRecommend
           {(card.subCategory || card.category) && (
             <div className="hp-modal-subcategory">{[card.subCategory, card.category].filter(Boolean).join(' · ')}</div>
           )}
-          <p className="hp-modal-copy">
-            {measurementUnavailable ? (
-              <>We cannot recommend a size because this chart does not provide your primary measurement: <strong>{unavailableMeasurements}</strong>.</>
-            ) : (
-              <>According to your saved measurements, <strong>{card.sizeLabel || 'this size'}</strong> is your closest available match for this item.</>
-            )}
-          </p>
+          <p className="hp-modal-copy">{card.explanation}</p>
           {measurementUnavailable ? (
             <div className="hp-modal-unavailable">
               <Ico.Alert />
-              <span>{unavailableMeasurements} is not available for this clothing item. Add other measurements or check another brand to receive a size recommendation.</span>
+              <div>
+                <strong>Primary measurement unavailable</strong>
+                <span>This brand's chart does not provide {unavailableMeasurements}, so it cannot be evaluated using your primary measurement.</span>
+              </div>
             </div>
           ) : (
             <div className="hp-modal-result">
               <div>
                 <div className="hp-modal-size-label">Your recommended size</div>
-                <div className="hp-modal-size"><strong>{card.sizeLabel || '—'}</strong><span>size</span></div>
+                <div className="hp-modal-size"><strong>{card.recommendedSize || '—'}</strong><span>size</span></div>
               </div>
               <span className={`hp-modal-fit ${cls}`}>{getFitLabel(card)}</span>
             </div>
           )}
           <div className="hp-modal-metrics">
+            <div className="hp-modal-metric">
+              <div className="hp-modal-metric-label">Fit score</div>
+              <div className="hp-modal-metric-value">{card.score}%</div>
+            </div>
             <div className="hp-modal-metric">
               <div className="hp-modal-metric-label">Comparable measurements</div>
               <div className="hp-modal-metric-value">{card.commonMeasurementCount}</div>
@@ -983,10 +1102,215 @@ function RecommendationDetailsModal({ card, onClose }: { card: EnrichedRecommend
               <div className="hp-modal-metric-value">{card.confidence === 'high' ? 'High' : 'Limited'}</div>
             </div>
           </div>
+          <div className={`hp-modal-confidence-note ${card.confidence}`}>
+            <span className="hp-modal-confidence-dot" aria-hidden="true" />
+            <div>
+              <strong>{card.confidence === 'high' ? 'High confidence' : 'Limited confidence'}</strong>
+              <span>{card.confidenceExplanation}</span>
+            </div>
+          </div>
+          {card.reasons.length > 0 && (
+            <div className="hp-modal-reasons">
+              <div className="hp-modal-reasons-title">Why this result</div>
+              <ul>
+                {card.reasons.map(reason => <li key={reason}>{reason}</li>)}
+              </ul>
+            </div>
+          )}
+          {card.missingMeasurements.length > 0 && (
+            <div className="hp-modal-missing">
+              <Ico.Alert />
+              <div>
+                <span>Useful measurements to add: <strong>{missingMeasurements}</strong>. This brand's chart supports them, and they provide more comparison data.</span>
+                <br />
+                <button type="button" className="hp-modal-add-measurements" onClick={onAddMeasurements}>
+                  Add useful measurements
+                </button>
+              </div>
+            </div>
+          )}
+          {!measurementUnavailable && (
+            <div className="hp-fit-feedback">
+              <div className="hp-fit-feedback-heading">Did this recommendation fit?</div>
+              <div className="hp-fit-feedback-copy">
+                After trying or buying this item, tell us how it fit. Your feedback helps improve future recommendations.
+              </div>
+              {feedbackSubmitted ? (
+                <div className="hp-fit-feedback-success" role="status">
+                  Thank you — your fit feedback has been saved.
+                </div>
+              ) : !feedbackExpanded ? (
+                <button className="hp-fit-feedback-open" type="button" onClick={() => setFeedbackExpanded(true)}>
+                  Leave fit feedback
+                </button>
+              ) : (
+                <div className="hp-fit-feedback-form">
+                  <div className="hp-fit-feedback-field">
+                    <div className="hp-fit-feedback-label">What did you do?</div>
+                    <div className="hp-fit-feedback-options">
+                      {([
+                        ['TRIED', 'Tried it'],
+                        ['BOUGHT', 'Bought it'],
+                      ] as const).map(([value, label]) => (
+                        <button
+                          className={`hp-fit-feedback-option ${experience === value ? 'active' : ''}`}
+                          type="button"
+                          key={value}
+                          aria-pressed={experience === value}
+                          onClick={() => setExperience(value)}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="hp-fit-feedback-field">
+                    <div className="hp-fit-feedback-label">How did the recommended size fit?</div>
+                    <div className="hp-fit-feedback-options outcomes">
+                      {([
+                        ['TOO_SMALL', 'Too small'],
+                        ['PERFECT', 'Perfect'],
+                        ['TOO_LARGE', 'Too large'],
+                      ] as const).map(([value, label]) => (
+                        <button
+                          className={`hp-fit-feedback-option ${outcome === value ? 'active' : ''}`}
+                          type="button"
+                          key={value}
+                          aria-pressed={outcome === value}
+                          onClick={() => setOutcome(value)}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="hp-fit-feedback-field">
+                    <label className="hp-fit-feedback-label" htmlFor="hp-fit-feedback-note">Note (optional)</label>
+                    <textarea
+                      className="hp-fit-feedback-note"
+                      id="hp-fit-feedback-note"
+                      maxLength={1000}
+                      value={feedbackNote}
+                      onChange={event => setFeedbackNote(event.target.value)}
+                      placeholder="Tell us where it felt tight, loose, or especially comfortable."
+                    />
+                    <div className="hp-fit-feedback-count">{feedbackNote.length} / 1000</div>
+                  </div>
+                  {feedbackError && <div className="hp-fit-feedback-error" role="alert">{feedbackError}</div>}
+                  <div className="hp-fit-feedback-actions">
+                    <button
+                      className="hp-fit-feedback-cancel"
+                      type="button"
+                      disabled={feedbackSubmitting}
+                      onClick={() => {
+                        setFeedbackExpanded(false);
+                        setFeedbackError(null);
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="hp-fit-feedback-submit"
+                      type="button"
+                      disabled={!experience || !outcome || feedbackSubmitting}
+                      onClick={() => void handleFeedbackSubmit()}
+                    >
+                      {feedbackSubmitting ? 'Saving…' : 'Submit feedback'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
     </div>,
     document.body,
+  );
+}
+
+function PublicFeedbackPanel() {
+  const [rating, setRating] = useState(0);
+  const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const normalizedMessage = message.trim();
+
+  const handleSubmit = async () => {
+    if (!rating || normalizedMessage.length < 10 || submitting) return;
+
+    setSubmitting(true);
+    setError(null);
+    try {
+      await submitSiteFeedback(rating, normalizedMessage);
+      setSubmitted(true);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Unable to publish your feedback.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <section className="hp-public-feedback" aria-labelledby="hp-public-feedback-title">
+      <div>
+        <div className="hp-public-feedback-eyebrow">Your voice matters</div>
+        <h2 className="hp-public-feedback-title" id="hp-public-feedback-title">Share your MatchMySize experience</h2>
+        <p className="hp-public-feedback-copy">
+          Tell future shoppers what you think about MatchMySize overall. This is separate from feedback about a specific size recommendation.
+        </p>
+      </div>
+      {submitted ? (
+        <div className="hp-public-feedback-success" role="status">
+          Thank you. Your review is now available in the customer stories section of our landing page.
+        </div>
+      ) : (
+        <div className="hp-public-feedback-form">
+          <div>
+            <div className="hp-public-feedback-label">Your rating</div>
+            <div className="hp-public-feedback-stars" role="group" aria-label="Overall rating">
+              {[1, 2, 3, 4, 5].map(value => (
+                <button
+                  className={`hp-public-feedback-star ${value <= rating ? 'active' : ''}`}
+                  type="button"
+                  key={value}
+                  aria-label={`${value} ${value === 1 ? 'star' : 'stars'}`}
+                  aria-pressed={rating === value}
+                  onClick={() => setRating(value)}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="hp-public-feedback-label" htmlFor="hp-public-feedback-message">Your feedback</label>
+            <textarea
+              className="hp-public-feedback-textarea"
+              id="hp-public-feedback-message"
+              maxLength={500}
+              value={message}
+              onChange={event => setMessage(event.target.value)}
+              placeholder="What was useful, and what could we improve?"
+            />
+          </div>
+          <div className="hp-public-feedback-meta">
+            <span>This will be public using only your first name and last initial.</span>
+            <span>{message.length} / 500</span>
+          </div>
+          {error && <div className="hp-public-feedback-error" role="alert">{error}</div>}
+          <button
+            className="hp-public-feedback-submit"
+            type="button"
+            disabled={!rating || normalizedMessage.length < 10 || submitting}
+            onClick={() => void handleSubmit()}
+          >
+            {submitting ? 'Publishing…' : 'Publish feedback'}
+          </button>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -1070,6 +1394,14 @@ export function HomePage() {
     ? `add ${formatMeasurementKeys(additionalMeasurementLabels)} measurements`
     : 'add more measurements';
   const extraMeasurementPrompt = `${additionalMeasurementText.charAt(0).toUpperCase()}${additionalMeasurementText.slice(1)} to improve the accuracy of your ${selectedClothingLabel.toLowerCase()} result.`;
+  const editMeasurementParams = new URLSearchParams();
+  if (selectedMeasurementProfile?.preferredClothing) {
+    editMeasurementParams.set('choice', selectedMeasurementProfile.preferredClothing);
+  }
+  if (selectedMeasurementProfile?.profileKey) {
+    editMeasurementParams.set('profileKey', selectedMeasurementProfile.profileKey);
+  }
+  const editMeasurementsPath = `/app/add-preference${editMeasurementParams.size ? `?${editMeasurementParams.toString()}` : ''}`;
 
   const cards = useMemo<EnrichedRecommendation[]>(() => {
     const base = (selectedSection?.recommendations ?? []).map(r => {
@@ -1190,7 +1522,7 @@ export function HomePage() {
               <button
                 type="button"
                 className="hp-measurement-prompt-btn"
-                onClick={() => navigate(`/app/add-preference?choice=${selectedMeasurementProfile?.preferredClothing ?? ''}`)}>
+                onClick={() => navigate(editMeasurementsPath)}>
                 Add measurements
               </button>
             </div>
@@ -1265,11 +1597,21 @@ export function HomePage() {
             </div>
           )}
 
+          <PublicFeedbackPanel />
+
         </div>
       </div>
 
       {selectedCard && (
-        <RecommendationDetailsModal card={selectedCard} onClose={() => setSelectedCard(null)} />
+        <RecommendationDetailsModal
+          card={selectedCard}
+          measurementProfileKey={selectedMeasurementProfile?.profileKey ?? 'default'}
+          onClose={() => setSelectedCard(null)}
+          onAddMeasurements={() => {
+            setSelectedCard(null);
+            navigate(editMeasurementsPath);
+          }}
+        />
       )}
     </div>
   );

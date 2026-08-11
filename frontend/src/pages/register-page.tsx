@@ -12,6 +12,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import manImage from '@/assets/images/man.png';
 import womenImage from '@/assets/images/women.png';
 import { AppLogo } from '@/components/app-logo';
+import { MeasurementValidationDialog } from '@/components/measurement-validation-dialog';
 import {
   CLOTHING_OPTIONS_BY_GENDER,
   DEFAULT_MEASUREMENT_LABELS,
@@ -23,12 +24,20 @@ import {
 } from '@/lib/measurement';
 import { requestOtpViaTextLk } from '@/lib/otp-client';
 import {
+  validateMeasurements,
+  type MeasurementValidationWarning,
+} from '@/lib/measurement-validation';
+import {
   DEFAULT_PHONE_COUNTRY_CODE,
   getSriLankaLocalPhoneInput,
   isValidE164Phone,
   normalizePhoneForAuth,
 } from '@/lib/phone-auth';
-import { setOtpSession, setPendingRegistration } from '@/lib/auth-flow';
+import {
+  setOtpSession,
+  setPendingRegistration,
+  type PendingRegistration,
+} from '@/lib/auth-flow';
 
 /* ─────────────────────────────────────────────
    Fonts + global CSS
@@ -1009,6 +1018,8 @@ export function RegisterPage() {
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState<string | null>(null);
   const [errorKey,    setErrorKey]    = useState(0);
+  const [measurementWarning, setMeasurementWarning] = useState<MeasurementValidationWarning | null>(null);
+  const [pendingRegistrationDraft, setPendingRegistrationDraft] = useState<PendingRegistration | null>(null);
 
   const clothingOptions = gender ? CLOTHING_OPTIONS_BY_GENDER[gender] : [];
   const template = useMemo(() => getClothingTemplate(gender, clothing), [gender, clothing]);
@@ -1045,6 +1056,20 @@ export function RegisterPage() {
     setStepIndex(i => i - 1);
   };
 
+  const sendVerificationCode = async (registration: PendingRegistration) => {
+    try {
+      setLoading(true); setError(null);
+      setPendingRegistration(registration);
+      const session = await requestOtpViaTextLk(registration.phoneNumber, 'signup');
+      setOtpSession(session);
+      navigate('/auth/otp');
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Unable to send verification code.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!template || !gender || !clothing || !selectedOption) return;
@@ -1058,26 +1083,37 @@ export function RegisterPage() {
     if (password.length < 6) { showError('Password must be at least 6 characters.'); return; }
     if (password !== confirmPw) { showError('Passwords do not match.'); return; }
 
+    const registration: PendingRegistration = {
+      firstName: firstName.trim(), lastName: lastName.trim(),
+      email: email.trim(), phoneNumber: normalizedPhone, password,
+      gender, preferredClothing: clothing,
+      preferredClothingLabel: selectedOption.label,
+      measurementProfileKey: template.profileKey, unit,
+      measurements: Object.fromEntries(template.fields.map(f => [f.key, measurements[f.key] ?? ''])),
+      primaryMeasurementKeys: template.fields.filter(f => f.isPrimary).map(f => f.key),
+      measurementDisplayNames: Object.fromEntries(template.fields.map(f => [f.key, f.label])),
+    };
+
     try {
       setLoading(true); setError(null);
-      setPendingRegistration({
-        firstName: firstName.trim(), lastName: lastName.trim(),
-        email: email.trim(), phoneNumber: normalizedPhone, password,
-        gender, preferredClothing: clothing,
-        preferredClothingLabel: selectedOption.label,
-        measurementProfileKey: template.profileKey, unit,
-        measurements: Object.fromEntries(template.fields.map(f => [f.key, measurements[f.key] ?? ''])),
-        primaryMeasurementKeys: template.fields.filter(f => f.isPrimary).map(f => f.key),
-        measurementDisplayNames: Object.fromEntries(template.fields.map(f => [f.key, f.label])),
+      const validation = await validateMeasurements({
+        unit: registration.unit,
+        measurements: registration.measurements,
       });
-      const session = await requestOtpViaTextLk(normalizedPhone, 'signup');
-      setOtpSession(session);
-      navigate('/auth/otp');
+      const warning = validation.warnings[0];
+      if (warning) {
+        setMeasurementWarning(warning);
+        setPendingRegistrationDraft(registration);
+        return;
+      }
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Unable to send verification code.');
+      showError(err instanceof Error ? err.message : 'Unable to validate measurements.');
+      return;
     } finally {
       setLoading(false);
     }
+
+    await sendVerificationCode(registration);
   };
 
   const phaseIdx = PHASES.indexOf(phase);
@@ -1390,6 +1426,34 @@ export function RegisterPage() {
 
         </PhaseContainer>
       </main>
+
+      <MeasurementValidationDialog
+        warning={measurementWarning}
+        onEditValue={() => {
+          setMeasurementWarning(null);
+          setPendingRegistrationDraft(null);
+          go('guide', 'back');
+        }}
+        onKeepEnteredValue={() => {
+          const registration = pendingRegistrationDraft;
+          setMeasurementWarning(null);
+          setPendingRegistrationDraft(null);
+          if (registration) void sendVerificationCode(registration);
+        }}
+        onUseSuggestedValue={() => {
+          const warning = measurementWarning;
+          const registration = pendingRegistrationDraft;
+          if (!warning || !registration) return;
+          const correctedMeasurements = {
+            ...registration.measurements,
+            [warning.field]: String(warning.suggestedValue),
+          };
+          setMeasurements(current => ({ ...current, [warning.field]: String(warning.suggestedValue) }));
+          setMeasurementWarning(null);
+          setPendingRegistrationDraft(null);
+          void sendVerificationCode({ ...registration, measurements: correctedMeasurements });
+        }}
+      />
     </div>
   );
 }

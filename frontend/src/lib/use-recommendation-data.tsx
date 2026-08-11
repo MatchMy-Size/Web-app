@@ -159,7 +159,7 @@ export const getCategoryBadge = (sections: RecommendationSection[], choice: stri
   const section = sections.find((entry) => entry.choice === choice);
   if (!section) return 'Add sizes';
   if (section.status === 'no-reliable-match') return 'No reliable fit';
-  if (section.status === 'no-comparable-key-measurements') return 'Primary data unavailable';
+  if (section.status === 'no-comparable-key-measurements') return 'Primary measurement unavailable';
   return `${section.recommendations.length} matches`;
 };
 

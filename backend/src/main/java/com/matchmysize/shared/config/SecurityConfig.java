@@ -31,6 +31,8 @@ public class SecurityConfig {
                     "/api/health",
                     "/actuator/health/**",
                     "/api/catalog/summary",
+                    "/api/feedback/public",
+                    "/api/measurements/validate",
                     "/api/otp/request",
                     "/api/otp/verify",
                     "/api/auth/register",
