@@ -732,10 +732,7 @@ const CSS = `
 
   @media (max-width: 760px) {
     .ap-topbar {
-      height: auto;
-      min-height: 62px;
-      padding: 10px 14px;
-      gap: 8px;
+      display: none;
     }
     .ap-topbar-divider {
       display: none;
@@ -751,7 +748,7 @@ const CSS = `
       display: none;
     }
     .ap-progress-bar {
-      top: 62px;
+      top: var(--nav-h, 64px);
     }
     .ap-layout {
       grid-template-columns: 1fr;
@@ -779,9 +776,34 @@ const CSS = `
       grid-template-columns: 1fr;
       gap: 10px;
     }
-    .ap-choice-card {
-      padding: 16px;
-      border-radius: 14px;
+    .ap-phase-choose .ap-choice-card {
+      min-height: 76px;
+      display: grid;
+      grid-template-columns: 42px minmax(0,1fr) auto;
+      align-items: center;
+      gap: 6px 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+    }
+    .ap-phase-choose .ap-choice-card .ap-check-circle {
+      grid-column: 3;
+      grid-row: 1 / span 2;
+      position: static;
+    }
+    .ap-phase-choose .ap-choice-card .ap-choice-icon {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+    }
+    .ap-phase-choose .ap-choice-card .ap-choice-card-title {
+      grid-column: 2;
+      grid-row: 1;
+      align-self: end;
+    }
+    .ap-phase-choose .ap-choice-card .ap-choice-card-sub {
+      grid-column: 2;
+      grid-row: 2;
+      align-self: start;
+      margin-top: 0;
     }
     .ap-guide-layout {
       grid-template-columns: 1fr;
@@ -834,6 +856,17 @@ const CSS = `
       z-index: 20;
       padding-top: 8px;
       background: var(--paper);
+    }
+    .ap-phase-choose .ap-actions,
+    .ap-phase-gender .ap-actions {
+      position: static;
+      bottom: auto;
+      padding-top: 4px;
+      background: transparent;
+    }
+    .ap-phase-choose .ap-btn-next,
+    .ap-phase-gender .ap-btn-next {
+      min-height: 50px;
     }
     .ap-btn-back,
     .ap-btn-next {
@@ -1362,7 +1395,7 @@ export function AddPreferencePage() {
   const filledMeasurements = template?.fields.slice(0, stepIndex).filter(f => measurements[f.key]) ?? [];
 
   return (
-    <div className="ap-root">
+    <div className={`ap-root ap-phase-${!normalizedGender ? 'gender' : phase}`}>
 
       {/* ── Topbar ── */}
       <div className="ap-topbar">
