@@ -24,6 +24,8 @@ public class CatalogService {
         List<String> brandNames
     ) {}
 
+    public record PublicBrand(String key, String name, String logoUrl) {}
+
     private record SellerProfile(String sourceAccountId, Map<String, Object> profileData) {}
 
     private final JdbcClient jdbc;
@@ -100,6 +102,39 @@ public class CatalogService {
             .list();
 
         return new CatalogSummary(brandCount, catalogRowCount, sellerCount, brandNames);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PublicBrand> publicBrands() {
+        return jdbc.sql("""
+                select id, profile_data::text as profile_json
+                  from app_users
+                 where role = 'seller'
+                   and status = 'active'
+                 order by lower(coalesce(
+                     nullif(trim(profile_data ->> 'businessName'), ''),
+                     nullif(trim(profile_data ->> 'brandName'), ''),
+                     nullif(trim(profile_data ->> 'displayName'), ''),
+                     'seller'
+                 )), id
+                """)
+            .query((rs, rowNum) -> {
+                var id = rs.getLong("id");
+                var profile = jsonMaps.read(rs.getString("profile_json"));
+                var name = firstText(
+                    profile,
+                    "businessName", "brandName", "storeName", "shopName",
+                    "companyName", "sellerName", "displayName"
+                );
+                if (name == null) name = "Seller brand";
+                var logoUrl = firstText(
+                    profile,
+                    "photoURL", "photoUrl", "logoUrl", "logoURL", "imageUrl",
+                    "imageURL", "profilePhoto", "profileImage"
+                );
+                return new PublicBrand("seller-" + id, name, logoUrl);
+            })
+            .list();
     }
 
     private Map<String, Object> publicSeller(String id, Map<String, Object> profile) {

@@ -3,6 +3,8 @@ export type SessionUser = {
   email: string | null;
   phoneNumber: string | null;
   displayName: string | null;
+  role: 'customer' | 'seller' | 'admin' | string | null;
+  status: string | null;
 };
 
 export type SessionResponse = {

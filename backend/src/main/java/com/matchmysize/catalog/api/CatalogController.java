@@ -1,5 +1,7 @@
 package com.matchmysize.catalog.api;
 
+import java.util.List;
+
 import com.matchmysize.catalog.application.CatalogService;
 import com.matchmysize.shared.api.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,5 +25,10 @@ public class CatalogController {
     @GetMapping("/summary")
     ApiResponse<CatalogService.CatalogSummary> summary() {
         return ApiResponse.success(catalogService.summary());
+    }
+
+    @GetMapping("/brands")
+    ApiResponse<List<CatalogService.PublicBrand>> brands() {
+        return ApiResponse.success(catalogService.publicBrands());
     }
 }
