@@ -513,7 +513,7 @@ const CSS = `
 
   /* Simplified profile hub */
   .wp-simple-page {
-    width: min(760px, 100%);
+    width: min(1240px, 100%);
     margin: 0 auto;
     padding: 24px 24px calc(110px + env(safe-area-inset-bottom, 0px));
     display: flex;
@@ -607,6 +607,13 @@ const CSS = `
     border: 1px solid var(--cloud);
     border-radius: 16px;
     overflow: hidden;
+  }
+
+  .wp-simple-sections {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 14px;
   }
 
   .wp-simple-section-title {
@@ -952,6 +959,16 @@ const CSS = `
     }
   }
 
+  @media (max-width: 860px) {
+    .wp-simple-page {
+      width: min(760px, 100%);
+    }
+
+    .wp-simple-sections {
+      grid-template-columns: 1fr;
+    }
+  }
+
   @media (max-width: 390px) {
     .wp-simple-page {
       padding-inline: 14px;
@@ -1183,6 +1200,7 @@ export function ProfilePage() {
           </button>
         </section>
 
+        <div className="wp-simple-sections">
         <section className="wp-simple-section">
           <div className="wp-simple-section-title">Account</div>
           <button className="wp-simple-row" type="button" onClick={() => navigate('/app/profile/details')}>
@@ -1417,6 +1435,7 @@ export function ProfilePage() {
             {!signingOut && <div className="wp-simple-chevron"><Ico.Chevron /></div>}
           </button>
         </section>
+        </div>
       </main>
     </div>
   );

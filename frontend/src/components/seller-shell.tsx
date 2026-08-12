@@ -47,11 +47,6 @@ export function SellerShell() {
           ))}
         </nav>
 
-        <div className="seller-sidebar-note">
-          <span className="seller-live-dot" />
-          <div><strong>Customer-ready data</strong><small>Published measurements appear in recommendations.</small></div>
-        </div>
-
         <div className="seller-sidebar-user">
           <span className="seller-avatar">{(user?.displayName || user?.email || 'S').charAt(0).toUpperCase()}</span>
           <span><strong>{user?.displayName || 'Seller'}</strong><small>{user?.email || 'Seller account'}</small></span>
@@ -71,4 +66,3 @@ export function SellerShell() {
     </div>
   );
 }
-

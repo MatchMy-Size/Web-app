@@ -1248,7 +1248,7 @@
 
 
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 import appStoreIcon from '@/assets/images/appstore.png';
 import cameraIcon from '@/assets/images/camera.png';
@@ -1264,8 +1264,7 @@ import searchIcon from '@/assets/images/search.png';
 import starIcon from '@/assets/images/star.png';
 import tshirtIcon from '@/assets/images/t-shirt.png';
 import { AppLogo } from '@/components/app-logo';
-import { BRAND_LOGOS } from '@/lib/brand-logos';
-import { useCatalogSummary } from '@/lib/catalog-summary';
+import { BRAND_LOGOS, getBrandLogo } from '@/lib/brand-logos';
 import { fetchPublicBrands, LOCAL_LANDING_BRANDS, type LandingBrand } from '@/lib/public-brands';
 import { getPublicSiteFeedback, type PublicSiteFeedback } from '@/lib/site-feedback';
 
@@ -2307,13 +2306,25 @@ function PhoneResult() {
    Main page
 ───────────────────────────────────────────── */
 export function LandingPage() {
-  const { brandNames } = useCatalogSummary();
   const [publicFeedback, setPublicFeedback] = useState<PublicSiteFeedback[]>([]);
   const [landingBrands, setLandingBrands] = useState<LandingBrand[]>(LOCAL_LANDING_BRANDS);
+  const animatedBrands = useMemo(() => {
+    const seen = new Set<string>();
+    return landingBrands.filter(brand => {
+      const knownBrand = getBrandLogo(brand.name);
+      const identity = knownBrand
+        ? `brand:${knownBrand.key}`
+        : brand.src
+          ? `image:${brand.src.trim().toLowerCase()}`
+          : `name:${brand.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+      if (seen.has(identity)) return false;
+      seen.add(identity);
+      return true;
+    });
+  }, [landingBrands]);
   const brandCount = landingBrands.length;
   const features = getFeatures(brandCount);
   const stats = getStats(brandCount);
-  const brands = brandNames.length ? brandNames : BRAND_LOGOS.map((brand) => brand.name);
 
   useEffect(() => {
     let active = true;
@@ -2383,7 +2394,7 @@ export function LandingPage() {
           </div>
           {/* Right — horizontally auto-scrolling brand logos */}
           <div className="lp-hero-right">
-            <AutoScrollingBrands brands={landingBrands}/>
+            <AutoScrollingBrands brands={animatedBrands}/>
           </div>
         </div>
       </section>
@@ -2452,9 +2463,11 @@ export function LandingPage() {
         <div className="lp-section-inner">
           <div className="lp-eyebrow lp-reveal"><div className="lp-eyebrow-line"/><span>Supported brands</span></div>
           <h2 className="lp-section-title lp-reveal lp-d1">Every brand, <em>one profile</em></h2>
-          <p className="lp-section-sub lp-reveal lp-d2">From fast fashion to luxury — if they make clothes, we have their sizing.</p>
-          <div className="lp-brands-grid">{brands.map((brand,i)=><div key={brand} className={`lp-brand-pill lp-reveal lp-d${i%6}`}>{brand}</div>)}</div>
-          <p className="lp-reveal" style={{marginTop:32,fontSize:13,color:'var(--ash)',textAlign:'center'}}>{brandCount} active brands with live sizing data.</p>
+          <p className="lp-section-sub lp-reveal lp-d2">Discover every active seller brand registered with MatchMySize.</p>
+          <div className="lp-brands-grid">
+            {landingBrands.map(brand => <div key={brand.key} className="lp-brand-pill">{brand.name}</div>)}
+          </div>
+          <p className="lp-reveal" style={{marginTop:32,fontSize:13,color:'var(--ash)',textAlign:'center'}}>{brandCount} registered brands and growing.</p>
         </div>
       </section>
 

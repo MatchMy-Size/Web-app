@@ -6,6 +6,10 @@ export type SellerPublicProfile = {
   displayName: string;
   photoURL: string | null;
   logoKey?: string | null;
+  websiteUrl?: string | null;
+  instagramUrl?: string | null;
+  facebookUrl?: string | null;
+  tiktokUrl?: string | null;
 };
 
 const parseSellerUserId = (sellerRef: string | null | undefined): string | null => {

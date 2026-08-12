@@ -81,6 +81,20 @@ const CSS = `
   }
   .ap-topbar-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
 
+  /* Editing is a focused task, so its breadcrumb header stays compact. */
+  .ap-topbar.ap-topbar-edit {
+    height: 52px;
+    min-height: 52px;
+    padding: 0 32px;
+    gap: 10px;
+  }
+  .ap-topbar.ap-topbar-edit .ap-topbar-back {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  .ap-topbar.ap-topbar-edit .ap-topbar-divider { height: 18px; }
+  .ap-topbar.ap-topbar-edit .ap-topbar-title { font-size: 18px; }
+
   /* Step progress in topbar */
   .ap-step-track { display: flex; align-items: center; gap: 0; }
   .ap-step-item {
@@ -1365,7 +1379,7 @@ export function AddPreferencePage() {
     <div className="ap-root">
 
       {/* ── Topbar ── */}
-      <div className="ap-topbar">
+      <div className={`ap-topbar${isEditRequest ? ' ap-topbar-edit' : ''}`}>
         <button className="ap-topbar-back" onClick={() => navigate(returnPath)}>
           {returnLabel}
         </button>

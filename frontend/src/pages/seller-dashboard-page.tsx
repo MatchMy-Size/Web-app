@@ -57,7 +57,6 @@ export function SellerDashboardPage() {
           <section className="seller-stat-grid">
             <article className="seller-stat-card dark"><div className="seller-stat-icon"><FiGrid /></div><span>Published charts</span><strong>{dashboard.categoryCount}</strong><small>Clothing categories connected to customers</small></article>
             <article className="seller-stat-card"><div className="seller-stat-icon"><FiCheckCircle /></div><span>Size entries</span><strong>{dashboard.sizeCount}</strong><small>Individual sizes available for matching</small></article>
-            <article className="seller-stat-card sage"><div className="seller-stat-icon"><FiArrowRight /></div><span>Data status</span><strong>{dashboard.sizeCount > 0 ? 'Live' : 'Ready'}</strong><small>{dashboard.sizeCount > 0 ? 'Your data is part of customer recommendations' : 'Add a chart to start matching customers'}</small></article>
           </section>
 
           <section className="seller-dashboard-grid">
@@ -65,11 +64,6 @@ export function SellerDashboardPage() {
               <div className="seller-panel-head"><div><p className="seller-kicker">Quick action</p><h3>Manage size charts</h3></div><FiGrid /></div>
               <p>Add clothing categories and the measurements for every available size. Product inventory is intentionally not part of this portal.</p>
               <Link className="seller-action-row" to="/seller/categories"><span><FiGrid /></span><div><strong>Open size chart manager</strong><small>Create, edit, or archive category measurements</small></div><FiArrowRight /></Link>
-            </article>
-            <article className="seller-panel seller-guidance-panel">
-              <p className="seller-kicker">Measurement standard</p><h3>One consistent source of truth</h3>
-              <p>You may enter centimetres or inches. MatchMySize normalizes every seller value into centimetres before saving and matching.</p>
-              <div className="seller-guidance-tags"><span>cm storage</span><span>Seller-owned</span><span>Customer-ready</span></div>
             </article>
           </section>
         </>
@@ -93,6 +87,8 @@ function SellerProfileModal({ profile, onClose, onSaved }: { profile: SellerProf
       const saved = await updateSellerProfile({
         businessName: draft.businessName, contactName: draft.contactName, email: draft.email,
         phoneNumber: draft.phoneNumber, address: draft.address, photoUrl: draft.photoUrl,
+        websiteUrl: draft.websiteUrl, instagramUrl: draft.instagramUrl,
+        facebookUrl: draft.facebookUrl, tiktokUrl: draft.tiktokUrl,
       });
       onSaved(saved);
     } catch (cause) {
@@ -123,6 +119,11 @@ function SellerProfileModal({ profile, onClose, onSaved }: { profile: SellerProf
               <label><span>Sign-in email</span><input type="email" value={draft.email} readOnly aria-readonly="true" title="Your authentication email cannot be changed here." /><small className="seller-field-help">Contact support to change the sign-in email.</small></label>
               <label><span>Phone number</span><input value={draft.phoneNumber} onChange={event => update('phoneNumber', event.target.value)} /></label>
               <label className="seller-grid-wide"><span>Address</span><textarea value={draft.address} onChange={event => update('address', event.target.value)} rows={3} /></label>
+              <div className="seller-grid-wide seller-form-divider"><span>Public brand links</span><small>These links appear to customers when they open your brand recommendation.</small></div>
+              <label><span>Website</span><input inputMode="url" placeholder="yourbrand.com" value={draft.websiteUrl ?? ''} onChange={event => update('websiteUrl', event.target.value)} /></label>
+              <label><span>Instagram</span><input inputMode="url" placeholder="instagram.com/yourbrand" value={draft.instagramUrl ?? ''} onChange={event => update('instagramUrl', event.target.value)} /></label>
+              <label><span>Facebook</span><input inputMode="url" placeholder="facebook.com/yourbrand" value={draft.facebookUrl ?? ''} onChange={event => update('facebookUrl', event.target.value)} /></label>
+              <label><span>TikTok</span><input inputMode="url" placeholder="tiktok.com/@yourbrand" value={draft.tiktokUrl ?? ''} onChange={event => update('tiktokUrl', event.target.value)} /></label>
             </div>
             {error && <div className="seller-form-error">{error}</div>}
           </div>
