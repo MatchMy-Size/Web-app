@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { IconType } from 'react-icons';
 import { GiShorts } from 'react-icons/gi';
@@ -5,13 +6,20 @@ import { PiCoatHanger, PiDress, PiPants, PiShirtFolded, PiTShirt } from 'react-i
 
 import { useAuth } from '@/context/auth-context';
 import { useProfileSubject } from '@/context/profile-subject-context';
+import { saveCustomerMeasurementProfile } from '@/lib/customer-profile';
+import { saveFamilyMemberMeasurementProfile } from '@/lib/family-members';
 import {
   DEFAULT_MEASUREMENT_LABELS,
   getClothingTemplate,
   normalizeGender,
   type ClothingChoice,
   type CustomerGender,
+  type MeasurementFieldKey,
 } from '@/lib/measurement';
+import {
+  convertMeasurementRecord,
+  type MeasurementUnit,
+} from '@/lib/measurement-units';
 import type { CustomerMeasurementProfile } from '@/lib/recommendation-view';
 import { useRecommendationData } from '@/lib/use-recommendation-data';
 
@@ -85,10 +93,14 @@ const CSS = `
   .mw-unit-btn {
     font-family: var(--fs); font-size: 12px; font-weight: 700;
     padding: 5px 12px; border: none; border-radius: 6px;
-    cursor: default; color: var(--ash); background: transparent;
+    cursor: pointer; color: var(--ash); background: transparent;
     transition: all 0.2s;
   }
   .mw-unit-btn.active { background: var(--ink); color: var(--white); }
+  .mw-unit-btn:disabled { cursor: wait; opacity: 0.6; }
+  .mw-unit-error {
+    margin: 8px 0 0; color: #a33b32; font-size: 12px; text-align: right;
+  }
   .mw-add-btn {
     display: flex; align-items: center; gap: 7px;
     font-family: var(--fs); font-size: 13px; font-weight: 600;
@@ -1363,13 +1375,83 @@ export function MeasurementsPage() {
   const { categoryOptions, measurementProfiles, normalizedGender, profile } = useRecommendationData(user?.uid);
   const activeKey = typeof profile?.activeMeasurementProfileKey === 'string'
     ? profile.activeMeasurementProfileKey : null;
-  const unit = (profile?.unit as 'cm' | 'in') ?? 'cm';
+  const storedUnit: MeasurementUnit = profile?.unit === 'in' ? 'in' : 'cm';
+  const [unit, setUnit] = useState<MeasurementUnit>(storedUnit);
+  const [unitChanging, setUnitChanging] = useState(false);
+  const [unitError, setUnitError] = useState('');
+
+  const displayUnitKey = `matchmysize:measurement-unit:${selectedSubject?.key ?? 'self'}`;
+
+  useEffect(() => {
+    const savedDisplayUnit = window.localStorage.getItem(displayUnitKey);
+    setUnit(savedDisplayUnit === 'in' || savedDisplayUnit === 'cm' ? savedDisplayUnit : storedUnit);
+  }, [displayUnitKey, storedUnit]);
 
   const customerGender =
     normalizeGender(normalizedGender) ??
     normalizeGender(profile?.gender) ??
     normalizeGender(measurementProfiles[0]?.gender);
   const hasAvailableCategories = categoryOptions.length > 0;
+
+  const changeUnit = async (nextUnit: MeasurementUnit) => {
+    if (!user?.uid || nextUnit === unit || unitChanging) return;
+
+    setUnitChanging(true);
+    setUnitError('');
+
+    try {
+      for (const entry of measurementProfiles) {
+        if (!entry.preferredClothing) continue;
+
+        const sourceUnit: MeasurementUnit = entry.unit === 'in' ? 'in' : 'cm';
+        const stringMeasurements = Object.fromEntries(
+          Object.entries(entry.measurements ?? {}).map(([key, value]) => [
+            key,
+            value === null || value === undefined ? '' : String(value),
+          ]),
+        );
+        const convertedMeasurements = convertMeasurementRecord(
+          stringMeasurements,
+          sourceUnit,
+          nextUnit,
+        );
+        const primaryMeasurementKeys = entry.primaryMeasurementKeys.filter(
+          (key): key is MeasurementFieldKey => key in DEFAULT_MEASUREMENT_LABELS,
+        );
+        const measurementDisplayNames = Object.fromEntries(
+          Object.keys(convertedMeasurements).map(key => [key, fallbackMeasurementLabel(key)]),
+        );
+        const payload = {
+          gender: normalizeGender(entry.gender),
+          preferredClothing: entry.preferredClothing,
+          preferredClothingLabel: entry.preferredClothingLabel,
+          measurementProfileKey: entry.profileKey,
+          unit: nextUnit,
+          measurements: convertedMeasurements,
+          primaryMeasurementKeys,
+          measurementDisplayNames,
+          setAsActive: entry.profileKey === activeKey,
+        };
+
+        if (selectedSubject?.type === 'family') {
+          await saveFamilyMemberMeasurementProfile({
+            ownerUid: user.uid,
+            familyMemberId: selectedSubject.id,
+            ...payload,
+          });
+        } else {
+          await saveCustomerMeasurementProfile({ uid: user.uid, ...payload });
+        }
+      }
+
+      window.localStorage.setItem(displayUnitKey, nextUnit);
+      setUnit(nextUnit);
+    } catch (error) {
+      setUnitError(error instanceof Error ? error.message : 'Unable to change units. Please try again.');
+    } finally {
+      setUnitChanging(false);
+    }
+  };
 
   return (
     <div className="mw-root">
@@ -1379,10 +1461,23 @@ export function MeasurementsPage() {
         <span className="mw-topbar-title">Measurements</span>
 
         <div className="mw-topbar-right">
-          {/* Unit indicator */}
           <div className="mw-unit-toggle">
-            <div className={`mw-unit-btn${unit === 'cm' ? ' active' : ''}`}>cm</div>
-            <div className={`mw-unit-btn${unit === 'in' ? ' active' : ''}`}>in</div>
+            <button
+              type="button"
+              className={`mw-unit-btn${unit === 'cm' ? ' active' : ''}`}
+              aria-pressed={unit === 'cm'}
+              disabled={unitChanging}
+              onClick={() => void changeUnit('cm')}>
+              cm
+            </button>
+            <button
+              type="button"
+              className={`mw-unit-btn${unit === 'in' ? ' active' : ''}`}
+              aria-pressed={unit === 'in'}
+              disabled={unitChanging}
+              onClick={() => void changeUnit('in')}>
+              in
+            </button>
           </div>
           <button className="mw-add-btn" onClick={() => navigate('/app/add-preference')}>
             <Ico.Plus /> Add measurements
@@ -1392,6 +1487,7 @@ export function MeasurementsPage() {
 
       {/* ── Page ── */}
       <div className="mw-page">
+        {unitError && <p className="mw-unit-error" role="alert">{unitError}</p>}
 
         {/* Empty state */}
         {!measurementProfiles.length && !hasAvailableCategories && (
@@ -1425,17 +1521,15 @@ export function MeasurementsPage() {
                   const parts = categoryMeasurementParts(cardGender, option.key, savedProfile);
                   const statusLabel = isDefault ? 'Default' : savedProfile ? 'Added' : 'Add';
                   const savedCount = Object.keys(savedProfile?.measurements ?? {}).length;
-                  const cardUnit = savedProfile?.unit === 'in' || savedProfile?.unit === 'cm'
-                    ? savedProfile.unit
-                    : unit;
+                  const storedCardUnit: MeasurementUnit = savedProfile?.unit === 'in' ? 'in' : 'cm';
                   return (
                     <button
                       key={option.key}
                       className={`mw-category-card ${savedProfile ? 'is-added' : 'is-missing'}${isDefault ? ' is-default' : ''}`}
                       onClick={() => navigate(
                         savedProfile
-                          ? `/app/add-preference?profileKey=${savedProfile.profileKey}`
-                          : `/app/add-preference?choice=${option.key}`
+                          ? `/app/add-preference?profileKey=${savedProfile.profileKey}&unit=${unit}`
+                          : `/app/add-preference?choice=${option.key}&unit=${unit}`
                       )}>
                       <div className="mw-category-card-top">
                         <div className="mw-category-icon"><ClothingCategoryIcon categoryKey={option.key} /></div>
@@ -1451,7 +1545,15 @@ export function MeasurementsPage() {
                               key={part.key}
                               className={`mw-body-part${part.isPrimary ? ' is-primary' : ''}${hasValue ? ' is-filled' : ''}`}>
                               {part.label}
-                              {hasValue && <strong>{String(savedValue)} {cardUnit}</strong>}
+                              {hasValue && (
+                                <strong>
+                                  {convertMeasurementRecord(
+                                    { value: String(savedValue) },
+                                    storedCardUnit,
+                                    unit,
+                                  ).value} {unit}
+                                </strong>
+                              )}
                             </span>
                           );
                         })}

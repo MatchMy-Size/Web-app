@@ -15,6 +15,7 @@ import { PiCoatHanger, PiDress, PiPants, PiShirtFolded, PiTShirt } from 'react-i
 import manImage from '@/assets/images/man.png';
 import womenImage from '@/assets/images/women.png';
 import { AppLogo } from '@/components/app-logo';
+import { MeasurementFigureGuide } from '@/components/measurement-figure-guide';
 import { MeasurementValidationDialog } from '@/components/measurement-validation-dialog';
 import {
   CLOTHING_OPTIONS_BY_GENDER,
@@ -30,6 +31,7 @@ import {
   validateMeasurements,
   type MeasurementValidationWarning,
 } from '@/lib/measurement-validation';
+import { convertMeasurementRecord, type MeasurementUnit } from '@/lib/measurement-units';
 import {
   DEFAULT_PHONE_COUNTRY_CODE,
   getSriLankaLocalPhoneInput,
@@ -50,6 +52,7 @@ fontLink.rel = 'stylesheet';
 fontLink.href =
   'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap';
 if (!document.querySelector('[href*="Cormorant+Garamond"]')) document.head.appendChild(fontLink);
+
 
 const CSS = `
   :root {
@@ -395,8 +398,8 @@ const CSS = `
   /* Measurement guide card */
   .rp-measure-card {
     background: var(--white); border: 1px solid var(--cloud);
-    border-radius: 16px; padding: 24px;
-    display: flex; gap: 18px; margin-bottom: 24px;
+    border-radius: 16px; padding: 0;
+    display: block; margin-bottom: 24px;
     position: relative; overflow: hidden;
   }
   .rp-measure-card::before {
@@ -404,6 +407,27 @@ const CSS = `
     width: 4px; background: var(--sage-deep);
     border-radius: 16px 0 0 16px;
   }
+  .rp-measure-visual {
+    position: relative; height: 300px; overflow: hidden;
+    background: #101512; border-bottom: 1px solid var(--cloud);
+  }
+  .rp-measure-visual img {
+    width: 100%; height: 100%; display: block; object-fit: cover;
+    object-position: var(--guide-x,50%) var(--guide-y,30%);
+    transform: scale(var(--guide-scale,1.8));
+    transition: transform .34s var(--ease), object-position .34s var(--ease);
+  }
+  .rp-measure-visual::after {
+    content:''; position:absolute; inset:0; pointer-events:none;
+    box-shadow:inset 0 -45px 44px rgba(8,12,9,.34);
+  }
+  .rp-measure-visual-label {
+    position:absolute; left:14px; bottom:12px; z-index:1;
+    padding:6px 10px; border-radius:999px;
+    background:rgba(250,250,248,.94); color:#496657;
+    font-size:10px; font-weight:800; letter-spacing:.04em;
+  }
+  .rp-measure-card-content { display:flex; gap:18px; padding:20px 24px 22px; }
   .rp-measure-icon-wrap {
     width: 44px; height: 44px; border-radius: 10px;
     background: var(--sage-light); border: 1px solid var(--sage-dark);
@@ -805,9 +829,16 @@ const CSS = `
     }
 
     .rp-measure-card {
-      flex-direction: column;
-      gap: 14px;
-      padding: 20px;
+      padding: 0;
+    }
+
+    .rp-measure-visual {
+      height: 220px;
+    }
+
+    .rp-measure-card-content {
+      gap: 12px;
+      padding: 16px;
     }
 
     .rp-measure-icon-wrap {
@@ -1097,7 +1128,7 @@ export function RegisterPage() {
   const [stepIndex,   setStepIndex]   = useState(0);
   const [gender,      setGender]      = useState<CustomerGender | null>(null);
   const [clothing,    setClothing]    = useState<ClothingChoice | null>(null);
-  const [unit]                         = useState<'cm' | 'in'>('cm');
+  const [unit, setUnit]                = useState<MeasurementUnit>('cm');
   const [measurements, setMeasurements] = useState<Partial<Record<MeasurementFieldKey, string>>>({});
   const [firstName,   setFirstName]   = useState('');
   const [lastName,    setLastName]    = useState('');
@@ -1118,6 +1149,13 @@ export function RegisterPage() {
   const selectedOption = clothingOptions.find(o => o.key === clothing) ?? null;
   const completedMeasurementCount = Object.values(measurements).filter(value => parsePositiveNumber(value) !== null).length;
   const completedMeasurementLabel = `${completedMeasurementCount} measurement${completedMeasurementCount === 1 ? '' : 's'} saved`;
+
+  const changeUnit = (nextUnit: MeasurementUnit) => {
+    if (nextUnit === unit) return;
+    setMeasurements(current => convertMeasurementRecord(current, unit, nextUnit));
+    setUnit(nextUnit);
+    setError(null);
+  };
 
   const go = (next: Phase, direction: 'fwd' | 'back' = 'fwd') => {
     setError(null);
@@ -1356,23 +1394,31 @@ export function RegisterPage() {
 
               {/* Measurement guide card */}
               <div className="rp-measure-card">
-                <div className="rp-measure-icon-wrap"><Ico.Ruler /></div>
-                <div className="rp-measure-card-body">
-                  <div className="rp-measure-card-label">
-                    {currentStep.isPrimary ? 'Required' : 'Optional'}
-                  </div>
-                  <div className="rp-measure-card-title">{currentStep.label}</div>
-                  <div className="rp-measure-card-body-text">{currentStep.body}</div>
-                  {currentStep.tip && (
-                    <div className="rp-measure-tip">
-                      <Ico.Bulb /> {currentStep.tip}
+                <MeasurementFigureGuide gender={gender!} field={currentStep.key} label={currentStep.label} />
+                <div className="rp-measure-card-content">
+                  <div className="rp-measure-icon-wrap"><Ico.Ruler /></div>
+                  <div className="rp-measure-card-body">
+                    <div className="rp-measure-card-label">
+                      {currentStep.isPrimary ? 'Required' : 'Optional'}
                     </div>
-                  )}
+                    <div className="rp-measure-card-title">{currentStep.label}</div>
+                    <div className="rp-measure-card-body-text">{currentStep.body}</div>
+                    {currentStep.tip && (
+                      <div className="rp-measure-tip">
+                        <Ico.Bulb /> {currentStep.tip}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* Input */}
               <div style={{ marginBottom: 24 }}>
+                <div className="rp-unit-toggle" aria-label="Measurement unit">
+                  <button type="button" className={`rp-unit-btn${unit === 'cm' ? ' is-active' : ''}`} onClick={() => changeUnit('cm')}>Centimetres</button>
+                  <button type="button" className={`rp-unit-btn${unit === 'in' ? ' is-active' : ''}`} onClick={() => changeUnit('in')}>Inches</button>
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--ash)', margin: '7px 0 14px' }}>Entered values convert automatically.</div>
                 <label className="rp-label">
                   {currentStep.label}
                   <span className={`rp-field-badge ${currentStep.isPrimary ? 'required' : 'optional'}`}>
