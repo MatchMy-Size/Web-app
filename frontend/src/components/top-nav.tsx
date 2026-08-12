@@ -405,6 +405,27 @@ const CSS = `
     height: 14px;
     flex-shrink: 0;
   }
+  .tn-subject-toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    z-index: 700;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: var(--ink);
+    box-shadow: 0 14px 34px rgba(13,13,13,0.24);
+    color: var(--white);
+    font-family: var(--fs);
+    font-size: 12.5px;
+    font-weight: 800;
+    line-height: 1.2;
+    text-align: center;
+    pointer-events: none;
+    animation: tn-toastIn 0.22s var(--ease) both;
+  }
 
   .tn-user-wrap {
     position: relative;
@@ -433,6 +454,10 @@ const CSS = `
   @keyframes tn-pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
     50%       { opacity: 0.6; transform: scale(0.85); }
+  }
+  @keyframes tn-toastIn {
+    from { opacity: 0; transform: translate(-50%, 8px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
   }
 
   /* ── Page offset so content starts below nav ── */
@@ -515,6 +540,13 @@ const CSS = `
     }
   }
 
+  @media (min-width: 961px) {
+    .tn-subject-toast {
+      top: calc(var(--nav-h) + 12px);
+      bottom: auto;
+    }
+  }
+
   @media (max-width: 640px) {
     :root {
       --nav-h: 72px;
@@ -591,6 +623,81 @@ const CSS = `
     }
   }
 
+  @media (max-width: 430px) {
+    .tn-inner {
+      padding: 9px 10px;
+      gap: 6px;
+    }
+
+    .tn-brand {
+      gap: 7px;
+    }
+
+    .tn-brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+    }
+
+    .tn-brand-name {
+      max-width: 150px;
+      font-size: 17px;
+    }
+
+    .tn-brand-tagline {
+      font-size: 8.5px;
+    }
+
+    .tn-actions {
+      gap: 6px;
+    }
+
+    .tn-icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+    }
+
+    .tn-user-wrap {
+      flex-basis: 138px;
+    }
+
+    .tn-user-btn {
+      min-height: 38px;
+      gap: 7px;
+      border-radius: 12px;
+    }
+
+    .tn-avatar {
+      width: 25px;
+      height: 25px;
+      font-size: 10.5px;
+    }
+
+    .tn-user-name,
+    .tn-subject-label {
+      font-size: 11.5px;
+    }
+
+    .tn-links {
+      width: calc(100vw - 20px);
+      height: 64px;
+      bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+      border-radius: 17px;
+    }
+
+    .tn-link {
+      height: 52px;
+      font-size: 10px;
+      gap: 3px;
+    }
+
+    .tn-link svg {
+      width: 17px;
+      height: 17px;
+    }
+  }
+
   @media (max-width: 390px) {
     .tn-brand-name {
       max-width: 118px;
@@ -603,6 +710,42 @@ const CSS = `
 
     .tn-user-wrap {
       flex-basis: 118px;
+    }
+  }
+
+  @media (max-width: 370px) {
+    .tn-brand-mark {
+      width: 36px;
+      height: 36px;
+    }
+
+    .tn-brand-name {
+      max-width: 106px;
+      font-size: 15.5px;
+    }
+
+    .tn-icon-btn {
+      width: 36px;
+      height: 36px;
+    }
+
+    .tn-user-wrap {
+      flex-basis: 110px;
+    }
+
+    .tn-user-btn {
+      padding-right: 6px;
+      gap: 6px;
+    }
+
+    .tn-avatar {
+      width: 23px;
+      height: 23px;
+      font-size: 10px;
+    }
+
+    .tn-link {
+      font-size: 9.5px;
     }
   }
 `;
@@ -716,12 +859,14 @@ export function TopNav({
   onSearch,
   showAddCta = false,
 }: TopNavProps) {
-  const { selectedSubject, subjectOptions, setSelectedSubjectKey } = useProfileSubject();
+  const { selectedSubject, subjectOptions, setSelectedSubjectKey, selectSelf } = useProfileSubject();
   const location = useLocation();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [subjectMenuOpen, setSubjectMenuOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [subjectToast, setSubjectToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
 
   const { linksRef, indicatorStyle } = useSlidingIndicator(location.pathname);
   const scrollPct = useScrollProgress();
@@ -735,6 +880,7 @@ export function TopNav({
     if (signingOut) return;
     setSigningOut(true);
     setSubjectMenuOpen(false);
+    selectSelf();
     try {
       await signOutUser();
     } catch {
@@ -744,6 +890,23 @@ export function TopNav({
       setSigningOut(false);
     }
   };
+
+  const showSubjectToast = (message: string) => {
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+    setSubjectToast(message);
+    toastTimerRef.current = window.setTimeout(() => {
+      setSubjectToast(null);
+      toastTimerRef.current = null;
+    }, 1800);
+  };
+
+  useEffect(() => () => {
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+  }, []);
 
   // Keyboard shortcut: / to focus search
   const searchRef = useRef<HTMLInputElement>(null);
@@ -900,7 +1063,14 @@ export function TopNav({
                       role="menuitemradio"
                       aria-checked={active}
                       onClick={() => {
-                        setSelectedSubjectKey(option.key);
+                        if (!active) {
+                          setSelectedSubjectKey(option.key);
+                          showSubjectToast(
+                            option.type === 'family'
+                              ? `Now viewing ${option.label}'s fit profile`
+                              : 'Now viewing your fit profile'
+                          );
+                        }
                         setSubjectMenuOpen(false);
                       }}>
                       <div className="tn-subject-avatar">{optionInitials}</div>
@@ -940,6 +1110,11 @@ export function TopNav({
         </div>
       </header>
       {navLinks}
+      {subjectToast && (
+        <div className="tn-subject-toast" role="status" aria-live="polite">
+          {subjectToast}
+        </div>
+      )}
     </>
   );
 }

@@ -6,6 +6,7 @@ export type OtpSession = {
   purpose: OtpPurpose;
   phoneNumber: string;
   expiresAt: number;
+  resendCount?: number;
 };
 
 export type PendingRegistration = {

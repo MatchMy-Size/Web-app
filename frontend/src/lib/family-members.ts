@@ -12,6 +12,7 @@ type JsonRecord = Record<string, unknown>;
 type FamilyMemberInput = {
   ownerUid: string;
   firstName: string;
+  gender: CustomerGender;
   relation: string;
 };
 
@@ -105,14 +106,29 @@ export const extractFamilyMembers = (value: unknown): FamilyMemberProfile[] => {
 export const createFamilyMember = async ({
   ownerUid: _ownerUid,
   firstName,
+  gender,
   relation,
 }: FamilyMemberInput) => {
   const result = await apiRequest<{ id: string }>('/api/profile/me/family-members', {
     method: 'POST',
-    body: { firstName, relation },
+    body: { firstName, gender, relation },
   });
   notifyProfileChanged();
   return result.id;
+};
+
+export const deleteFamilyMember = async ({
+  ownerUid: _ownerUid,
+  familyMemberId,
+}: {
+  ownerUid: string;
+  familyMemberId: string;
+}) => {
+  await apiRequest(
+    `/api/profile/me/family-members/${encodeURIComponent(familyMemberId)}`,
+    { method: 'DELETE' },
+  );
+  notifyProfileChanged();
 };
 
 export const saveFamilyMemberMeasurementProfile = async ({

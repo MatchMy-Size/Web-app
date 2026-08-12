@@ -359,6 +359,192 @@ const CSS = `
   }
   .ep-error svg { width: 15px; height: 15px; flex-shrink: 0; }
 
+  @media (max-width: 760px) {
+    .ep-root {
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    .ep-topbar {
+      min-height: 60px;
+      height: auto;
+      padding: 10px 14px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .ep-topbar-back {
+      padding: 8px 0;
+      font-size: 12px;
+    }
+
+    .ep-topbar-divider {
+      display: none;
+    }
+
+    .ep-topbar-title {
+      font-size: 18px;
+    }
+
+    .ep-mode-toggle {
+      width: 100%;
+      margin-left: 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ep-mode-btn {
+      min-height: 38px;
+      padding: 7px 8px;
+      font-size: 12px;
+    }
+
+    .ep-body {
+      width: 100%;
+      padding: 18px 14px calc(112px + env(safe-area-inset-bottom, 0px));
+      gap: 18px;
+    }
+
+    .ep-header-eyebrow {
+      margin-bottom: 8px;
+      font-size: 10px;
+    }
+
+    .ep-page-title {
+      font-size: 32px;
+      letter-spacing: 0;
+    }
+
+    .ep-page-sub {
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .ep-category-bar {
+      gap: 8px;
+    }
+
+    .ep-category-chips {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding: 0 10px 4px 0;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .ep-category-chips::-webkit-scrollbar {
+      display: none;
+    }
+
+    .ep-chip {
+      flex: 0 0 auto;
+      min-height: 36px;
+      padding: 7px 12px;
+      font-size: 12px;
+    }
+
+    .ep-pair-card,
+    .ep-product-card,
+    .ep-empty,
+    .ep-skeleton-pair {
+      border-radius: 14px;
+    }
+
+    .ep-pair-header {
+      align-items: flex-start;
+      gap: 10px;
+      padding: 13px 14px;
+      flex-direction: column;
+    }
+
+    .ep-pair-score-wrap {
+      width: 100%;
+      gap: 8px;
+    }
+
+    .ep-pair-score-bar-wrap {
+      max-width: none;
+      min-width: 0;
+    }
+
+    .ep-pair-columns {
+      grid-template-columns: 1fr;
+    }
+
+    .ep-pair-vs {
+      min-height: 34px;
+      padding: 0;
+      border-left: 0;
+      border-right: 0;
+      border-top: 1px solid var(--cloud);
+      border-bottom: 1px solid var(--cloud);
+    }
+
+    .ep-pair-vs-badge {
+      width: 28px;
+      height: 28px;
+      font-size: 9px;
+    }
+
+    .ep-item-card {
+      padding: 14px;
+    }
+
+    .ep-item-footer {
+      gap: 12px;
+    }
+
+    .ep-item-title,
+    .ep-product-title {
+      overflow-wrap: anywhere;
+    }
+
+    .ep-multi-stack {
+      gap: 24px;
+    }
+
+    .ep-multi-section-header {
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .ep-multi-grid {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .ep-product-card {
+      display: grid;
+      grid-template-columns: 96px minmax(0, 1fr);
+      min-height: 112px;
+    }
+
+    .ep-product-image {
+      height: 100%;
+      min-height: 112px;
+      aspect-ratio: auto;
+      border-right: 1px solid var(--cloud);
+    }
+
+    .ep-product-image img {
+      object-fit: contain !important;
+      padding: 8px;
+    }
+
+    .ep-product-body {
+      padding: 10px 12px;
+      min-width: 0;
+    }
+
+    .ep-product-footer {
+      gap: 8px;
+    }
+
+    .ep-empty {
+      padding: 42px 18px;
+    }
+  }
+
   /* ── Keyframes ── */
   @keyframes ep-fadeDown {
     from { opacity: 0; transform: translateY(-14px); }
@@ -591,7 +777,7 @@ export function ExplorePage() {
       {/* ── Topbar ── */}
       <div className="ep-topbar">
         <button className="ep-topbar-back" onClick={() => navigate('/app/home')}>
-          <Ico.Back /> Home
+          Home
         </button>
         <div className="ep-topbar-divider" />
         <span className="ep-topbar-title">Explore</span>

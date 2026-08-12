@@ -427,7 +427,8 @@ const CSS = `
     body .lp-login-root {
       display: block;
       min-height: 100vh;
-      overflow: visible;
+      min-height: 100dvh;
+      overflow-x: hidden;
       background: var(--paper);
     }
     body .lp-login-left {
@@ -435,11 +436,13 @@ const CSS = `
     }
     body .lp-login-right {
       min-height: 100vh;
+      min-height: 100dvh;
       padding: 24px 20px 36px;
       align-items: flex-start;
       justify-content: center;
     }
     body .lp-login-form-wrap {
+      width: 100%;
       max-width: 430px;
       margin: 0 auto;
     }

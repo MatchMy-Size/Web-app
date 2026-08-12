@@ -71,8 +71,9 @@ export const createUserWithPhonePassword = async (
     return storeSession(session);
   } catch (error) {
     if (error instanceof ApiError && error.status === 409) {
-      const conflict = new Error(error.message) as Error & { code?: string };
-      conflict.code = 'auth/email-already-in-use';
+      const conflict = new Error(error.message) as Error & { code?: string; status?: number };
+      conflict.code = error.code === 'account_exists' ? 'auth/phone-already-in-use' : (error.code ?? 'auth/phone-already-in-use');
+      conflict.status = error.status;
       throw conflict;
     }
     throw error;

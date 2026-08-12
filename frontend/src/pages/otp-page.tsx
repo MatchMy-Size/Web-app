@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { AppLogo } from '@/components/app-logo';
@@ -10,7 +10,7 @@ import {
   setOtpSession,
 } from '@/lib/auth-flow';
 import { saveCustomerProfile } from '@/lib/customer-profile';
-import { createUserWithPhonePassword, signInWithPhonePassword } from '@/lib/auth-api';
+import { createUserWithPhonePassword } from '@/lib/auth-api';
 import { requestOtpViaTextLk, verifyOtpSession } from '@/lib/otp-client';
 
 /* ─────────────────────────────────────────────
@@ -176,8 +176,43 @@ const CSS = `
     animation: otp-fadeUp 0.7s 0.15s var(--ease) both;
   }
 
+  .otp-top-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-bottom: 28px;
+  }
+
+  .otp-top-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 38px;
+    padding: 0 13px;
+    border-radius: 999px;
+    border: 1px solid var(--cloud);
+    background: var(--white);
+    color: var(--ink);
+    font-family: var(--fs);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(13,13,13,0.05);
+    transition: border-color 0.18s, transform 0.18s;
+  }
+
+  .otp-top-back:hover {
+    border-color: var(--mist);
+    transform: translateY(-1px);
+  }
+
+  .otp-top-back svg {
+    width: 14px;
+    height: 14px;
+  }
+
   /* Header */
-  .otp-form-header { margin-bottom: 40px; }
+  .otp-form-header { margin-bottom: 28px; }
   .otp-form-eyebrow {
     font-size: 11px; font-weight: 700; color: var(--sage-deep);
     letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 10px;
@@ -191,9 +226,48 @@ const CSS = `
     font-size: 14px; color: var(--ash); line-height: 1.65;
   }
   .otp-form-sub strong { color: var(--ink); font-weight: 700; }
+  .otp-phone-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 10px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--cloud);
+    background: var(--white);
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 6px 18px rgba(13,13,13,0.05);
+  }
+  .otp-phone-pill svg {
+    width: 15px;
+    height: 15px;
+    color: var(--sage-deep);
+  }
+  .otp-time-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 16px 0 18px;
+    padding: 11px 12px;
+    border-radius: 12px;
+    background: rgba(13,13,13,0.035);
+    color: var(--ash);
+    font-size: 12.5px;
+    font-weight: 700;
+  }
+  .otp-time-row strong {
+    color: var(--ink);
+  }
+  .otp-time-row.is-expired {
+    background: rgba(192,57,43,0.07);
+    color: var(--red);
+  }
 
   /* ── OTP cell grid ── */
-  .otp-cells-wrap { position: relative; margin-bottom: 28px; }
+  .otp-cells-wrap { position: relative; margin-bottom: 18px; }
 
   /* Hidden real input layered over cells */
   .otp-hidden-input {
@@ -201,6 +275,8 @@ const CSS = `
     width: 100%; height: 100%;
     opacity: 0; cursor: text; z-index: 2;
     font-size: 1px; /* prevent iOS zoom */
+    color: transparent;
+    caret-color: transparent;
   }
 
   .otp-cells {
@@ -240,6 +316,17 @@ const CSS = `
     animation: otp-shake 0.4s var(--ease);
   }
 
+  .otp-success {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(122,158,120,0.12);
+    border: 1px solid rgba(122,158,120,0.26);
+    border-radius: 10px; padding: 12px 16px;
+    font-size: 13px; color: var(--sage-deep);
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+  .otp-success svg { width: 15px; height: 15px; flex-shrink: 0; }
+
   /* ── Error banner ── */
   .otp-error {
     display: flex; align-items: center; gap: 10px;
@@ -252,6 +339,9 @@ const CSS = `
   .otp-error svg { width: 15px; height: 15px; flex-shrink: 0; }
 
   /* ── Submit button ── */
+  .otp-submit-bar {
+    margin-top: 18px;
+  }
   .otp-submit-btn {
     width: 100%; height: 52px;
     font-family: var(--fs); font-size: 15px; font-weight: 600;
@@ -280,11 +370,16 @@ const CSS = `
   /* ── Resend footer ── */
   .otp-footer {
     display: flex; align-items: center; justify-content: center;
-    gap: 8px; margin-top: 24px;
+    gap: 10px; margin-top: 22px;
     font-size: 13px; color: var(--ash);
   }
   .otp-resend-timer {
     display: inline-flex; align-items: center; gap: 6px;
+  }
+  .otp-resend-limit {
+    color: var(--ash);
+    font-size: 12.5px;
+    font-weight: 600;
   }
   .otp-timer-ring {
     position: relative; width: 20px; height: 20px;
@@ -308,10 +403,25 @@ const CSS = `
   .otp-resend-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .otp-resend-btn svg { width: 13px; height: 13px; }
 
-  /* Back link */
+  /* Secondary actions */
+  .otp-secondary-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+    font-size: 12.5px;
+    color: var(--ash);
+  }
+  .otp-secondary-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--mist);
+  }
   .otp-back-link {
-    display: flex; align-items: center; justify-content: center;
-    gap: 6px; margin-top: 16px;
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 6px;
     font-size: 12.5px; color: var(--ash);
     cursor: pointer; background: none; border: none;
     font-family: var(--fs); transition: color 0.2s;
@@ -340,9 +450,118 @@ const CSS = `
     50%      { opacity: 0.55; }
   }
   @keyframes otp-spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 900px) {
+    .otp-root {
+      display: block;
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    .otp-left {
+      display: none;
+    }
+
+    .otp-right {
+      min-height: 100dvh;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 24px 18px 100px;
+    }
+
+    .otp-form-wrap {
+      width: 100%;
+      max-width: 430px;
+      min-height: calc(100dvh - 124px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .otp-form-header {
+      margin-bottom: 20px;
+    }
+
+    .otp-top-actions {
+      margin-bottom: 18px;
+    }
+
+    .otp-form-eyebrow {
+      margin-bottom: 8px;
+    }
+
+    .otp-form-title {
+      font-size: clamp(34px, 11vw, 42px);
+    }
+
+    .otp-form-sub {
+      font-size: 14.5px;
+      line-height: 1.55;
+    }
+
+    .otp-phone-pill {
+      width: 100%;
+      justify-content: center;
+      border-radius: 14px;
+    }
+
+    .otp-time-row {
+      margin: 14px 0 16px;
+    }
+
+    .otp-cells {
+      gap: 7px;
+    }
+
+    .otp-cell {
+      height: 56px;
+      border-radius: 13px;
+      font-size: 25px;
+    }
+
+    .otp-submit-bar {
+      position: sticky;
+      bottom: 0;
+      z-index: 10;
+      margin: 20px -18px -100px;
+      padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
+      background: rgba(250,250,248,0.94);
+      border-top: 1px solid var(--cloud);
+      backdrop-filter: blur(14px);
+    }
+
+    .otp-submit-btn {
+      height: 54px;
+      border-radius: 14px;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .otp-right {
+      padding-inline: 14px;
+    }
+
+    .otp-cells {
+      gap: 5px;
+    }
+
+    .otp-cell {
+      height: 50px;
+      border-radius: 11px;
+      font-size: 23px;
+    }
+
+    .otp-submit-bar {
+      margin-inline: -14px;
+      padding-inline: 14px;
+    }
+  }
 `;
 
-if (!document.getElementById('otp-page-styles')) {
+const otpPageStyles = document.getElementById('otp-page-styles');
+if (otpPageStyles) {
+  otpPageStyles.textContent = CSS;
+} else {
   const s = document.createElement('style');
   s.id = 'otp-page-styles';
   s.textContent = CSS;
@@ -358,18 +577,33 @@ const Ico = {
   Refresh: () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M2 8a6 6 0 1 1 1.5 4"/><path d="M2 12V8h4"/></svg>,
   Alert:   () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v4M8 11v.5"/></svg>,
   Check:   () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M3 8l3.5 3.5L13 5"/></svg>,
+  Phone:   () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="5" y="1.5" width="6" height="13" rx="1.8"/><path d="M7.5 12.5h1"/></svg>,
 };
 
 /* ─────────────────────────────────────────────
    Helpers
 ───────────────────────────────────────────── */
 const RESEND_SECONDS = 30;
+const MAX_RESENDS = 3;
 const CIRCUMFERENCE = 2 * Math.PI * 8; // r=8
 
-const isEmailAlreadyInUseError = (err: unknown) => {
+const formatCountdown = (milliseconds: number) => {
+  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+};
+
+const isPhoneAlreadyInUseError = (err: unknown) => {
   const code = (err as { code?: string })?.code ?? '';
   const msg  = (err as { message?: string })?.message?.toLowerCase() ?? '';
-  return code === 'auth/email-already-in-use' || msg.includes('email-already-in-use');
+  return (
+    code === 'account_exists' ||
+    code === 'auth/phone-already-in-use' ||
+    msg.includes('already exists for this phone') ||
+    msg.includes('phone number is already') ||
+    (msg.includes('already registered') && msg.includes('phone'))
+  );
 };
 
 /* ─────────────────────────────────────────────
@@ -402,11 +636,14 @@ export function OtpPage() {
   const [session,    setSessionState] = useState(getOtpSession());
   const [code,       setCode]         = useState('');
   const [seconds,    setSeconds]      = useState(RESEND_SECONDS);
+  const [now,        setNow]          = useState(() => Date.now());
+  const [resendCount, setResendCount] = useState(() => Math.min(session?.resendCount ?? 0, MAX_RESENDS));
   const [loading,    setLoading]      = useState(false);
   const [error,      setError]        = useState<string | null>(null);
   const [errorKey,   setErrorKey]     = useState(0);
   const [success,    setSuccess]      = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const lastSubmittedCodeRef = useRef('');
 
   /* Redirect if no pending registration */
   useEffect(() => {
@@ -419,6 +656,7 @@ export function OtpPage() {
   useEffect(() => {
     const t = window.setInterval(() => {
       setSeconds(s => (s <= 1 ? 0 : s - 1));
+      setNow(Date.now());
     }, 1000);
     return () => window.clearInterval(t);
   }, []);
@@ -427,28 +665,33 @@ export function OtpPage() {
   useEffect(() => { inputRef.current?.focus(); }, []);
 
   const showError = (msg: string) => { setError(msg); setErrorKey(k => k + 1); };
+  const expiresInMs = Math.max(0, (session?.expiresAt ?? 0) - now);
+  const expired = !!session && expiresInMs <= 0;
+  const resendsRemaining = Math.max(0, MAX_RESENDS - resendCount);
+
+  const updateCode = (value: string) => {
+    const next = value.replace(/\D/g, '').slice(0, 6);
+    setCode(next);
+    if (error) setError(null);
+    if (next !== lastSubmittedCodeRef.current) lastSubmittedCodeRef.current = '';
+  };
 
   /* Verify */
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!registration || !session || code.length !== 6) return;
+  const verifyCode = useCallback(async () => {
+    if (!registration || !session || code.length !== 6 || loading || success || expired) {
+      if (expired) showError('This code has expired. Resend a new code.');
+      return;
+    }
     try {
+      lastSubmittedCodeRef.current = code;
       setLoading(true); setError(null);
       await verifyOtpSession(session, code.trim());
 
-      const signedInUser = await createUserWithPhonePassword(
-          registration.phoneNumber,
-          registration.password,
-          session.sessionId,
-        )
-        .then(result => result.user)
-        .catch(async err => {
-          if (!isEmailAlreadyInUseError(err)) throw err;
-          return (await signInWithPhonePassword(
-            registration.phoneNumber,
-            registration.password,
-          )).user;
-        });
+      const signedInUser = (await createUserWithPhonePassword(
+        registration.phoneNumber,
+        registration.password,
+        session.sessionId,
+      )).user;
 
       const numericMeasurements = Object.fromEntries(
         Object.entries(registration.measurements).filter(([, v]) => `${v ?? ''}`.trim().length > 0)
@@ -478,32 +721,61 @@ export function OtpPage() {
       clearPendingRegistration();
       setTimeout(() => navigate('/app/home', { replace: true }), 800);
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Unable to verify the code.');
+      if (isPhoneAlreadyInUseError(err)) {
+        showError('This phone number is already registered. Log in or use a different number.');
+        return;
+      }
+      showError('That code is incorrect. Try again.');
     } finally {
       setLoading(false);
     }
+  }, [code, expired, loading, navigate, registration, session, success]);
+
+  useEffect(() => {
+    if (code.length === 6 && !loading && !success && lastSubmittedCodeRef.current !== code) {
+      void verifyCode();
+    }
+  }, [code, loading, success, verifyCode]);
+
+  const handleVerify = (e: FormEvent) => {
+    e.preventDefault();
+    void verifyCode();
   };
 
   /* Resend */
   const handleResend = async () => {
-    if (!registration || !session || seconds > 0) return;
+    if (!registration || !session || seconds > 0 || resendCount >= MAX_RESENDS) return;
     try {
       setLoading(true); setError(null);
       const next = await requestOtpViaTextLk(registration.phoneNumber, session.purpose);
-      setOtpSession(next); setSessionState(next);
-      setCode(''); setSeconds(RESEND_SECONDS);
+      const nextResendCount = resendCount + 1;
+      const nextSession = { ...next, resendCount: nextResendCount };
+      setOtpSession(nextSession); setSessionState(nextSession);
+      setResendCount(nextResendCount);
+      setNow(Date.now());
+      setCode(''); setSeconds(RESEND_SECONDS); lastSubmittedCodeRef.current = '';
       inputRef.current?.focus();
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Unable to resend code.');
+      const message = err instanceof Error ? err.message : '';
+      showError(
+        message.toLowerCase().includes('limit')
+          ? 'You have reached the resend limit. Try again in 10 minutes.'
+          : message || 'Could not resend the code. Try again.'
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  /* Masked phone */
-  const maskedPhone = registration?.phoneNumber
-    ? registration.phoneNumber.replace(/(\+\d{2})\d+(\d{4})/, '$1****$2')
-    : 'your phone';
+  const displayPhone = (() => {
+    const raw = registration?.phoneNumber;
+    if (!raw) return 'your phone number';
+    const digits = raw.replace(/\D/g, '');
+    if (digits.startsWith('94') && digits.length >= 11) {
+      return `+94 ${digits.slice(2, 4)} ${digits.slice(4, 7)} ${digits.slice(-4)}`;
+    }
+    return raw;
+  })();
 
   return (
     <div className="otp-root">
@@ -558,15 +830,32 @@ export function OtpPage() {
       {/* ── Right form panel ── */}
       <div className="otp-right">
         <div className="otp-form-wrap">
+          <div className="otp-top-actions">
+            <button
+              type="button"
+              className="otp-top-back"
+              onClick={() => navigate('/auth/register')}
+            >
+              <Ico.Back /> Back
+            </button>
+          </div>
 
           {/* Header */}
           <div className="otp-form-header">
             <div className="otp-form-eyebrow">Phone verification</div>
-            <h1 className="otp-form-title">Enter the code</h1>
+            <h1 className="otp-form-title">Verify your phone</h1>
             <p className="otp-form-sub">
-              We sent a 6-digit code to <strong>{maskedPhone}</strong>.
-              Enter it below to verify your number and create your account.
+              Enter the 6-digit code we sent to your phone.
             </p>
+            <div className="otp-phone-pill">
+              <Ico.Phone />
+              <span>{displayPhone}</span>
+            </div>
+          </div>
+
+          <div className={`otp-time-row${expired ? ' is-expired' : ''}`}>
+            <span>{expired ? 'Code expired' : 'Code expires in'}</span>
+            <strong>{expired ? 'Resend now' : formatCountdown(expiresInMs)}</strong>
           </div>
 
           {/* OTP cells */}
@@ -579,8 +868,10 @@ export function OtpPage() {
                 autoFocus
                 maxLength={6}
                 value={code}
-                onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onChange={e => updateCode(e.target.value)}
                 autoComplete="one-time-code"
+                aria-label="6-digit verification code"
+                disabled={loading || success || expired}
               />
               <div
                 className="otp-cells"
@@ -612,43 +903,62 @@ export function OtpPage() {
               </div>
             )}
 
+            {success && (
+              <div className="otp-success">
+                <Ico.Check /> Account created
+              </div>
+            )}
+
             {/* Submit */}
-            <button
-              type="submit"
-              className="otp-submit-btn"
-              disabled={loading || code.length !== 6 || success}>
-              {success
-                ? <><Ico.Check /> Verified!</>
-                : loading
-                ? <><div className="otp-spinner" /> Verifying…</>
-                : <>Verify & create account <Ico.Arrow /></>
-              }
-            </button>
+            <div className="otp-submit-bar">
+              <button
+                type="submit"
+                className="otp-submit-btn"
+                disabled={loading || code.length !== 6 || success || expired}>
+                {success
+                  ? <><Ico.Check /> Account created</>
+                  : loading
+                  ? <><div className="otp-spinner" /> Checking code...</>
+                  : <>Verify <Ico.Arrow /></>
+                }
+              </button>
+            </div>
           </form>
 
           {/* Footer — resend */}
           <div className="otp-footer">
-            {seconds > 0 ? (
+            {resendsRemaining <= 0 ? (
+              <span className="otp-resend-limit">
+                Resend limit reached. Try again in 10 minutes.
+              </span>
+            ) : seconds > 0 ? (
               <span className="otp-resend-timer">
                 <CountdownRing seconds={seconds} total={RESEND_SECONDS} />
-                Resend in {seconds}s
+                Resend code in {seconds}s · {resendsRemaining} left
               </span>
             ) : (
               <button
                 className="otp-resend-btn"
                 onClick={handleResend}
                 disabled={loading}>
-                <Ico.Refresh /> Resend code
+                <Ico.Refresh /> Resend code ({resendsRemaining} left)
               </button>
             )}
           </div>
 
-          {/* Back */}
-          <button
-            className="otp-back-link"
-            onClick={() => navigate('/auth/register')}>
-            <Ico.Back /> Back to registration
-          </button>
+          <div className="otp-secondary-actions">
+            <button
+              className="otp-back-link"
+              onClick={() => navigate('/auth/register')}>
+              Change number
+            </button>
+            <span className="otp-secondary-dot" aria-hidden="true" />
+            <button
+              className="otp-back-link"
+              onClick={() => navigate('/auth/register')}>
+              Back
+            </button>
+          </div>
 
         </div>
       </div>
