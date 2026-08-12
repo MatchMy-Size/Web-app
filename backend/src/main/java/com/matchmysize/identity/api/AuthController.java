@@ -9,6 +9,7 @@ import com.matchmysize.shared.api.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -31,6 +32,22 @@ public class AuthController {
     record LoginRequest(
         @NotBlank String phoneNumber,
         @NotBlank String password
+    ) {}
+
+    record SellerLoginRequest(
+        @NotBlank String identifier,
+        @NotBlank String password
+    ) {}
+
+    record SellerRegisterRequest(
+        @NotBlank String phoneNumber,
+        @NotBlank @Email String email,
+        @Size(min = 6, max = 128) String password,
+        @NotNull UUID otpSessionId,
+        @NotBlank @Size(max = 160) String businessName,
+        @NotBlank @Size(max = 160) String contactName,
+        @Size(max = 500) String address,
+        @Size(max = 1000) String photoUrl
     ) {}
 
     record RefreshRequest(@NotBlank String refreshToken) {}
@@ -57,6 +74,25 @@ public class AuthController {
     @PostMapping("/login")
     ApiResponse<Map<String, Object>> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.success(authService.login(request.phoneNumber(), request.password()));
+    }
+
+    @PostMapping("/seller/login")
+    ApiResponse<Map<String, Object>> sellerLogin(@Valid @RequestBody SellerLoginRequest request) {
+        return ApiResponse.success(authService.sellerLogin(request.identifier(), request.password()));
+    }
+
+    @PostMapping("/seller/register")
+    ApiResponse<Map<String, Object>> sellerRegister(@Valid @RequestBody SellerRegisterRequest request) {
+        return ApiResponse.success(authService.registerSeller(
+            request.phoneNumber(),
+            request.email(),
+            request.password(),
+            request.otpSessionId(),
+            request.businessName(),
+            request.contactName(),
+            request.address(),
+            request.photoUrl()
+        ));
     }
 
     @PostMapping("/refresh")

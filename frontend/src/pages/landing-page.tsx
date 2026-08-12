@@ -1248,7 +1248,7 @@
 
 
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 import appStoreIcon from '@/assets/images/appstore.png';
 import cameraIcon from '@/assets/images/camera.png';
@@ -1265,6 +1265,7 @@ import tshirtIcon from '@/assets/images/t-shirt.png';
 import { AppLogo } from '@/components/app-logo';
 import { BRAND_LOGOS } from '@/lib/brand-logos';
 import { useCatalogSummary } from '@/lib/catalog-summary';
+import { fetchPublicBrands, LOCAL_LANDING_BRANDS, type LandingBrand } from '@/lib/public-brands';
 import { getPublicSiteFeedback, type PublicSiteFeedback } from '@/lib/site-feedback';
 
 /* ─────────────────────────────────────────────
@@ -1340,7 +1341,6 @@ const CSS = `
     align-items: center;
     gap: 24px;
     width: max-content;
-    animation: fb-scroll 20s linear infinite;
     will-change: transform;
   }
   .fb-group {
@@ -1372,10 +1372,21 @@ const CSS = `
     object-fit: contain;
     mix-blend-mode: multiply;
   }
+  .fb-logo-wordmark {
+    display: block;
+    max-width: 100%;
+    color: var(--ink);
+    font-family: var(--fd);
+    font-size: clamp(28px, 3vw, 44px);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    text-align: center;
+    text-transform: uppercase;
+  }
   .fb-logo:hover {
     transform: scale(1.05);
   }
-  .fb-scene:hover .fb-track { animation-play-state: paused; }
 
   /* Stats */
   .lp-stats { background: var(--ink); padding: 32px 56px; }
@@ -1864,7 +1875,6 @@ const CSS = `
   @keyframes lp-markerIn  { from{opacity:0;transform:translate(-50%,-50%) scale(.72)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
   @keyframes lp-figureIn  { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
   @keyframes lp-pulseDot  { 0%,100%{opacity:1;box-shadow:0 0 5px var(--sage)} 50%{opacity:.5;box-shadow:0 0 2px var(--sage)} }
-  @keyframes fb-scroll    { from{transform:translateX(0)} to{transform:translateX(calc(-50% - 12px))} }
 
   @media (max-width: 1100px) {
     .lp-testimonials-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1894,7 +1904,6 @@ const CSS = `
     .fb-track, .fb-group { gap: 16px; }
     .fb-logo { width: 190px; height: 124px; }
     .lp-testimonials-grid { grid-template-columns: 1fr; }
-    @keyframes fb-scroll { from{transform:translateX(0)} to{transform:translateX(calc(-50% - 8px))} }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1943,26 +1952,95 @@ if (landingStyles) {
 /* ═══════════════════════════════════════════════
    AUTO-SCROLLING BRANDS
 ═══════════════════════════════════════════════ */
-const FB_BRANDS = BRAND_LOGOS;
-
-function BrandLogoGroup({ duplicate = false }:{ duplicate?: boolean }) {
+function BrandLogoMark({ brand, duplicate }: { brand: LandingBrand; duplicate: boolean }) {
+  const [imageFailed, setImageFailed] = useState(false);
   return (
-    <div className="fb-group" aria-hidden={duplicate || undefined}>
-      {FB_BRANDS.map(brand=>(
-        <div key={brand.key} className="fb-logo">
-          <img src={brand.src} alt={duplicate ? '' : brand.name}/>
-        </div>
-      ))}
+    <div className="fb-logo">
+      {brand.src && !imageFailed
+        ? <img src={brand.src} alt={duplicate ? '' : brand.name} onError={() => setImageFailed(true)} />
+        : <span className="fb-logo-wordmark" aria-hidden={duplicate || undefined}>{brand.name}</span>}
     </div>
   );
 }
 
-function AutoScrollingBrands() {
+function BrandLogoGroup({
+  brands,
+  duplicate = false,
+  groupRef,
+}: {
+  brands: LandingBrand[];
+  duplicate?: boolean;
+  groupRef?: (element: HTMLDivElement | null) => void;
+}) {
   return (
-    <div className="fb-scene" aria-label="Supported clothing brands">
-      <div className="fb-track">
-        <BrandLogoGroup/>
-        <BrandLogoGroup duplicate/>
+    <div ref={groupRef} className="fb-group" aria-hidden={duplicate || undefined}>
+      {brands.map(brand => <BrandLogoMark key={brand.key} brand={brand} duplicate={duplicate} />)}
+    </div>
+  );
+}
+
+function AutoScrollingBrands({ brands }: { brands: LandingBrand[] }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const primaryGroupRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<Animation | null>(null);
+  const brandSequenceKey = brands.map(brand => brand.key).join('|');
+
+  useEffect(() => {
+    const track = trackRef.current;
+    const primaryGroup = primaryGroupRef.current;
+    if (!track || !primaryGroup || !brands.length) return;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const startAnimation = () => {
+      animationRef.current?.cancel();
+      animationRef.current = null;
+      track.style.transform = 'translateX(0)';
+      if (reducedMotion.matches) return;
+
+      const trackStyles = window.getComputedStyle(track);
+      const groupGap = Number.parseFloat(trackStyles.columnGap || trackStyles.gap) || 0;
+      const distance = primaryGroup.getBoundingClientRect().width + groupGap;
+      if (distance <= 0) return;
+
+      // Travel through the complete first group before the identical group takes its place.
+      const durationMs = Math.max(18_000, (distance / 180) * 1_000);
+      animationRef.current = track.animate(
+        [
+          { transform: 'translateX(0)' },
+          { transform: `translateX(-${distance}px)` },
+        ],
+        {
+          duration: durationMs,
+          iterations: Infinity,
+          easing: 'linear',
+        },
+      );
+    };
+
+    startAnimation();
+    const resizeObserver = new ResizeObserver(startAnimation);
+    resizeObserver.observe(primaryGroup);
+    reducedMotion.addEventListener('change', startAnimation);
+
+    return () => {
+      resizeObserver.disconnect();
+      reducedMotion.removeEventListener('change', startAnimation);
+      animationRef.current?.cancel();
+      animationRef.current = null;
+    };
+  }, [brandSequenceKey, brands.length]);
+
+  return (
+    <div
+      className="fb-scene"
+      aria-label={`Supported clothing brands. ${brands.length} brands in this carousel.`}
+      onMouseEnter={() => animationRef.current?.pause()}
+      onMouseLeave={() => animationRef.current?.play()}
+    >
+      <div ref={trackRef} className="fb-track" key={brandSequenceKey}>
+        <BrandLogoGroup brands={brands} groupRef={element => { primaryGroupRef.current = element; }}/>
+        <BrandLogoGroup brands={brands} duplicate/>
       </div>
     </div>
   );
@@ -2208,11 +2286,27 @@ function PhoneResult() {
    Main page
 ───────────────────────────────────────────── */
 export function LandingPage() {
-  const { brandCount, brandNames } = useCatalogSummary();
+  const { brandNames } = useCatalogSummary();
   const [publicFeedback, setPublicFeedback] = useState<PublicSiteFeedback[]>([]);
+  const [landingBrands, setLandingBrands] = useState<LandingBrand[]>(LOCAL_LANDING_BRANDS);
+  const brandCount = landingBrands.length;
   const features = getFeatures(brandCount);
   const stats = getStats(brandCount);
   const brands = brandNames.length ? brandNames : BRAND_LOGOS.map((brand) => brand.name);
+
+  useEffect(() => {
+    let active = true;
+    void fetchPublicBrands()
+      .then(brands => {
+        if (active && brands.length) setLandingBrands(brands);
+      })
+      .catch(() => {
+        // The complete local logo set remains visible while the API is unavailable.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     const els = document.querySelectorAll('.lp-reveal');
@@ -2250,7 +2344,7 @@ export function LandingPage() {
           </div>
         </a>
         <ul className="lp-nav-links"><li><a href="#how">How it works</a></li><li><a href="#features">Features</a></li><li><a href="#app">Mobile app</a></li><li><a href="#brands">Brands</a></li>{publicFeedback.length > 0 && <li><a href="#reviews">Reviews</a></li>}</ul>
-        <div className="lp-nav-cta"><button className="lp-btn-ghost" onClick={()=>window.location.href='/auth/login'}>Sign in</button><button className="lp-btn-ink" onClick={()=>window.location.href='/auth/register'}>Get started →</button></div>
+        <div className="lp-nav-cta"><button className="lp-btn-ghost" onClick={()=>window.location.href='/seller/login'}>For sellers</button><button className="lp-btn-ghost" onClick={()=>window.location.href='/auth/login'}>Sign in</button><button className="lp-btn-ink" onClick={()=>window.location.href='/auth/register'}>Get started →</button></div>
       </nav>
 
       {/* ── Hero ── */}
@@ -2268,7 +2362,7 @@ export function LandingPage() {
           </div>
           {/* Right — horizontally auto-scrolling brand logos */}
           <div className="lp-hero-right">
-            <AutoScrollingBrands/>
+            <AutoScrollingBrands brands={landingBrands}/>
           </div>
         </div>
       </section>

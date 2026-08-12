@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useAuth } from '@/context/auth-context';
 import { getOtpSession, setOtpSession, type OtpSession } from '@/lib/auth-flow';
@@ -422,9 +422,12 @@ export function ForgotPasswordPage() {
 
 function PasswordFlow({ mode }: { mode: PasswordFlowMode }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user }  = useAuth();
   const { profile } = useRecommendationData(mode === 'change' ? user?.uid : null, { subject: 'self' });
   const isPasswordReset = mode === 'reset';
+  const sellerReset = isPasswordReset && searchParams.get('portal') === 'seller';
+  const resetReturnPath = sellerReset ? '/seller/login' : '/auth/login';
 
   const [step,        setStep]        = useState<Step>('verify');
   const [dir,         setDir]         = useState<'fwd' | 'back'>('fwd');
@@ -490,7 +493,7 @@ function PasswordFlow({ mode }: { mode: PasswordFlowMode }) {
         await attachPasswordToVerifiedPhone(session.phoneNumber, newPw, session.sessionId);
       }
       setOtpSession(null);
-      navigate(isPasswordReset ? '/auth/login' : '/app/settings', {
+      navigate(isPasswordReset ? resetReturnPath : '/app/settings', {
         replace: true,
         state: isPasswordReset ? { passwordReset: true } : undefined,
       });
@@ -511,7 +514,7 @@ function PasswordFlow({ mode }: { mode: PasswordFlowMode }) {
       <div className="cp-topbar">
         <button
           className="cp-back-btn"
-          onClick={() => navigate(isPasswordReset ? '/auth/login' : '/app/settings')}
+          onClick={() => navigate(isPasswordReset ? resetReturnPath : '/app/settings')}
         >
           <Ico.Back /> {isPasswordReset ? 'Back to sign in' : 'Back to settings'}
         </button>

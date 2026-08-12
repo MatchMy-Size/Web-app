@@ -275,10 +275,30 @@ export function ProtectedRoute() {
   return <Outlet />;
 }
 
+export function CustomerRoute() {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) return <GuardLoading variant="profile" />;
+  if (!user) return <Navigate to="/auth/login" replace state={{ from: location.pathname }} />;
+  if (user.role === 'seller') return <Navigate to="/seller/dashboard" replace />;
+  return <Outlet />;
+}
+
+export function SellerRoute() {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) return <GuardLoading variant="profile" />;
+  if (!user) return <Navigate to="/seller/login" replace state={{ from: location.pathname }} />;
+  if (user.role !== 'seller') return <Navigate to="/app/home" replace />;
+  return <Outlet />;
+}
+
 export function PublicOnlyRoute() {
   const { user, loading } = useAuth();
 
   if (loading) return <GuardLoading variant="auth" />;
-  if (user) return <Navigate to="/app/home" replace />;
+  if (user) return <Navigate to={user.role === 'seller' ? '/seller/dashboard' : '/app/home'} replace />;
   return <Outlet />;
 }
