@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import manImage from '@/assets/images/man.png';
 import womenImage from '@/assets/images/women.png';
+import { MeasurementFigureGuide } from '@/components/measurement-figure-guide';
 import { MeasurementValidationDialog } from '@/components/measurement-validation-dialog';
 import { useAuth } from '@/context/auth-context';
 import { useProfileSubject } from '@/context/profile-subject-context';
@@ -22,6 +23,7 @@ import {
   validateMeasurements,
   type MeasurementValidationWarning,
 } from '@/lib/measurement-validation';
+import { convertMeasurementRecord, type MeasurementUnit } from '@/lib/measurement-units';
 import {
   buildFallbackOptions,
   extractMeasurementProfiles,
@@ -38,6 +40,7 @@ fontLink.rel = 'stylesheet';
 fontLink.href =
   'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap';
 if (!document.querySelector('[href*="Cormorant+Garamond"]')) document.head.appendChild(fontLink);
+
 
 /* ─────────────────────────────────────────────
    CSS
@@ -379,6 +382,32 @@ const CSS = `
     background: var(--white); border: 1px solid var(--cloud);
     border-radius: 18px; overflow: hidden;
   }
+  .ap-measure-visual {
+    position: relative;
+    height: 300px;
+    overflow: hidden;
+    background: #101512;
+    border-bottom: 1px solid var(--cloud);
+  }
+  .ap-measure-visual img {
+    width: 100%; height: 100%; display: block;
+    object-fit: cover;
+    object-position: var(--guide-x, 50%) var(--guide-y, 30%);
+    transform: scale(var(--guide-scale, 1.8));
+    transition: transform .34s var(--ease), object-position .34s var(--ease);
+  }
+  .ap-measure-visual::after {
+    content: '';
+    position: absolute; inset: 0;
+    pointer-events: none;
+    box-shadow: inset 0 -46px 45px rgba(8,12,9,.34);
+  }
+  .ap-measure-visual-label {
+    position: absolute; left: 14px; bottom: 12px; z-index: 1;
+    padding: 6px 10px; border-radius: 999px;
+    background: rgba(250,250,248,.94); color: #496657;
+    font-size: 10px; font-weight: 800; letter-spacing: .04em;
+  }
   .ap-guide-cover {
     height: 72px; background: var(--ink); position: relative; overflow: hidden;
   }
@@ -417,6 +446,10 @@ const CSS = `
 
   /* Input panel */
   .ap-input-panel {}
+  .ap-unit-toggle { display:flex; width:fit-content; margin-bottom:7px; padding:3px; gap:3px; border-radius:9px; background:var(--cloud); }
+  .ap-unit-btn { min-height:34px; padding:0 14px; border:0; border-radius:7px; background:transparent; color:var(--ash); font:700 11px var(--fs); cursor:pointer; }
+  .ap-unit-btn.active { background:var(--ink); color:var(--white); }
+  .ap-unit-note { margin-bottom:13px; color:var(--ash); font-size:10px; }
   .ap-field-label {
     display: flex; align-items: center; gap: 8px;
     font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 10px;
@@ -812,6 +845,9 @@ const CSS = `
     .ap-guide-card {
       border-radius: 15px;
     }
+    .ap-measure-visual {
+      height: 220px;
+    }
     .ap-guide-cover {
       display: none;
     }
@@ -851,11 +887,11 @@ const CSS = `
       height: 58px;
     }
     .ap-actions {
-      position: sticky;
-      bottom: calc(92px + env(safe-area-inset-bottom, 0px));
-      z-index: 20;
-      padding-top: 8px;
-      background: var(--paper);
+      position: static;
+      bottom: auto;
+      z-index: auto;
+      padding-top: 4px;
+      background: transparent;
     }
     .ap-phase-choose .ap-actions,
     .ap-phase-gender .ap-actions {
@@ -872,6 +908,15 @@ const CSS = `
     .ap-btn-next {
       min-height: 46px;
       height: auto;
+    }
+    .ap-phase-guide .ap-input-panel {
+      padding-bottom: 2px;
+    }
+    .ap-unit-toggle { width:100%; }
+    .ap-unit-btn { flex:1; }
+    .ap-phase-guide .ap-actions {
+      margin-top: 4px !important;
+      padding-bottom: 8px;
     }
 
     .ap-edit-simple {
@@ -1158,6 +1203,7 @@ export function AddPreferencePage() {
   const initialProfileKey = searchParams.get('profileKey');
   const isEditRequest = !!initialProfileKey;
   const initialChoice     = normalizeClothingChoice(searchParams.get('choice'));
+  const requestedUnit: MeasurementUnit = searchParams.get('unit') === 'in' ? 'in' : 'cm';
 
   const [choice,       setChoice]       = useState<ClothingChoice | null>(initialChoice);
   const [measurements, setMeasurements] = useState<Record<string, string>>({});
@@ -1172,6 +1218,7 @@ export function AddPreferencePage() {
   const [pendingWarningAction, setPendingWarningAction] = useState<'advance' | 'save' | null>(null);
   const [acceptedWarnings, setAcceptedWarnings] = useState<Record<string, number>>({});
   const [hydratedEditKey, setHydratedEditKey] = useState<string | null>(null);
+  const [unit, setUnit] = useState<MeasurementUnit>('cm');
 
   const measurementProfiles = useMemo(
     () => (profile ? extractMeasurementProfiles(profile) : []),
@@ -1212,7 +1259,6 @@ export function AddPreferencePage() {
 
   const template    = useMemo(() => getClothingTemplate(normalizedGender, choice), [choice, normalizedGender]);
   const currentStep = template?.fields[stepIndex] ?? null;
-  const unit        = (profile?.unit as 'cm' | 'in') ?? 'cm';
 
   const subjectLabel  = selectedSubject?.type === 'family'
     ? `${selectedSubject.label} · ${selectedSubject.subtitle}` : 'your profile';
@@ -1220,6 +1266,13 @@ export function AddPreferencePage() {
   const returnLabel   = selectedSubject?.type === 'family' || isEditRequest ? 'Measurements' : 'Home';
   const requiresGenderStep = !storedGender;
   const isEditing = !!editingProfile;
+
+  const changeUnit = (nextUnit: MeasurementUnit) => {
+    if (nextUnit === unit) return;
+    setMeasurements(current => convertMeasurementRecord(current, unit, nextUnit));
+    setUnit(nextUnit);
+    setError(null);
+  };
   const editHydrationKey =
     isEditRequest && selectedSubject?.key && editingProfile
       ? `${selectedSubject.key}:${editingProfile.profileKey}`
@@ -1249,10 +1302,13 @@ export function AddPreferencePage() {
 
   useEffect(() => {
     if (!editingProfile || !editHydrationKey || hydratedEditKey === editHydrationKey) return;
-    setChoice(editingProfile.preferredClothing);
-    setMeasurements(Object.fromEntries(
+    const storedEditUnit: MeasurementUnit = editingProfile.unit === 'in' ? 'in' : 'cm';
+    const savedMeasurements = Object.fromEntries(
       Object.entries(editingProfile.measurements).map(([k, v]) => [k, String(v)])
-    ));
+    );
+    setChoice(editingProfile.preferredClothing);
+    setUnit(requestedUnit);
+    setMeasurements(convertMeasurementRecord(savedMeasurements, storedEditUnit, requestedUnit));
     setStepIndex(0);
     setError(null);
     setMeasurementWarning(null);
@@ -1260,9 +1316,14 @@ export function AddPreferencePage() {
     setAcceptedWarnings({});
     setPhase('guide');
     setHydratedEditKey(editHydrationKey);
-  }, [editingProfile, editHydrationKey, hydratedEditKey]);
+  }, [editingProfile, editHydrationKey, hydratedEditKey, requestedUnit]);
 
   useEffect(() => { setChosenGender(storedGender ?? null); }, [selectedSubject?.key, storedGender]);
+
+  useEffect(() => {
+    if (isEditRequest) return;
+    setUnit(searchParams.has('unit') ? requestedUnit : profile?.unit === 'in' ? 'in' : 'cm');
+  }, [isEditRequest, profile?.unit, requestedUnit, searchParams, selectedSubject?.key]);
 
   useEffect(() => {
     if (isEditRequest) return;
@@ -1732,6 +1793,7 @@ export function AddPreferencePage() {
 
                 {/* Guide card */}
                 <div className="ap-guide-card">
+                  <MeasurementFigureGuide gender={normalizedGender} field={currentStep.key} label={currentStep.label} />
                   <div className="ap-guide-cover">
                     <div className="ap-guide-cover-glow"/>
                     <div className="ap-guide-cover-grid"/>
@@ -1755,6 +1817,11 @@ export function AddPreferencePage() {
 
                 {/* Input + reference */}
                 <div className="ap-input-panel">
+                  <div className="ap-unit-toggle" aria-label="Measurement unit">
+                    <button type="button" className={`ap-unit-btn${unit === 'cm' ? ' active' : ''}`} onClick={() => changeUnit('cm')}>Centimetres</button>
+                    <button type="button" className={`ap-unit-btn${unit === 'in' ? ' active' : ''}`} onClick={() => changeUnit('in')}>Inches</button>
+                  </div>
+                  <div className="ap-unit-note">Entered values convert automatically.</div>
                   <div className="ap-field-label">
                     Enter {currentStep.label.toLowerCase()}
                     <span className={`ap-field-badge ${currentStep.isPrimary ? 'required' : 'optional'}`}>
