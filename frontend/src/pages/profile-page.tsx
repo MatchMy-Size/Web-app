@@ -873,6 +873,7 @@ const CSS = `
     .wp-simple-page {
       padding: 16px 18px calc(110px + env(safe-area-inset-bottom, 0px));
       gap: 12px;
+      overflow-x: hidden;
     }
 
     .wp-simple-hero {
@@ -890,6 +891,12 @@ const CSS = `
     .wp-simple-name {
       font-size: 27px;
       white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .wp-simple-contact {
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
 
     .wp-simple-edit {
@@ -906,6 +913,78 @@ const CSS = `
     .wp-simple-row {
       min-height: 56px;
       padding: 11px 14px;
+    }
+
+    .wp-simple-row-label,
+    .wp-simple-row-sub {
+      overflow-wrap: anywhere;
+    }
+
+    .wp-family-member-row {
+      gap: 9px;
+    }
+
+    .wp-family-member-main {
+      gap: 10px;
+    }
+
+    .wp-family-delete-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+    }
+
+    .wp-simple-chevron {
+      display: none;
+    }
+
+    .wp-family-gender-row {
+      grid-template-columns: 1fr;
+    }
+
+    .wp-family-mini-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+
+    .wp-family-mini-secondary {
+      min-height: 40px;
+    }
+  }
+
+  @media (max-width: 390px) {
+    .wp-simple-page {
+      padding-inline: 14px;
+    }
+
+    .wp-simple-hero {
+      gap: 11px;
+      padding: 14px;
+    }
+
+    .wp-simple-avatar {
+      width: 50px;
+      height: 50px;
+    }
+
+    .wp-simple-name {
+      font-size: 24px;
+    }
+
+    .wp-simple-row {
+      padding: 11px 12px;
+      gap: 10px;
+    }
+
+    .wp-simple-row-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+    }
+
+    .wp-simple-badge {
+      padding: 3px 7px;
+      font-size: 10px;
     }
   }
 `;

@@ -455,7 +455,7 @@ const CSS = `
     .otp-root {
       display: block;
       min-height: 100dvh;
-      overflow: visible;
+      overflow-x: hidden;
     }
 
     .otp-left {
@@ -470,6 +470,7 @@ const CSS = `
     }
 
     .otp-form-wrap {
+      width: 100%;
       max-width: 430px;
       min-height: calc(100dvh - 124px);
       display: flex;

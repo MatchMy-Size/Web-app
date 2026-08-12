@@ -623,6 +623,81 @@ const CSS = `
     }
   }
 
+  @media (max-width: 430px) {
+    .tn-inner {
+      padding: 9px 10px;
+      gap: 6px;
+    }
+
+    .tn-brand {
+      gap: 7px;
+    }
+
+    .tn-brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+    }
+
+    .tn-brand-name {
+      max-width: 150px;
+      font-size: 17px;
+    }
+
+    .tn-brand-tagline {
+      font-size: 8.5px;
+    }
+
+    .tn-actions {
+      gap: 6px;
+    }
+
+    .tn-icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+    }
+
+    .tn-user-wrap {
+      flex-basis: 138px;
+    }
+
+    .tn-user-btn {
+      min-height: 38px;
+      gap: 7px;
+      border-radius: 12px;
+    }
+
+    .tn-avatar {
+      width: 25px;
+      height: 25px;
+      font-size: 10.5px;
+    }
+
+    .tn-user-name,
+    .tn-subject-label {
+      font-size: 11.5px;
+    }
+
+    .tn-links {
+      width: calc(100vw - 20px);
+      height: 64px;
+      bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+      border-radius: 17px;
+    }
+
+    .tn-link {
+      height: 52px;
+      font-size: 10px;
+      gap: 3px;
+    }
+
+    .tn-link svg {
+      width: 17px;
+      height: 17px;
+    }
+  }
+
   @media (max-width: 390px) {
     .tn-brand-name {
       max-width: 118px;
@@ -635,6 +710,42 @@ const CSS = `
 
     .tn-user-wrap {
       flex-basis: 118px;
+    }
+  }
+
+  @media (max-width: 370px) {
+    .tn-brand-mark {
+      width: 36px;
+      height: 36px;
+    }
+
+    .tn-brand-name {
+      max-width: 106px;
+      font-size: 15.5px;
+    }
+
+    .tn-icon-btn {
+      width: 36px;
+      height: 36px;
+    }
+
+    .tn-user-wrap {
+      flex-basis: 110px;
+    }
+
+    .tn-user-btn {
+      padding-right: 6px;
+      gap: 6px;
+    }
+
+    .tn-avatar {
+      width: 23px;
+      height: 23px;
+      font-size: 10px;
+    }
+
+    .tn-link {
+      font-size: 9.5px;
     }
   }
 `;

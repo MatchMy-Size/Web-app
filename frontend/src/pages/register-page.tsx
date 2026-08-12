@@ -877,6 +877,41 @@ const CSS = `
       height: 12px;
     }
   }
+
+  @media (max-width: 390px) {
+    .rp-sidebar {
+      padding-inline: 12px;
+    }
+
+    .rp-main {
+      padding: 16px 14px 38px;
+      overflow-x: hidden;
+    }
+
+    .rp-phase-title {
+      font-size: 30px;
+    }
+
+    .rp-phase-sub {
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .rp-gender-visual {
+      width: 94px;
+      height: 116px;
+    }
+
+    .rp-choice-card,
+    .rp-summary-card {
+      border-radius: 14px;
+    }
+
+    .rp-account-actions {
+      margin-inline: -14px;
+      padding-inline: 14px;
+    }
+  }
 `;
 
 if (!document.getElementById('rp-styles')) {

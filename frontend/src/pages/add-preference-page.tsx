@@ -757,6 +757,7 @@ const CSS = `
       grid-template-columns: 1fr;
       padding: 18px 16px calc(112px + env(safe-area-inset-bottom, 0px));
       gap: 22px;
+      overflow-x: hidden;
     }
     .ap-sidebar {
       display: none;
@@ -769,6 +770,7 @@ const CSS = `
     }
     .ap-page-title {
       font-size: 31px;
+      letter-spacing: 0;
     }
     .ap-page-sub {
       font-size: 13px;
@@ -785,11 +787,26 @@ const CSS = `
       grid-template-columns: 1fr;
       gap: 14px;
     }
+    .ap-guide-card {
+      border-radius: 15px;
+    }
     .ap-guide-cover {
       display: none;
     }
     .ap-guide-body {
       padding: 16px;
+    }
+    .ap-guide-title {
+      font-size: 21px;
+    }
+    .ap-guide-desc {
+      font-size: 13px;
+      line-height: 1.55;
+      margin-bottom: 12px;
+    }
+    .ap-guide-tip {
+      padding: 10px 12px;
+      font-size: 12px;
     }
     .ap-field-tabs {
       flex-wrap: nowrap;
@@ -931,6 +948,50 @@ const CSS = `
       line-height: 1.25;
       text-align: center;
       white-space: normal;
+    }
+  }
+
+  @media (max-width: 390px) {
+    .ap-topbar {
+      padding-inline: 12px;
+    }
+
+    .ap-layout {
+      padding: 16px 14px calc(112px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .ap-page-title {
+      font-size: 28px;
+    }
+
+    .ap-page-sub {
+      font-size: 12.5px;
+      line-height: 1.55;
+    }
+
+    .ap-field-tab {
+      min-height: 34px;
+      padding: 6px 10px;
+      font-size: 11.5px;
+    }
+
+    .ap-guide-body {
+      padding: 14px;
+    }
+
+    .ap-text-input {
+      font-size: 26px;
+      padding: 0 16px;
+    }
+
+    .ap-input-unit {
+      min-width: 50px;
+      padding: 0 14px;
+    }
+
+    .ap-gender-image {
+      width: 94px;
+      height: 116px;
     }
   }
 

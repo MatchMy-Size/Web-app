@@ -313,6 +313,142 @@ const CSS = `
     80% { transform: translateX(4px); }
   }
   @keyframes pe-spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 640px) {
+    .pe-root {
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    .pe-topbar {
+      height: auto;
+      min-height: 58px;
+      padding: 10px 14px;
+      gap: 8px;
+    }
+
+    .pe-back-btn {
+      max-width: 112px;
+      padding: 8px 0;
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .pe-topbar-divider {
+      display: none;
+    }
+
+    .pe-topbar-title {
+      font-size: 18px;
+    }
+
+    .pe-save-btn-top {
+      height: 36px;
+      padding: 0 11px;
+      font-size: 0;
+      margin-left: auto;
+    }
+
+    .pe-save-btn-top svg,
+    .pe-save-btn-top .pe-spinner {
+      width: 15px;
+      height: 15px;
+    }
+
+    .pe-body {
+      width: 100%;
+      padding: 16px 14px calc(112px + env(safe-area-inset-bottom, 0px));
+      gap: 16px;
+    }
+
+    .pe-page-title {
+      font-size: 32px;
+      letter-spacing: 0;
+    }
+
+    .pe-page-sub {
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .pe-avatar-section {
+      align-items: flex-start;
+      gap: 14px;
+      padding: 16px;
+      border-radius: 15px;
+    }
+
+    .pe-avatar {
+      width: 66px;
+      height: 66px;
+    }
+
+    .pe-avatar-name,
+    .pe-avatar-hint {
+      overflow-wrap: anywhere;
+    }
+
+    .pe-upload-label {
+      min-height: 38px;
+      padding: 7px 11px;
+      font-size: 12px;
+    }
+
+    .pe-form-card {
+      border-radius: 15px;
+    }
+
+    .pe-form-section-header {
+      padding: 14px 16px 11px;
+    }
+
+    .pe-form-body {
+      padding: 16px;
+      gap: 16px;
+    }
+
+    .pe-two-col {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .pe-field-label {
+      flex-wrap: wrap;
+    }
+
+    .pe-field-hint {
+      margin-left: 0;
+    }
+
+    .pe-text-input {
+      height: 50px;
+      font-size: 16px;
+    }
+
+    .pe-lock-badge {
+      padding: 0 10px;
+      font-size: 9px;
+    }
+
+    .pe-cta-row {
+      position: sticky;
+      bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+      z-index: 20;
+      padding: 8px 0 0;
+      background: var(--paper);
+    }
+
+    .pe-cancel-btn {
+      width: 96px;
+      padding: 0 12px;
+    }
+
+    .pe-save-btn {
+      min-width: 0;
+    }
+  }
 `;
 
 if (!document.getElementById('pe-styles')) {

@@ -262,20 +262,137 @@ const CSS = `
       radial-gradient(circle at 86% 18%, rgba(122,158,120,0.24), transparent 42%),
       radial-gradient(circle at 72% 92%, rgba(195,216,193,0.38), transparent 44%);
     filter: blur(12px);
+    --hp-glow-opacity: 0.72;
     opacity: 0.72;
+    animation: hp-cardGlowIn 0.72s 0.18s var(--ease) both;
   }
   .hp-stat-card-perfect > * {
     position: relative;
     z-index: 1;
   }
+  .hp-stat-card-average {
+    position: relative;
+    overflow: hidden;
+  }
+  .hp-stat-card-average::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    right: -24px;
+    bottom: -46px;
+    height: 92px;
+    background: radial-gradient(ellipse at center, rgba(195,216,193,0.42), transparent 66%);
+    --hp-glow-opacity: 0.55;
+    opacity: 0.55;
+    pointer-events: none;
+    animation: hp-cardGlowIn 0.72s 0.22s var(--ease) both;
+  }
+  .hp-stat-card-average > * {
+    position: relative;
+    z-index: 1;
+  }
+  .hp-stat-layout {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px;
+  }
+  .hp-stat-copy {
+    min-width: 0;
+  }
   .hp-stat-label { font-size: 11px; font-weight: 600; color: var(--ash); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
   .hp-stat-card.accent .hp-stat-label { color: rgba(255,255,255,0.45); }
   .hp-stat-num { font-family: var(--fd); font-size: 32px; font-weight: 700; color: var(--ink); letter-spacing: -0.8px; line-height: 1; }
+  .hp-stat-num .hp-stat-value {
+    color: inherit;
+  }
+  .hp-stat-num-perfect {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 44px;
+  }
+  .hp-stat-check {
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(122,158,120,0.13);
+    color: #496657;
+    opacity: 0;
+    transform: scale(0.82);
+    animation: hp-checkIn 0.3s 0.62s var(--ease) both;
+  }
+  .hp-stat-num .hp-stat-check {
+    color: #496657;
+  }
+  .hp-stat-check svg {
+    width: 11px;
+    height: 11px;
+  }
+  .hp-stat-sparkle {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #7A9E78;
+    opacity: 0;
+    pointer-events: none;
+    animation: hp-sparklePop 0.62s 0.68s ease-out both;
+  }
+  .hp-stat-sparkle.one {
+    top: -5px;
+    right: 4px;
+  }
+  .hp-stat-sparkle.two {
+    top: 4px;
+    right: -12px;
+    width: 4px;
+    height: 4px;
+    animation-delay: 0.76s;
+  }
+  .hp-stat-sparkle.three {
+    right: -5px;
+    bottom: -3px;
+    width: 3px;
+    height: 3px;
+    animation-delay: 0.82s;
+  }
   .hp-stat-card.accent .hp-stat-num { color: var(--white); }
   .hp-stat-num span { color: var(--sage-deep); }
   .hp-stat-card.accent .hp-stat-num span { color: var(--sage); }
   .hp-stat-sub { font-size: 12px; color: var(--ash); margin-top: 4px; }
   .hp-stat-card.accent .hp-stat-sub { color: rgba(255,255,255,0.35); }
+  .hp-fit-ring {
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+    color: #496657;
+    opacity: 0;
+    animation: hp-ringIn 0.4s 0.2s var(--ease) both;
+  }
+  .hp-fit-ring svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    transform: rotate(-90deg);
+  }
+  .hp-fit-ring-track,
+  .hp-fit-ring-progress {
+    fill: none;
+    stroke-width: 3.4;
+  }
+  .hp-fit-ring-track {
+    stroke: #E8ECE8;
+  }
+  .hp-fit-ring-progress {
+    stroke: #496657;
+    stroke-linecap: round;
+    stroke-dasharray: 100;
+  }
 
   /* ── Filter bar ── */
   .hp-filter-bar {
@@ -772,6 +889,12 @@ const CSS = `
       gap: 8px;
     }
 
+    @supports not (height: 100dvh) {
+      .hp-body {
+        height: calc(100vh - var(--nav-h, 72px) - var(--mobile-tab-h, 80px));
+      }
+    }
+
     .hp-mobile-summary {
       position: relative;
       top: auto;
@@ -816,7 +939,7 @@ const CSS = `
     .hp-stat-card {
       min-width: 0;
       border-radius: 10px;
-      padding: 10px 11px;
+      padding: 10px;
       box-shadow: 0 6px 16px rgba(13,13,13,0.04);
     }
 
@@ -837,11 +960,27 @@ const CSS = `
       margin-bottom: 5px;
       font-size: 9px;
       letter-spacing: 0.45px;
+      white-space: nowrap;
     }
 
     .hp-stat-num {
       font-size: 24px;
       letter-spacing: 0;
+    }
+
+    .hp-stat-layout {
+      gap: 7px;
+    }
+
+    .hp-fit-ring {
+      width: 36px;
+      height: 36px;
+      flex-basis: 36px;
+    }
+
+    .hp-fit-ring-track,
+    .hp-fit-ring-progress {
+      stroke-width: 3.2;
     }
 
     .hp-stat-sub {
@@ -865,7 +1004,7 @@ const CSS = `
 
     .hp-filter-section {
       display: grid;
-      grid-template-columns: 68px minmax(0, 1fr);
+      grid-template-columns: 62px minmax(0, 1fr);
       align-items: center;
       gap: 6px;
       min-width: 0;
@@ -918,7 +1057,7 @@ const CSS = `
       flex: 0 0 auto;
       justify-content: center;
       min-height: 36px;
-      padding: 7px 11px;
+      padding: 7px 10px;
       font-size: 11.5px;
       scroll-snap-align: start;
     }
@@ -1107,6 +1246,52 @@ const CSS = `
     .hp-modal-title { font-size: 29px; }
   }
 
+  @media (max-width: 380px) {
+    .hp-stats-row {
+      gap: 6px;
+    }
+
+    .hp-stat-card {
+      padding: 9px;
+    }
+
+    .hp-stat-label {
+      font-size: 8.5px;
+    }
+
+    .hp-stat-num {
+      font-size: 22px;
+    }
+
+    .hp-stat-sub {
+      font-size: 9.5px;
+    }
+
+    .hp-fit-ring {
+      width: 32px;
+      height: 32px;
+      flex-basis: 32px;
+    }
+
+    .hp-filter-section {
+      grid-template-columns: 54px minmax(0, 1fr);
+    }
+
+    .hp-filter-label {
+      font-size: 9px;
+    }
+
+    .hp-product-card,
+    .hp-skeleton-card {
+      grid-template-columns: 78px minmax(0, 1fr);
+    }
+
+    .hp-card-image,
+    .hp-skeleton-card > .hp-skeleton {
+      min-height: 98px;
+    }
+  }
+
   /* ── Error ── */
   .hp-error {
     display: flex; align-items: center; gap: 10px;
@@ -1133,6 +1318,23 @@ const CSS = `
     from { background-position: 200% 0; }
     to   { background-position: -200% 0; }
   }
+  @keyframes hp-cardGlowIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.96); }
+    to   { opacity: var(--hp-glow-opacity, 0.72); transform: none; }
+  }
+  @keyframes hp-checkIn {
+    from { opacity: 0; transform: scale(0.82); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes hp-sparklePop {
+    0%   { opacity: 0; transform: translateY(2px) scale(0.4); }
+    32%  { opacity: 1; transform: translateY(-2px) scale(1); }
+    100% { opacity: 0; transform: translateY(-7px) scale(0.2); }
+  }
+  @keyframes hp-ringIn {
+    from { opacity: 0; transform: translateY(5px) scale(0.95); }
+    to   { opacity: 1; transform: none; }
+  }
   @keyframes hp-modalFade {
     from { opacity: 0; }
     to   { opacity: 1; }
@@ -1143,7 +1345,27 @@ const CSS = `
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .hp-modal-backdrop, .hp-modal { animation: none; }
+    .hp-modal-backdrop,
+    .hp-modal,
+    .hp-stat-card-perfect::before,
+    .hp-stat-card-average::before,
+    .hp-stat-check,
+    .hp-fit-ring {
+      animation: none;
+    }
+    .hp-stat-card-perfect::before,
+    .hp-stat-card-average::before,
+    .hp-stat-check,
+    .hp-fit-ring {
+      opacity: 1;
+    }
+    .hp-stat-card-perfect::before,
+    .hp-stat-card-average::before {
+      opacity: var(--hp-glow-opacity, 0.72);
+    }
+    .hp-stat-sparkle {
+      display: none;
+    }
   }
 `;
 
@@ -1171,6 +1393,7 @@ const Ico = {
   Plus:     () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 3v10M3 8h10"/></svg>,
   Bulb:     () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M8 2a4 4 0 014 4c0 1.7-.9 3.1-2 4v1H6v-1c-1.1-.9-2-2.3-2-4a4 4 0 014-4z"/><path d="M6 13h4"/></svg>,
   Alert:    () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v4M8 11v.5"/></svg>,
+  Check:    () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3L12.5 5.5"/></svg>,
   Shirt:    () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M6 2l2 2 2-2 3 2-1.5 3H11v7H5V7H3.5L2 4l3-2z"/></svg>,
 };
 
@@ -1226,6 +1449,44 @@ function normalizeMeasurementKeyForPrompt(key: string) {
 function isEnteredMeasurement(value: unknown) {
   const numeric = typeof value === 'number' ? value : typeof value === 'string' ? Number.parseFloat(value) : NaN;
   return Number.isFinite(numeric) && numeric > 0;
+}
+
+function prefersReducedMotion() {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
+
+function useAnimatedNumber(target: number, durationMs: number) {
+  const safeTarget = Number.isFinite(target) ? Math.max(0, target) : 0;
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || safeTarget === 0 || prefersReducedMotion()) {
+      setValue(safeTarget);
+      return;
+    }
+
+    let frame = 0;
+    const startedAt = window.performance.now();
+    setValue(0);
+
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - startedAt) / durationMs);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(safeTarget * eased));
+      if (progress < 1) {
+        frame = window.requestAnimationFrame(tick);
+      }
+    };
+
+    frame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frame);
+  }, [durationMs, safeTarget]);
+
+  return value;
 }
 
 function getRecommendationEmptyState(
@@ -1691,6 +1952,9 @@ export function HomePage() {
   const totalCards    = recommendedSectionCards.length;
   const perfectCount  = availableCards.filter(isPerfectFit).length;
   const avgScore      = availableCards.length ? Math.round(availableCards.reduce((a, c) => a + c.matchScore, 0) / availableCards.length) : 0;
+  const animatedPerfectCount = useAnimatedNumber(perfectCount, 600);
+  const animatedAvgScore = useAnimatedNumber(avgScore, 800);
+  const animatedAvgRingScore = Math.min(100, animatedAvgScore);
   const hasUnfilteredRecommendations = recommendedSectionCards.length > 0;
   const emptyState = getRecommendationEmptyState(
     selectedSection?.status,
@@ -1715,13 +1979,42 @@ export function HomePage() {
               </div>
               <div className="hp-stat-card hp-stat-card-perfect">
                 <div className="hp-stat-label">Perfect fits</div>
-                <div className="hp-stat-num">{perfectCount}</div>
-                <div className="hp-stat-sub">Score ≥ 75%</div>
+                <div className="hp-stat-num hp-stat-num-perfect">
+                  <span className="hp-stat-value">{animatedPerfectCount}</span>
+                  {perfectCount > 0 && (
+                    <span key={`perfect-finish-${perfectCount}`} className="hp-perfect-finish" aria-hidden="true">
+                      <span className="hp-stat-check"><Ico.Check /></span>
+                      <span className="hp-stat-sparkle one" />
+                      <span className="hp-stat-sparkle two" />
+                      <span className="hp-stat-sparkle three" />
+                    </span>
+                  )}
+                </div>
+                <div className="hp-stat-sub">Perfect matches</div>
               </div>
               <div className="hp-stat-card hp-stat-card-average">
-                <div className="hp-stat-label">Avg fit score</div>
-                <div className="hp-stat-num">{avgScore || '—'}<span>{avgScore ? '%' : ''}</span></div>
-                <div className="hp-stat-sub">Current category</div>
+                <div className="hp-stat-layout">
+                  <div className="hp-stat-copy">
+                    <div className="hp-stat-label">Avg fit score</div>
+                    <div className="hp-stat-num">{avgScore ? animatedAvgScore : '—'}<span>{avgScore ? '%' : ''}</span></div>
+                    <div className="hp-stat-sub">Current category</div>
+                  </div>
+                  {avgScore > 0 && (
+                    <div className="hp-fit-ring" aria-hidden="true">
+                      <svg viewBox="0 0 44 44">
+                        <circle className="hp-fit-ring-track" cx="22" cy="22" r="17" />
+                        <circle
+                          className="hp-fit-ring-progress"
+                          cx="22"
+                          cy="22"
+                          r="17"
+                          pathLength="100"
+                          style={{ strokeDashoffset: 100 - animatedAvgRingScore }}
+                        />
+                      </svg>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="hp-stat-card hp-stat-card-brands">
                 <div className="hp-stat-label">Brands</div>
