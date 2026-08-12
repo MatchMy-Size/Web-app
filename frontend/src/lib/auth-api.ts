@@ -25,6 +25,38 @@ export const signInWithPhonePassword = async (
   return storeSession(session);
 };
 
+export const signInSeller = async (
+  identifier: string,
+  password: string,
+): Promise<AuthResult> => {
+  const session = await apiRequest<SessionResponse>('/api/auth/seller/login', {
+    method: 'POST',
+    authenticated: false,
+    body: { identifier: identifier.trim(), password },
+  });
+  return storeSession(session);
+};
+
+export type SellerRegistration = {
+  phoneNumber: string;
+  email: string;
+  password: string;
+  otpSessionId: string;
+  businessName: string;
+  contactName: string;
+  address?: string;
+  photoUrl?: string;
+};
+
+export const registerSeller = async (registration: SellerRegistration): Promise<AuthResult> => {
+  const session = await apiRequest<SessionResponse>('/api/auth/seller/register', {
+    method: 'POST',
+    authenticated: false,
+    body: registration,
+  });
+  return storeSession(session);
+};
+
 export const createUserWithPhonePassword = async (
   phoneNumber: string,
   password: string,

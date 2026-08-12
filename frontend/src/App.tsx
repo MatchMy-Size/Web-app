@@ -2,7 +2,8 @@ import { useCallback, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { AppShell } from '@/components/app-shell';
-import { ProtectedRoute, PublicOnlyRoute } from '@/components/route-guard';
+import { CustomerRoute, PublicOnlyRoute, SellerRoute } from '@/components/route-guard';
+import { SellerShell } from '@/components/seller-shell';
 import { StartupSplash } from '@/components/startup-splash';
 import { AddPreferencePage } from '@/pages/add-preference-page';
 import { ChangePasswordPage, ForgotPasswordPage } from '@/pages/change-password-page';
@@ -17,6 +18,9 @@ import { ProfilePage } from '@/pages/profile-page';
 import { RegisterPage } from '@/pages/register-page';
 import { SettingsPage } from '@/pages/settings-page';
 import { LandingPage } from '@/pages/landing-page';
+import { SellerLoginPage, SellerRegisterPage } from '@/pages/seller-auth-pages';
+import { SellerCategoriesPage } from '@/pages/seller-categories-page';
+import { SellerDashboardPage } from '@/pages/seller-dashboard-page';
 
 export default function App() {
   const [showStartupSplash, setShowStartupSplash] = useState(() => {
@@ -43,9 +47,11 @@ export default function App() {
           <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/auth/register" element={<RegisterPage />} />
           <Route path="/auth/otp" element={<OtpPage />} />
+          <Route path="/seller/login" element={<SellerLoginPage />} />
+          <Route path="/seller/register" element={<SellerRegisterPage />} />
         </Route>
 
-        <Route element={<ProtectedRoute />}>
+        <Route element={<CustomerRoute />}>
           <Route path="/app" element={<AppShell />}>
             <Route index element={<Navigate to="home" replace />} />
             <Route path="home" element={<HomePage />} />
@@ -57,6 +63,14 @@ export default function App() {
             <Route path="settings" element={<SettingsPage />} />
             <Route path="change-password" element={<ChangePasswordPage />} />
             <Route path="add-preference" element={<AddPreferencePage />} />
+          </Route>
+        </Route>
+
+        <Route element={<SellerRoute />}>
+          <Route path="/seller" element={<SellerShell />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<SellerDashboardPage />} />
+            <Route path="categories" element={<SellerCategoriesPage />} />
           </Route>
         </Route>
 

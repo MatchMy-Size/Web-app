@@ -79,6 +79,56 @@ public class AppUserRepository {
             .update();
     }
 
+    public AppUser promoteToSeller(
+        long appUserId,
+        UUID authUserId,
+        String authEmail,
+        String phoneNumber,
+        Map<String, Object> profileData
+    ) {
+        return jdbc.sql("""
+                update app_users
+                   set source_account_id = coalesce(source_account_id, :sourceAccountId),
+                       auth_email = :authEmail,
+                       phone_number = :phoneNumber,
+                       email = :authEmail,
+                       role = 'seller',
+                       status = 'active',
+                       profile_data = cast(:profileData as jsonb),
+                       updated_at = now()
+                 where id = :id
+                returning id, auth_user_id, source_account_id, auth_email, phone_number,
+                          role, status, profile_data::text as profile_json
+                """)
+            .param("sourceAccountId", authUserId.toString())
+            .param("authEmail", authEmail)
+            .param("phoneNumber", phoneNumber)
+            .param("profileData", jsonMaps.write(profileData))
+            .param("id", appUserId)
+            .query(this::mapRow)
+            .single();
+    }
+
+    public AppUser updateSellerProfile(long appUserId, Map<String, Object> profileData) {
+        return jdbc.sql("""
+                update app_users
+                   set profile_data = cast(:profileData as jsonb),
+                       email = coalesce(cast(:email as text), email),
+                       phone_number = coalesce(cast(:phoneNumber as varchar), phone_number),
+                       updated_at = now()
+                 where id = :id
+                   and role = 'seller'
+                returning id, auth_user_id, source_account_id, auth_email, phone_number,
+                          role, status, profile_data::text as profile_json
+                """)
+            .param("profileData", jsonMaps.write(profileData))
+            .param("email", text(profileData.get("email")))
+            .param("phoneNumber", text(profileData.get("phoneNumber"), profileData.get("phone")))
+            .param("id", appUserId)
+            .query(this::mapRow)
+            .single();
+    }
+
     public Optional<AppUser> findById(long id) {
         return find("id = :value", id);
     }

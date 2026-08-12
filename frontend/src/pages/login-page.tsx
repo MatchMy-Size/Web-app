@@ -802,6 +802,11 @@ export function LoginPage() {
             <Link to="/auth/register">Create an account</Link>
           </p>
 
+          <p className="lp-auth-footer-text" style={{ marginTop: 8 }}>
+            Managing a clothing brand?{' '}
+            <Link to="/seller/login">Open the seller portal</Link>
+          </p>
+
           <div className="lp-auth-divider" aria-hidden="true">
             <div className="lp-auth-divider-line" />
             <span>500+ brands · One sizing profile</span>
