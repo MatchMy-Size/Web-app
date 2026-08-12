@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useProfileSubject } from '@/context/profile-subject-context';
 import { CLOTHING_OPTIONS_BY_GENDER, normalizeGender, type ClothingOption } from '@/lib/measurement';
 import { fetchCatalogBootstrap } from '@/lib/catalog-api';
-import { buildBrandRecommendations } from '@/lib/size-recommendation';
+import { buildBrandRecommendationResult } from '@/lib/size-recommendation';
 import type { SellerPublicProfile } from '@/lib/seller-public-profile';
 import {
   buildFallbackOptions,
@@ -99,13 +99,11 @@ export function useRecommendationData(
 
   const sections = useMemo<RecommendationSection[]>(() => {
     return measurementProfiles
-      .map((profileEntry) => ({
-        profileKey: profileEntry.profileKey,
-        choice: profileEntry.preferredClothing,
-        label: profileEntry.preferredClothingLabel,
-        recommendations: buildBrandRecommendations({
+      .map((profileEntry) => {
+        const result = buildBrandRecommendationResult({
           customer: {
             measurements: profileEntry.measurements,
+            unit: profileEntry.unit,
             averagePoint: profileEntry.averagePoint,
             gender: profileEntry.gender,
             preferredClothing: profileEntry.preferredClothing,
@@ -113,8 +111,16 @@ export function useRecommendationData(
           },
           brandRows,
           limit: 12,
-        }),
-      }));
+        });
+
+        return {
+          profileKey: profileEntry.profileKey,
+          choice: profileEntry.preferredClothing,
+          label: profileEntry.preferredClothingLabel,
+          recommendations: result.recommendations,
+          status: result.status,
+        };
+      });
   }, [brandRows, measurementProfiles]);
 
   const categoryOptions = useMemo<ClothingOption[]>(() => {
@@ -151,7 +157,10 @@ export function useRecommendationData(
 
 export const getCategoryBadge = (sections: RecommendationSection[], choice: string | null) => {
   const section = sections.find((entry) => entry.choice === choice);
-  return section ? `${section.recommendations.length} matches` : 'Add sizes';
+  if (!section) return 'Add sizes';
+  if (section.status === 'no-reliable-match') return 'No reliable fit';
+  if (section.status === 'no-comparable-key-measurements') return 'Primary measurement unavailable';
+  return `${section.recommendations.length} matches`;
 };
 
 export const resolveSectionLabel = (profile: CustomerMeasurementProfile) =>

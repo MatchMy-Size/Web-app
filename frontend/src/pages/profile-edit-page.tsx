@@ -40,28 +40,31 @@ const CSS = `
   }
 
   /* ── Topbar ── */
-  .pe-topbar {
-    position: sticky; top: 0; z-index: 50;
-    height: 64px;
+  .pe-root .pe-topbar {
+    position: relative;
+    top: 0;
+    z-index: 1;
+    height: 48px;
+    min-height: 48px;
     background: rgba(250,250,248,0.92);
     backdrop-filter: blur(14px);
     border-bottom: 1px solid var(--cloud);
     display: flex; align-items: center;
-    padding: 0 48px; gap: 14px;
+    padding: 0 clamp(20px, 2.5vw, 36px); gap: 9px;
     animation: pe-fadeDown 0.5s var(--ease) both;
   }
   .pe-back-btn {
     display: flex; align-items: center; gap: 7px;
-    font-family: var(--fs); font-size: 13px; font-weight: 600;
+    font-family: var(--fs); font-size: 11.5px; font-weight: 600;
     color: var(--ash); background: none; border: none;
-    cursor: pointer; padding: 8px 14px; border-radius: 8px;
+    cursor: pointer; padding: 6px 8px; border-radius: 8px;
     transition: all 0.18s;
   }
   .pe-back-btn:hover { background: var(--cloud); color: var(--ink); }
   .pe-back-btn svg { width: 14px; height: 14px; }
-  .pe-topbar-divider { width: 1px; height: 22px; background: var(--cloud); }
+  .pe-topbar-divider { width: 1px; height: 16px; background: var(--cloud); }
   .pe-topbar-title {
-    font-family: var(--fd); font-size: 20px; font-weight: 700;
+    font-family: var(--fd); font-size: 16px; font-weight: 700;
     color: var(--ink); letter-spacing: -0.4px;
   }
   .pe-save-btn-top {
@@ -80,26 +83,35 @@ const CSS = `
 
   /* ── Body ── */
   .pe-body {
-    max-width: 680px; margin: 0 auto;
-    padding: 44px 48px 80px;
-    display: flex; flex-direction: column; gap: 28px;
+    max-width: 1240px; margin: 0 auto;
+    padding: 30px 32px 96px;
+    display: flex; flex-direction: column; gap: 16px;
   }
 
   /* ── Page header ── */
-  .pe-header { animation: pe-fadeUp 0.5s 0.05s var(--ease) both; }
+  .pe-header { max-width: 650px; animation: pe-fadeUp 0.5s 0.05s var(--ease) both; }
   .pe-header-eyebrow {
     display: flex; align-items: center; gap: 8px;
     font-size: 11px; font-weight: 700; color: var(--sage-deep);
-    letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 10px;
+    letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 6px;
   }
   .pe-header-eyebrow-line { width: 28px; height: 1.5px; background: var(--sage-deep); }
   .pe-page-title {
-    font-family: var(--fd); font-size: clamp(28px, 3.5vw, 40px);
+    font-family: var(--fd); font-size: clamp(26px, 2.8vw, 34px);
     font-weight: 700; color: var(--ink); letter-spacing: -0.7px;
     line-height: 1.1; margin-bottom: 8px;
   }
   .pe-page-title em { font-style: italic; color: var(--sage-deep); }
-  .pe-page-sub { font-size: 13.5px; color: var(--ash); line-height: 1.65; }
+  .pe-page-sub { font-size: 13px; color: var(--ash); line-height: 1.55; }
+
+  .pe-edit-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 16px;
+  }
+
+  .pe-edit-grid > * { min-width: 0; }
 
   /* ── Avatar editor ── */
   .pe-avatar-section {
@@ -262,6 +274,11 @@ const CSS = `
   /* ── Save CTA ── */
   .pe-cta-row {
     display: flex; align-items: center; gap: 12px;
+    position: sticky;
+    bottom: calc(var(--mobile-tab-h, 80px) + 16px + env(safe-area-inset-bottom, 0px));
+    z-index: 20;
+    padding: 12px 0;
+    background: linear-gradient(90deg, var(--paper) 0%, rgba(250,250,248,0.96) 82%, var(--paper) 100%);
     animation: pe-fadeUp 0.5s 0.22s var(--ease) both;
   }
   .pe-cancel-btn {
@@ -313,6 +330,153 @@ const CSS = `
     80% { transform: translateX(4px); }
   }
   @keyframes pe-spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 860px) {
+    .pe-body {
+      max-width: 680px;
+      padding: 20px 24px 80px;
+    }
+
+    .pe-edit-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .pe-root {
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    .pe-topbar {
+      height: auto;
+      min-height: 58px;
+      padding: 10px 14px;
+      gap: 8px;
+    }
+
+    .pe-back-btn {
+      max-width: 112px;
+      padding: 8px 0;
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .pe-topbar-divider {
+      display: none;
+    }
+
+    .pe-topbar-title {
+      font-size: 18px;
+    }
+
+    .pe-save-btn-top {
+      height: 36px;
+      padding: 0 11px;
+      font-size: 0;
+      margin-left: auto;
+    }
+
+    .pe-save-btn-top svg,
+    .pe-save-btn-top .pe-spinner {
+      width: 15px;
+      height: 15px;
+    }
+
+    .pe-body {
+      width: 100%;
+      padding: 16px 14px calc(112px + env(safe-area-inset-bottom, 0px));
+      gap: 16px;
+    }
+
+    .pe-page-title {
+      font-size: 32px;
+      letter-spacing: 0;
+    }
+
+    .pe-page-sub {
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .pe-avatar-section {
+      align-items: flex-start;
+      gap: 14px;
+      padding: 16px;
+      border-radius: 15px;
+    }
+
+    .pe-avatar {
+      width: 66px;
+      height: 66px;
+    }
+
+    .pe-avatar-name,
+    .pe-avatar-hint {
+      overflow-wrap: anywhere;
+    }
+
+    .pe-upload-label {
+      min-height: 38px;
+      padding: 7px 11px;
+      font-size: 12px;
+    }
+
+    .pe-form-card {
+      border-radius: 15px;
+    }
+
+    .pe-form-section-header {
+      padding: 14px 16px 11px;
+    }
+
+    .pe-form-body {
+      padding: 16px;
+      gap: 16px;
+    }
+
+    .pe-two-col {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .pe-field-label {
+      flex-wrap: wrap;
+    }
+
+    .pe-field-hint {
+      margin-left: 0;
+    }
+
+    .pe-text-input {
+      height: 50px;
+      font-size: 16px;
+    }
+
+    .pe-lock-badge {
+      padding: 0 10px;
+      font-size: 9px;
+    }
+
+    .pe-cta-row {
+      position: sticky;
+      bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+      z-index: 20;
+      padding: 8px 0 0;
+      background: var(--paper);
+    }
+
+    .pe-cancel-btn {
+      width: 96px;
+      padding: 0 12px;
+    }
+
+    .pe-save-btn {
+      min-width: 0;
+    }
+  }
 `;
 
 if (!document.getElementById('pe-styles')) {
@@ -445,7 +609,7 @@ export function ProfileEditPage() {
       {/* ── Topbar ── */}
       <div className="pe-topbar">
         <button className="pe-back-btn" onClick={() => navigate('/app/profile/details')}>
-          <Ico.Back /> Profile details
+          Profile details
         </button>
         <div className="pe-topbar-divider" />
         <span className="pe-topbar-title">Edit profile</span>
@@ -474,6 +638,7 @@ export function ProfileEditPage() {
           </p>
         </div>
 
+        <div className="pe-edit-grid">
         {/* Avatar editor */}
         <div className="pe-avatar-section">
           <div className="pe-avatar-wrap" onClick={() => fileInputRef.current?.click()}>
@@ -592,6 +757,7 @@ export function ProfileEditPage() {
               </p>
             </div>
           </div>
+        </div>
         </div>
 
         {/* Error */}

@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.matchmysize.identity.application.PhoneCredentialService;
+import com.matchmysize.identity.infrastructure.AppUserRepository;
 import com.matchmysize.shared.api.ApiException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class OtpService {
+    private static final int MAX_REQUESTS_PER_WINDOW = 4;
     public record OtpSessionResponse(
         UUID sessionId,
         String purpose,
@@ -42,6 +44,7 @@ public class OtpService {
     private final JdbcClient jdbc;
     private final TextLkClient textLk;
     private final PhoneCredentialService phoneCredentials;
+    private final AppUserRepository users;
     private final SecureRandom secureRandom = new SecureRandom();
     private final long ttlMs;
     private final String template;
@@ -50,12 +53,14 @@ public class OtpService {
         JdbcClient jdbc,
         TextLkClient textLk,
         PhoneCredentialService phoneCredentials,
+        AppUserRepository users,
         @Value("${app.text-lk.otp-ttl-ms}") long ttlMs,
         @Value("${app.text-lk.otp-template}") String template
     ) {
         this.jdbc = jdbc;
         this.textLk = textLk;
         this.phoneCredentials = phoneCredentials;
+        this.users = users;
         this.ttlMs = ttlMs > 0 ? ttlMs : 300_000;
         this.template = template;
     }
@@ -64,6 +69,13 @@ public class OtpService {
     public OtpSessionResponse request(String phoneNumber, String purpose) {
         var normalizedPhone = phoneCredentials.normalize(phoneNumber);
         var normalizedPurpose = normalizePurpose(purpose);
+        if ("signup".equals(normalizedPurpose) && signupPhoneAlreadyRegistered(normalizedPhone)) {
+            throw new ApiException(
+                HttpStatus.CONFLICT,
+                "account_exists",
+                "This phone number is already registered. Log in or use a different number."
+            );
+        }
         var recentCount = jdbc.sql("""
                 select count(*) from otp_sessions
                  where phone_number = :phone
@@ -74,6 +86,23 @@ public class OtpService {
             .single();
         if (recentCount >= 3) {
             throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "otp_rate_limited", "Please wait before requesting another code.");
+        }
+        var windowCount = jdbc.sql("""
+                select count(*) from otp_sessions
+                 where phone_number = :phone
+                   and purpose = :purpose
+                   and created_at > now() - interval '10 minutes'
+                """)
+            .param("phone", normalizedPhone)
+            .param("purpose", normalizedPurpose)
+            .query(Long.class)
+            .single();
+        if (windowCount >= MAX_REQUESTS_PER_WINDOW) {
+            throw new ApiException(
+                HttpStatus.TOO_MANY_REQUESTS,
+                "otp_resend_limit",
+                "You have reached the resend limit. Try again in 10 minutes."
+            );
         }
 
         var code = "%06d".formatted(secureRandom.nextInt(900_000) + 100_000);
@@ -222,10 +251,17 @@ public class OtpService {
     }
 
     private String normalizePurpose(String purpose) {
-        if (!"signup".equals(purpose) && !"changePassword".equals(purpose)) {
+        if (!"signup".equals(purpose)
+            && !"changePassword".equals(purpose)
+            && !"passwordReset".equals(purpose)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "invalid_otp_purpose", "Unsupported OTP purpose.");
         }
         return purpose;
+    }
+
+    private boolean signupPhoneAlreadyRegistered(String normalizedPhone) {
+        return users.findByPhoneNumber(normalizedPhone).isPresent()
+            || users.findByAuthEmail(phoneCredentials.syntheticEmail(normalizedPhone)).isPresent();
     }
 
     static String hash(UUID sessionId, String code) {

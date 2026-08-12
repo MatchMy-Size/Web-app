@@ -7,6 +7,7 @@ import com.matchmysize.profile.application.ProfileService;
 import com.matchmysize.shared.api.ApiResponse;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -76,6 +77,14 @@ public class ProfileController {
             "id",
             profiles.createFamilyMember(identities.currentUser(jwt), payload)
         ));
+    }
+
+    @DeleteMapping("/family-members/{memberKey}")
+    ApiResponse<Map<String, Object>> deleteFamilyMember(
+        @AuthenticationPrincipal Jwt jwt,
+        @PathVariable String memberKey
+    ) {
+        return ApiResponse.success(profiles.deleteFamilyMember(identities.currentUser(jwt), memberKey));
     }
 
     @PostMapping("/family-members/{memberKey}/measurement-profiles")

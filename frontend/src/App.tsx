@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { AppShell } from '@/components/app-shell';
-import { ProtectedRoute, PublicOnlyRoute } from '@/components/route-guard';
+import { CustomerRoute, PublicOnlyRoute, SellerRoute } from '@/components/route-guard';
+import { SellerShell } from '@/components/seller-shell';
 import { StartupSplash } from '@/components/startup-splash';
 import { AddPreferencePage } from '@/pages/add-preference-page';
-import { ChangePasswordPage } from '@/pages/change-password-page';
+import { ChangePasswordPage, ForgotPasswordPage } from '@/pages/change-password-page';
 import { ExplorePage } from '@/pages/explore-page';
-import { HomePage } from '@/pages/home-page';
+import { EmptyHomePage } from '@/pages/empty-home-page';
 import { LoginPage } from '@/pages/login-page';
 import { MeasurementsPage } from '@/pages/measurements-page';
 import { OtpPage } from '@/pages/otp-page';
@@ -17,6 +18,9 @@ import { ProfilePage } from '@/pages/profile-page';
 import { RegisterPage } from '@/pages/register-page';
 import { SettingsPage } from '@/pages/settings-page';
 import { LandingPage } from '@/pages/landing-page';
+import { SellerLoginPage, SellerRegisterPage } from '@/pages/seller-auth-pages';
+import { SellerCategoriesPage } from '@/pages/seller-categories-page';
+import { SellerDashboardPage } from '@/pages/seller-dashboard-page';
 
 export default function App() {
   const [showStartupSplash, setShowStartupSplash] = useState(() => {
@@ -31,31 +35,26 @@ export default function App() {
     setShowStartupSplash(false);
   }, []);
 
-  useEffect(() => {
-    if (!showStartupSplash) return;
-
-    const timer = window.setTimeout(hideStartupSplash, 5000);
-
-    return () => window.clearTimeout(timer);
-  }, [hideStartupSplash, showStartupSplash]);
-
   return (
     <>
-      {showStartupSplash && <StartupSplash />}
+      {showStartupSplash && <StartupSplash onComplete={hideStartupSplash} />}
 
       <Routes>
         <Route path="/" element={<LandingPage />} />
 
         <Route element={<PublicOnlyRoute />}>
           <Route path="/auth/login" element={<LoginPage />} />
+          <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/auth/register" element={<RegisterPage />} />
           <Route path="/auth/otp" element={<OtpPage />} />
+          <Route path="/seller/login" element={<SellerLoginPage />} />
+          <Route path="/seller/register" element={<SellerRegisterPage />} />
         </Route>
 
-        <Route element={<ProtectedRoute />}>
+        <Route element={<CustomerRoute />}>
           <Route path="/app" element={<AppShell />}>
             <Route index element={<Navigate to="home" replace />} />
-            <Route path="home" element={<HomePage />} />
+            <Route path="home" element={<EmptyHomePage />} />
             <Route path="explore" element={<ExplorePage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="profile/details" element={<ProfileDetailsPage />} />
@@ -64,6 +63,14 @@ export default function App() {
             <Route path="settings" element={<SettingsPage />} />
             <Route path="change-password" element={<ChangePasswordPage />} />
             <Route path="add-preference" element={<AddPreferencePage />} />
+          </Route>
+        </Route>
+
+        <Route element={<SellerRoute />}>
+          <Route path="/seller" element={<SellerShell />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<SellerDashboardPage />} />
+            <Route path="categories" element={<SellerCategoriesPage />} />
           </Route>
         </Route>
 

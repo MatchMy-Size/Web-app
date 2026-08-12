@@ -65,7 +65,11 @@ if (!document.getElementById('ss-styles')) {
   document.head.appendChild(style);
 }
 
-export function StartupSplash() {
+type StartupSplashProps = {
+  onComplete: () => void;
+};
+
+export function StartupSplash({ onComplete }: StartupSplashProps) {
   return (
     <div className="ss-root" role="status" aria-live="polite" aria-label="Loading MatchMySize">
       <video
@@ -85,6 +89,8 @@ export function StartupSplash() {
         playsInline
         preload="auto"
         disablePictureInPicture
+        onEnded={onComplete}
+        onError={onComplete}
       />
       <div className="ss-overlay" aria-hidden="true" />
     </div>

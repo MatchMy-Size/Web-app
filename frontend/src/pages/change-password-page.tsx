@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useAuth } from '@/context/auth-context';
 import { getOtpSession, setOtpSession, type OtpSession } from '@/lib/auth-flow';
-import { attachPasswordToVerifiedPhone } from '@/lib/auth-api';
-import { requestOtpViaTextLk, verifyOtpSession } from '@/lib/otp-client';
+import { attachPasswordToVerifiedPhone, resetPasswordWithVerifiedPhone } from '@/lib/auth-api';
+import { requestOtpViaTextLk, requestPasswordResetOtp, verifyOtpSession } from '@/lib/otp-client';
 import {
   DEFAULT_PHONE_COUNTRY_CODE,
   getSriLankaLocalPhoneInput,
@@ -337,6 +337,158 @@ const CSS = `
 
   /* Fields gap */
   .cp-fields { display: flex; flex-direction: column; gap: 18px; }
+
+  @media (max-width: 640px) {
+    .cp-root {
+      min-height: 100dvh;
+      display: block;
+      overflow-x: hidden;
+    }
+
+    .cp-topbar {
+      min-height: 58px;
+      height: auto;
+      padding: 10px 14px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .cp-back-btn {
+      max-width: 126px;
+      padding: 8px 0;
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cp-topbar-divider {
+      display: none;
+    }
+
+    .cp-topbar-title {
+      margin-left: auto;
+      font-size: 18px;
+    }
+
+    .cp-stepper {
+      order: 3;
+      width: 100%;
+      margin-left: 0;
+      justify-content: space-between;
+      border-top: 1px solid var(--cloud);
+      padding-top: 8px;
+    }
+
+    .cp-step-item {
+      flex: 1;
+      justify-content: center;
+      padding: 4px 2px;
+      gap: 5px;
+    }
+
+    .cp-step-item:not(:last-child)::after {
+      display: none;
+    }
+
+    .cp-step-node {
+      width: 23px;
+      height: 23px;
+      font-size: 10px;
+    }
+
+    .cp-step-label {
+      font-size: 10.5px;
+      white-space: nowrap;
+    }
+
+    .cp-main {
+      width: 100%;
+      padding: 16px 14px calc(112px + env(safe-area-inset-bottom, 0px));
+      gap: 16px;
+    }
+
+    .cp-hero-card {
+      align-items: flex-start;
+      padding: 18px 16px;
+      border-radius: 16px;
+      gap: 13px;
+    }
+
+    .cp-hero-icon-wrap {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+    }
+
+    .cp-hero-title {
+      font-size: 23px;
+    }
+
+    .cp-hero-sub {
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+
+    .cp-fields {
+      gap: 16px;
+    }
+
+    .cp-field-label {
+      flex-wrap: wrap;
+    }
+
+    .cp-field-hint {
+      margin-left: 0;
+    }
+
+    .cp-input-icon {
+      padding: 0 11px;
+    }
+
+    .cp-input-country {
+      padding-right: 10px;
+      margin-right: 10px;
+    }
+
+    .cp-text-input {
+      height: 52px;
+      font-size: 16px;
+      padding: 0 12px;
+    }
+
+    .cp-eye-btn {
+      width: 42px;
+    }
+
+    .cp-otp-preview {
+      gap: 6px;
+    }
+
+    .cp-otp-cell {
+      height: 46px;
+      border-radius: 9px;
+      font-size: 20px;
+    }
+
+    .cp-actions {
+      position: sticky;
+      bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+      z-index: 20;
+      padding: 8px 0 0;
+      background: var(--paper);
+    }
+
+    .cp-btn-back {
+      width: 92px;
+      padding: 0 12px;
+      justify-content: center;
+    }
+
+    .cp-btn-next {
+      min-width: 0;
+    }
+  }
 `;
 
 if (!document.getElementById('cp-styles')) {
@@ -410,14 +562,30 @@ const STEPS: Step[] = ['verify', 'otp', 'password'];
 /* ─────────────────────────────────────────────
    Main component
 ───────────────────────────────────────────── */
+type PasswordFlowMode = 'change' | 'reset';
+
 export function ChangePasswordPage() {
+  return <PasswordFlow mode="change" />;
+}
+
+export function ForgotPasswordPage() {
+  return <PasswordFlow mode="reset" />;
+}
+
+function PasswordFlow({ mode }: { mode: PasswordFlowMode }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user }  = useAuth();
-  const { profile } = useRecommendationData(user?.uid, { subject: 'self' });
+  const { profile } = useRecommendationData(mode === 'change' ? user?.uid : null, { subject: 'self' });
+  const isPasswordReset = mode === 'reset';
+  const sellerReset = isPasswordReset && searchParams.get('portal') === 'seller';
+  const resetReturnPath = sellerReset ? '/seller/login' : '/auth/login';
 
   const [step,        setStep]        = useState<Step>('verify');
   const [dir,         setDir]         = useState<'fwd' | 'back'>('fwd');
-  const [phone,       setPhone]       = useState(getSriLankaLocalPhoneInput(String(profile?.phoneNumber ?? '')));
+  const [phone,       setPhone]       = useState(
+    isPasswordReset ? '' : getSriLankaLocalPhoneInput(String(profile?.phoneNumber ?? '')),
+  );
   const [session,     setSession]     = useState<OtpSession | null>(getOtpSession());
   const [code,        setCode]        = useState('');
   const [newPw,       setNewPw]       = useState('');
@@ -430,8 +598,10 @@ export function ChangePasswordPage() {
   const [sentTo,      setSentTo]      = useState<string | null>(null);
 
   useEffect(() => {
-    if (profile?.phoneNumber) setPhone(getSriLankaLocalPhoneInput(String(profile.phoneNumber)));
-  }, [profile?.phoneNumber]);
+    if (!isPasswordReset && profile?.phoneNumber) {
+      setPhone(getSriLankaLocalPhoneInput(String(profile.phoneNumber)));
+    }
+  }, [isPasswordReset, profile?.phoneNumber]);
 
   const showError = (msg: string) => { setError(msg); setErrorKey(k => k + 1); };
   const go = (next: Step, direction: 'fwd' | 'back') => {
@@ -443,7 +613,9 @@ export function ChangePasswordPage() {
     if (!isValidE164Phone(normalized)) { showError('Enter a valid Sri Lankan mobile number.'); return; }
     try {
       setLoading(true); setError(null);
-      const nextSession = await requestOtpViaTextLk(normalized, 'changePassword');
+      const nextSession = isPasswordReset
+        ? await requestPasswordResetOtp(normalized)
+        : await requestOtpViaTextLk(normalized, 'changePassword');
       setOtpSession(nextSession); setSession(nextSession);
       setSentTo(normalized);
       go('otp', 'fwd');
@@ -467,9 +639,16 @@ export function ChangePasswordPage() {
     if (newPw !== confirmPw) { showError('Passwords do not match.'); return; }
     try {
       setLoading(true); setError(null);
-      await attachPasswordToVerifiedPhone(session.phoneNumber, newPw, session.sessionId);
+      if (isPasswordReset) {
+        await resetPasswordWithVerifiedPhone(session.phoneNumber, newPw, session.sessionId);
+      } else {
+        await attachPasswordToVerifiedPhone(session.phoneNumber, newPw, session.sessionId);
+      }
       setOtpSession(null);
-      navigate('/app/settings', { replace: true });
+      navigate(isPasswordReset ? resetReturnPath : '/app/settings', {
+        replace: true,
+        state: isPasswordReset ? { passwordReset: true } : undefined,
+      });
     } catch (e) { showError(e instanceof Error ? e.message : 'Unable to change password.'); }
     finally { setLoading(false); }
   };
@@ -485,11 +664,14 @@ export function ChangePasswordPage() {
 
       {/* ── Topbar ── */}
       <div className="cp-topbar">
-        <button className="cp-back-btn" onClick={() => navigate('/app/settings')}>
-          <Ico.Back /> Back to settings
+        <button
+          className="cp-back-btn"
+          onClick={() => navigate(isPasswordReset ? resetReturnPath : '/app/settings')}
+        >
+          {isPasswordReset ? 'Back to sign in' : 'Back to settings'}
         </button>
         <div className="cp-topbar-divider" />
-        <span className="cp-topbar-title">Change password</span>
+        <span className="cp-topbar-title">{isPasswordReset ? 'Reset password' : 'Change password'}</span>
 
         {/* Step indicator */}
         <div className="cp-stepper">
@@ -612,7 +794,7 @@ export function ChangePasswordPage() {
 
               <div className="cp-actions">
                 <button className="cp-btn-back" onClick={() => go('verify', 'back')}>
-                  <Ico.Back /> Back
+                  Back
                 </button>
                 <button
                   className="cp-btn-next"
@@ -713,7 +895,7 @@ export function ChangePasswordPage() {
 
               <div className="cp-actions">
                 <button className="cp-btn-back" onClick={() => go('otp', 'back')}>
-                  <Ico.Back /> Back
+                  Back
                 </button>
                 <button
                   className={`cp-btn-next${pwMatch ? ' success' : ''}`}

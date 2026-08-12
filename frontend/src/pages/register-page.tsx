@@ -8,8 +8,15 @@ import {
   type ReactNode,
 } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import type { IconType } from 'react-icons';
+import { GiShorts } from 'react-icons/gi';
+import { PiCoatHanger, PiDress, PiPants, PiShirtFolded, PiTShirt } from 'react-icons/pi';
 
+import manImage from '@/assets/images/man.png';
+import womenImage from '@/assets/images/women.png';
 import { AppLogo } from '@/components/app-logo';
+import { MeasurementFigureGuide } from '@/components/measurement-figure-guide';
+import { MeasurementValidationDialog } from '@/components/measurement-validation-dialog';
 import {
   CLOTHING_OPTIONS_BY_GENDER,
   DEFAULT_MEASUREMENT_LABELS,
@@ -21,12 +28,21 @@ import {
 } from '@/lib/measurement';
 import { requestOtpViaTextLk } from '@/lib/otp-client';
 import {
+  validateMeasurements,
+  type MeasurementValidationWarning,
+} from '@/lib/measurement-validation';
+import { convertMeasurementRecord, type MeasurementUnit } from '@/lib/measurement-units';
+import {
   DEFAULT_PHONE_COUNTRY_CODE,
   getSriLankaLocalPhoneInput,
   isValidE164Phone,
   normalizePhoneForAuth,
 } from '@/lib/phone-auth';
-import { setOtpSession, setPendingRegistration } from '@/lib/auth-flow';
+import {
+  setOtpSession,
+  setPendingRegistration,
+  type PendingRegistration,
+} from '@/lib/auth-flow';
 
 /* ─────────────────────────────────────────────
    Fonts + global CSS
@@ -36,6 +52,7 @@ fontLink.rel = 'stylesheet';
 fontLink.href =
   'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap';
 if (!document.querySelector('[href*="Cormorant+Garamond"]')) document.head.appendChild(fontLink);
+
 
 const CSS = `
   :root {
@@ -244,14 +261,14 @@ const CSS = `
     width: 42px; height: 42px; border-radius: 10px;
     background: var(--paper); border: 1px solid var(--cloud);
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; font-size: 18px;
+    flex-shrink: 0; font-size: 18px; color: var(--sage-deep);
     transition: all 0.2s;
   }
   .rp-choice-card.is-selected .rp-choice-icon {
     background: var(--ink); border-color: var(--ink);
     color: var(--white);
   }
-  .rp-choice-icon svg { width: 17px; height: 17px; }
+  .rp-choice-icon svg { width: 22px; height: 22px; }
 
   .rp-choice-text { flex: 1; }
   .rp-choice-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
@@ -270,11 +287,119 @@ const CSS = `
   .rp-choice-check svg { width: 11px; height: 11px; color: var(--white); opacity: 0; transition: opacity 0.15s; }
   .rp-choice-card.is-selected .rp-choice-check svg { opacity: 1; }
 
+  /* Visual gender cards */
+  .rp-phase-wrap.rp-phase-wrap-gender {
+    max-width: 820px;
+  }
+  .rp-gender-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .rp-gender-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 390px;
+    padding: 14px;
+    border: 1.5px solid var(--cloud);
+    border-radius: 22px;
+    background: var(--white);
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    appearance: none;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.2s var(--ease), border-color 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s var(--ease);
+  }
+  .rp-gender-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(13,13,13,0.18);
+    box-shadow: 0 18px 46px rgba(13,13,13,0.08);
+  }
+  .rp-gender-card.is-selected {
+    border-color: var(--ink);
+    background: rgba(13,13,13,0.025);
+    box-shadow: 0 0 0 3px rgba(13,13,13,0.06), 0 20px 54px rgba(13,13,13,0.08);
+  }
+  .rp-gender-card:focus-visible {
+    outline: none;
+    border-color: var(--ink);
+    box-shadow: 0 0 0 4px rgba(13,13,13,0.09);
+  }
+  .rp-gender-visual {
+    height: 280px;
+    border-radius: 18px;
+    border: 1px solid rgba(13,13,13,0.08);
+    background: linear-gradient(180deg, #FFFFFF 0%, #F3F6F0 100%);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    overflow: hidden;
+    transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
+  }
+  .rp-gender-card.is-selected .rp-gender-visual {
+    border-color: rgba(73,102,87,0.3);
+    background: linear-gradient(180deg, #FFFFFF 0%, #EEF3EC 100%);
+  }
+  .rp-gender-visual img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center bottom;
+    transform: scale(1.14);
+    filter: drop-shadow(0 18px 22px rgba(13,13,13,0.1));
+  }
+  .rp-gender-copy {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 4px 2px;
+  }
+  .rp-gender-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .rp-gender-sub {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ash);
+  }
+  .rp-gender-check {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--cloud);
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .rp-gender-card.is-selected .rp-gender-check {
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+  .rp-gender-check svg {
+    width: 13px;
+    height: 13px;
+    color: var(--white);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .rp-gender-card.is-selected .rp-gender-check svg { opacity: 1; }
+
   /* Measurement guide card */
   .rp-measure-card {
     background: var(--white); border: 1px solid var(--cloud);
-    border-radius: 16px; padding: 24px;
-    display: flex; gap: 18px; margin-bottom: 24px;
+    border-radius: 16px; padding: 0;
+    display: block; margin-bottom: 24px;
     position: relative; overflow: hidden;
   }
   .rp-measure-card::before {
@@ -282,6 +407,27 @@ const CSS = `
     width: 4px; background: var(--sage-deep);
     border-radius: 16px 0 0 16px;
   }
+  .rp-measure-visual {
+    position: relative; height: 300px; overflow: hidden;
+    background: #101512; border-bottom: 1px solid var(--cloud);
+  }
+  .rp-measure-visual img {
+    width: 100%; height: 100%; display: block; object-fit: cover;
+    object-position: var(--guide-x,50%) var(--guide-y,30%);
+    transform: scale(var(--guide-scale,1.8));
+    transition: transform .34s var(--ease), object-position .34s var(--ease);
+  }
+  .rp-measure-visual::after {
+    content:''; position:absolute; inset:0; pointer-events:none;
+    box-shadow:inset 0 -45px 44px rgba(8,12,9,.34);
+  }
+  .rp-measure-visual-label {
+    position:absolute; left:14px; bottom:12px; z-index:1;
+    padding:6px 10px; border-radius:999px;
+    background:rgba(250,250,248,.94); color:#496657;
+    font-size:10px; font-weight:800; letter-spacing:.04em;
+  }
+  .rp-measure-card-content { display:flex; gap:18px; padding:20px 24px 22px; }
   .rp-measure-icon-wrap {
     width: 44px; height: 44px; border-radius: 10px;
     background: var(--sage-light); border: 1px solid var(--sage-dark);
@@ -394,20 +540,35 @@ const CSS = `
     background: var(--ink); color: var(--white);
   }
 
-  /* Summary card */
+  /* Final account summary */
   .rp-summary-card {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
     background: var(--white); border: 1px solid var(--cloud);
-    border-radius: 14px; padding: 16px 20px;
-    margin-bottom: 28px;
+    border-radius: 14px; padding: 14px 16px;
+    margin-bottom: 22px;
   }
-  .rp-summary-label { font-size: 11px; font-weight: 600; color: var(--ash); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-  .rp-summary-value { font-size: 15px; font-weight: 700; color: var(--ink); }
-  .rp-summary-actions { display: flex; gap: 16px; }
+  .rp-summary-main {
+    display: flex; align-items: center; gap: 12px;
+    min-width: 0; flex: 1;
+  }
+  .rp-summary-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: var(--sage-light); border: 1px solid var(--sage-dark);
+    color: var(--sage-deep);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .rp-summary-icon svg { width: 22px; height: 22px; }
+  .rp-summary-copy { min-width: 0; }
+  .rp-summary-label { font-size: 11px; font-weight: 700; color: var(--sage-deep); text-transform: uppercase; letter-spacing: 0.55px; margin-bottom: 3px; }
+  .rp-summary-value { font-size: 15px; font-weight: 800; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rp-summary-meta { font-size: 12px; color: var(--ash); margin-top: 2px; }
+  .rp-summary-actions { display: flex; gap: 10px; flex-shrink: 0; }
   .rp-link-btn {
     font-family: var(--fs); font-size: 12px; font-weight: 600;
-    color: var(--sage-deep); background: none; border: none;
-    cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+    color: var(--sage-deep); background: rgba(122,158,120,0.12);
+    border: 1px solid rgba(122,158,120,0.18); border-radius: 999px;
+    cursor: pointer; padding: 8px 12px;
     transition: color 0.2s;
   }
   .rp-link-btn:hover { color: var(--ink); }
@@ -541,14 +702,11 @@ const CSS = `
     }
 
     .rp-summary-card {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 14px;
+      align-items: center;
     }
 
     .rp-summary-actions {
-      flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
     }
 
     .rp-unit-toggle {
@@ -597,7 +755,7 @@ const CSS = `
     }
 
     .rp-phase-header {
-      margin-bottom: 28px;
+      margin-bottom: 22px;
     }
 
     .rp-phase-title {
@@ -613,15 +771,74 @@ const CSS = `
       gap: 14px;
     }
 
+    .rp-gender-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .rp-gender-card {
+      flex-direction: row;
+      align-items: center;
+      min-height: auto;
+      padding: 12px;
+      border-radius: 18px;
+      gap: 14px;
+    }
+
+    .rp-gender-visual {
+      width: 116px;
+      height: 136px;
+      border-radius: 15px;
+      flex-shrink: 0;
+    }
+
+    .rp-gender-copy {
+      flex: 1;
+      align-items: center;
+      padding: 0;
+      gap: 12px;
+    }
+
+    .rp-gender-title {
+      font-size: 17px;
+    }
+
+    .rp-gender-sub {
+      font-size: 12.5px;
+      line-height: 1.45;
+    }
+
+    .rp-gender-check {
+      width: 26px;
+      height: 26px;
+    }
+
+    .rp-btn-next {
+      min-height: 50px;
+      height: auto;
+      padding: 12px 14px;
+      line-height: 1.25;
+      text-align: center;
+      white-space: normal;
+    }
+
     .rp-choice-icon {
       width: 38px;
       height: 38px;
     }
 
     .rp-measure-card {
-      flex-direction: column;
-      gap: 14px;
-      padding: 20px;
+      padding: 0;
+    }
+
+    .rp-measure-visual {
+      height: 220px;
+    }
+
+    .rp-measure-card-content {
+      gap: 12px;
+      padding: 16px;
     }
 
     .rp-measure-icon-wrap {
@@ -630,15 +847,14 @@ const CSS = `
     }
 
     .rp-summary-card {
-      padding: 16px;
+      padding: 12px;
+      margin-bottom: 18px;
     }
 
-    .rp-summary-actions {
-      width: 100%;
-    }
-
-    .rp-summary-actions > * {
-      flex: 1 1 140px;
+    .rp-summary-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
     }
 
     .rp-unit-toggle {
@@ -651,7 +867,22 @@ const CSS = `
     }
 
     .rp-fields {
-      gap: 16px;
+      gap: 14px;
+    }
+
+    .rp-account-form {
+      padding-bottom: 92px;
+    }
+
+    .rp-account-actions {
+      position: sticky;
+      bottom: 0;
+      z-index: 12;
+      margin: 4px -16px -40px;
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      background: rgba(250,250,248,0.94);
+      backdrop-filter: blur(14px);
+      border-top: 1px solid var(--cloud);
     }
 
     .rp-actions {
@@ -675,6 +906,41 @@ const CSS = `
     .rp-btn-back svg {
       width: 12px;
       height: 12px;
+    }
+  }
+
+  @media (max-width: 390px) {
+    .rp-sidebar {
+      padding-inline: 12px;
+    }
+
+    .rp-main {
+      padding: 16px 14px 38px;
+      overflow-x: hidden;
+    }
+
+    .rp-phase-title {
+      font-size: 30px;
+    }
+
+    .rp-phase-sub {
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .rp-gender-visual {
+      width: 94px;
+      height: 116px;
+    }
+
+    .rp-choice-card,
+    .rp-summary-card {
+      border-radius: 14px;
+    }
+
+    .rp-account-actions {
+      margin-inline: -14px;
+      padding-inline: 14px;
     }
   }
 `;
@@ -717,6 +983,32 @@ const PHASE_META: Record<Phase, { label: string; desc: string; icon: () => JSX.E
   form:       { label: 'Your account', desc: 'Name, email & password', icon: Ico.Form  },
 };
 
+const CLOTHING_ICONS: Array<[string, IconType]> = [
+  ['tshirt', PiTShirt],
+  ['tee', PiTShirt],
+  ['shirt', PiShirtFolded],
+  ['blouse', PiShirtFolded],
+  ['trouser', PiPants],
+  ['pant', PiPants],
+  ['jean', PiPants],
+  ['short', GiShorts],
+  ['dress', PiDress],
+];
+
+function clothingIcon(key: string | null) {
+  if (!key) return PiCoatHanger;
+  const normalized = key.toLowerCase();
+  for (const [token, Icon] of CLOTHING_ICONS) {
+    if (normalized.includes(token)) return Icon;
+  }
+  return PiCoatHanger;
+}
+
+function ClothingCategoryIcon({ categoryKey }: { categoryKey: string | null }) {
+  const Icon = clothingIcon(categoryKey);
+  return <Icon aria-hidden="true" focusable="false" />;
+}
+
 const parsePositiveNumber = (v: unknown) => {
   const p = Number.parseFloat(String(v ?? ''));
   return Number.isFinite(p) && p > 0 ? p : null;
@@ -757,6 +1049,36 @@ function ChoiceCard({ selected, title, sub, icon, onClick }: {
   );
 }
 
+function GenderChoiceCard({ selected, title, sub, imageSrc, onClick }: {
+  selected: boolean;
+  title: ReactNode;
+  sub: ReactNode;
+  imageSrc: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`rp-gender-card${selected ? ' is-selected' : ''}`}
+      aria-pressed={selected}
+      onClick={onClick}
+    >
+      <div className="rp-gender-visual">
+        <img src={imageSrc} alt="" aria-hidden="true" />
+      </div>
+      <div className="rp-gender-copy">
+        <div>
+          <div className="rp-gender-title">{title}</div>
+          <div className="rp-gender-sub">{sub}</div>
+        </div>
+        <span className="rp-gender-check">
+          <Ico.Check />
+        </span>
+      </div>
+    </button>
+  );
+}
+
 function InputWrap({ icon, suffix, error = false, children }: {
   icon?: ReactNode;
   suffix?: ReactNode;
@@ -775,9 +1097,10 @@ function InputWrap({ icon, suffix, error = false, children }: {
 /* ─────────────────────────────────────────────
    Animated phase container
 ───────────────────────────────────────────── */
-function PhaseContainer({ phaseKey, dir, children }: {
+function PhaseContainer({ phaseKey, dir, className, children }: {
   phaseKey: string;
   dir: 'fwd' | 'back';
+  className?: string;
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -791,7 +1114,7 @@ function PhaseContainer({ phaseKey, dir, children }: {
       : 'rp-slideIn 0.32s var(--ease) both';
   }, [phaseKey]);
 
-  return <div ref={ref} className="rp-phase-wrap">{children}</div>;
+  return <div ref={ref} className={`rp-phase-wrap${className ? ` ${className}` : ''}`}>{children}</div>;
 }
 
 /* ─────────────────────────────────────────────
@@ -805,7 +1128,7 @@ export function RegisterPage() {
   const [stepIndex,   setStepIndex]   = useState(0);
   const [gender,      setGender]      = useState<CustomerGender | null>(null);
   const [clothing,    setClothing]    = useState<ClothingChoice | null>(null);
-  const [unit,        setUnit]        = useState<'cm' | 'in'>('cm');
+  const [unit, setUnit]                = useState<MeasurementUnit>('cm');
   const [measurements, setMeasurements] = useState<Partial<Record<MeasurementFieldKey, string>>>({});
   const [firstName,   setFirstName]   = useState('');
   const [lastName,    setLastName]    = useState('');
@@ -816,12 +1139,23 @@ export function RegisterPage() {
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState<string | null>(null);
   const [errorKey,    setErrorKey]    = useState(0);
+  const [measurementWarning, setMeasurementWarning] = useState<MeasurementValidationWarning | null>(null);
+  const [pendingRegistrationDraft, setPendingRegistrationDraft] = useState<PendingRegistration | null>(null);
 
   const clothingOptions = gender ? CLOTHING_OPTIONS_BY_GENDER[gender] : [];
   const template = useMemo(() => getClothingTemplate(gender, clothing), [gender, clothing]);
   const steps = template?.fields ?? [];
   const currentStep = steps[stepIndex] ?? null;
   const selectedOption = clothingOptions.find(o => o.key === clothing) ?? null;
+  const completedMeasurementCount = Object.values(measurements).filter(value => parsePositiveNumber(value) !== null).length;
+  const completedMeasurementLabel = `${completedMeasurementCount} measurement${completedMeasurementCount === 1 ? '' : 's'} saved`;
+
+  const changeUnit = (nextUnit: MeasurementUnit) => {
+    if (nextUnit === unit) return;
+    setMeasurements(current => convertMeasurementRecord(current, unit, nextUnit));
+    setUnit(nextUnit);
+    setError(null);
+  };
 
   const go = (next: Phase, direction: 'fwd' | 'back' = 'fwd') => {
     setError(null);
@@ -852,6 +1186,25 @@ export function RegisterPage() {
     setStepIndex(i => i - 1);
   };
 
+  const sendVerificationCode = async (registration: PendingRegistration) => {
+    try {
+      setLoading(true); setError(null);
+      setPendingRegistration(registration);
+      const session = await requestOtpViaTextLk(registration.phoneNumber, 'signup');
+      setOtpSession(session);
+      navigate('/auth/otp');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '';
+      showError(
+        message.toLowerCase().includes('already registered') || message.toLowerCase().includes('already exists')
+          ? 'This phone number is already registered. Log in or use a different number.'
+          : message || 'Unable to send verification code.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!template || !gender || !clothing || !selectedOption) return;
@@ -865,26 +1218,37 @@ export function RegisterPage() {
     if (password.length < 6) { showError('Password must be at least 6 characters.'); return; }
     if (password !== confirmPw) { showError('Passwords do not match.'); return; }
 
+    const registration: PendingRegistration = {
+      firstName: firstName.trim(), lastName: lastName.trim(),
+      email: email.trim(), phoneNumber: normalizedPhone, password,
+      gender, preferredClothing: clothing,
+      preferredClothingLabel: selectedOption.label,
+      measurementProfileKey: template.profileKey, unit,
+      measurements: Object.fromEntries(template.fields.map(f => [f.key, measurements[f.key] ?? ''])),
+      primaryMeasurementKeys: template.fields.filter(f => f.isPrimary).map(f => f.key),
+      measurementDisplayNames: Object.fromEntries(template.fields.map(f => [f.key, f.label])),
+    };
+
     try {
       setLoading(true); setError(null);
-      setPendingRegistration({
-        firstName: firstName.trim(), lastName: lastName.trim(),
-        email: email.trim(), phoneNumber: normalizedPhone, password,
-        gender, preferredClothing: clothing,
-        preferredClothingLabel: selectedOption.label,
-        measurementProfileKey: template.profileKey, unit,
-        measurements: Object.fromEntries(template.fields.map(f => [f.key, measurements[f.key] ?? ''])),
-        primaryMeasurementKeys: template.fields.filter(f => f.isPrimary).map(f => f.key),
-        measurementDisplayNames: Object.fromEntries(template.fields.map(f => [f.key, f.label])),
+      const validation = await validateMeasurements({
+        unit: registration.unit,
+        measurements: registration.measurements,
       });
-      const session = await requestOtpViaTextLk(normalizedPhone, 'signup');
-      setOtpSession(session);
-      navigate('/auth/otp');
+      const warning = validation.warnings[0];
+      if (warning) {
+        setMeasurementWarning(warning);
+        setPendingRegistrationDraft(registration);
+        return;
+      }
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Unable to send verification code.');
+      showError(err instanceof Error ? err.message : 'Unable to validate measurements.');
+      return;
     } finally {
       setLoading(false);
     }
+
+    await sendVerificationCode(registration);
   };
 
   const phaseIdx = PHASES.indexOf(phase);
@@ -936,7 +1300,11 @@ export function RegisterPage() {
 
       {/* ── Main ── */}
       <main className="rp-main">
-        <PhaseContainer phaseKey={`${phase}-${stepIndex}`} dir={dir}>
+        <PhaseContainer
+          phaseKey={`${phase}-${stepIndex}`}
+          dir={dir}
+          className={phase === 'gender' ? 'rp-phase-wrap-gender' : undefined}
+        >
 
           {/* ── Phase 1: Gender ── */}
           {phase === 'gender' && (
@@ -946,25 +1314,26 @@ export function RegisterPage() {
                 title="Tell us about you"
                 sub="Choose your gender so we can tailor clothing options and measurement guides."
               />
-              <div className="rp-choice-grid">
-                <ChoiceCard
+              <div className="rp-gender-grid">
+                <GenderChoiceCard
                   selected={gender === 'men'}
-                  title="Men"
-                  sub="Men's sizing charts and clothing options"
-                  icon={<Ico.User />}
+                  title="Men's sizing"
+                  sub="Shirts, T-shirts, trousers and shorts"
+                  imageSrc={manImage}
                   onClick={() => setGender('men')}
                 />
-                <ChoiceCard
+                <GenderChoiceCard
                   selected={gender === 'women'}
-                  title="Women"
-                  sub="Women's sizing charts and clothing options"
-                  icon={<Ico.User />}
+                  title="Women's sizing"
+                  sub="Blouses, dresses, trousers and shorts"
+                  imageSrc={womenImage}
                   onClick={() => setGender('women')}
                 />
               </div>
               <div className="rp-actions">
                 <button className="rp-btn-next" disabled={!gender} onClick={() => go('preference')}>
-                  Continue <Ico.Arrow />
+                  {gender === 'men' ? "Continue with men's sizing" : gender === 'women' ? "Continue with women's sizing" : 'Choose a sizing model'}
+                  <Ico.Arrow />
                 </button>
               </div>
             </>
@@ -985,14 +1354,14 @@ export function RegisterPage() {
                     selected={clothing === opt.key}
                     title={opt.label}
                     sub={opt.subtitle}
-                    icon={<Ico.Bag />}
+                    icon={<ClothingCategoryIcon categoryKey={opt.key} />}
                     onClick={() => setClothing(opt.key)}
                   />
                 ))}
               </div>
               <div className="rp-actions">
                 <button className="rp-btn-back" onClick={() => go('gender', 'back')}>
-                  <Ico.Back /> Back
+                  Back
                 </button>
                 <button
                   className="rp-btn-next"
@@ -1025,23 +1394,31 @@ export function RegisterPage() {
 
               {/* Measurement guide card */}
               <div className="rp-measure-card">
-                <div className="rp-measure-icon-wrap"><Ico.Ruler /></div>
-                <div className="rp-measure-card-body">
-                  <div className="rp-measure-card-label">
-                    {currentStep.isPrimary ? 'Required' : 'Optional'}
-                  </div>
-                  <div className="rp-measure-card-title">{currentStep.label}</div>
-                  <div className="rp-measure-card-body-text">{currentStep.body}</div>
-                  {currentStep.tip && (
-                    <div className="rp-measure-tip">
-                      <Ico.Bulb /> {currentStep.tip}
+                <MeasurementFigureGuide gender={gender!} field={currentStep.key} label={currentStep.label} />
+                <div className="rp-measure-card-content">
+                  <div className="rp-measure-icon-wrap"><Ico.Ruler /></div>
+                  <div className="rp-measure-card-body">
+                    <div className="rp-measure-card-label">
+                      {currentStep.isPrimary ? 'Required' : 'Optional'}
                     </div>
-                  )}
+                    <div className="rp-measure-card-title">{currentStep.label}</div>
+                    <div className="rp-measure-card-body-text">{currentStep.body}</div>
+                    {currentStep.tip && (
+                      <div className="rp-measure-tip">
+                        <Ico.Bulb /> {currentStep.tip}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* Input */}
               <div style={{ marginBottom: 24 }}>
+                <div className="rp-unit-toggle" aria-label="Measurement unit">
+                  <button type="button" className={`rp-unit-btn${unit === 'cm' ? ' is-active' : ''}`} onClick={() => changeUnit('cm')}>Centimetres</button>
+                  <button type="button" className={`rp-unit-btn${unit === 'in' ? ' is-active' : ''}`} onClick={() => changeUnit('in')}>Inches</button>
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--ash)', margin: '7px 0 14px' }}>Entered values convert automatically.</div>
                 <label className="rp-label">
                   {currentStep.label}
                   <span className={`rp-field-badge ${currentStep.isPrimary ? 'required' : 'optional'}`}>
@@ -1067,7 +1444,7 @@ export function RegisterPage() {
 
               <div className="rp-actions">
                 <button className="rp-btn-back" onClick={handleGuidePrev}>
-                  <Ico.Back /> Back
+                  Back
                 </button>
                 <button className="rp-btn-next" onClick={handleGuideNext}>
                   {stepIndex === steps.length - 1 ? <>Continue <Ico.Arrow /></> : <>Next <Ico.Arrow /></>}
@@ -1082,22 +1459,27 @@ export function RegisterPage() {
               <PhaseHeader
                 phase="form"
                 title="Create your account"
-                sub="Almost done — just fill in your details to finish setting up."
+                sub={`Save your ${selectedOption?.label ?? 'fit'} profile.`}
               />
 
               {/* Summary card */}
               <div className="rp-summary-card">
-                <div>
-                  <div className="rp-summary-label">Your profile</div>
-                  <div className="rp-summary-value">{selectedOption?.label ?? 'Selected'}</div>
+                <div className="rp-summary-main">
+                  <div className="rp-summary-icon">
+                    <ClothingCategoryIcon categoryKey={clothing} />
+                  </div>
+                  <div className="rp-summary-copy">
+                    <div className="rp-summary-label">Profile ready</div>
+                    <div className="rp-summary-value">{selectedOption?.label ?? 'Selected'} fit profile</div>
+                    <div className="rp-summary-meta">{completedMeasurementLabel}</div>
+                  </div>
                 </div>
                 <div className="rp-summary-actions">
-                  <button className="rp-link-btn" onClick={() => go('guide', 'back')}>Edit measurements</button>
-                  <button className="rp-link-btn" onClick={() => go('preference', 'back')}>Change clothing</button>
+                  <button type="button" className="rp-link-btn" onClick={() => go('guide', 'back')}>Edit</button>
                 </div>
               </div>
 
-              <form onSubmit={handleSubmit}>
+              <form className="rp-account-form" onSubmit={handleSubmit}>
                 <div className="rp-fields">
 
                   {/* Name row */}
@@ -1114,14 +1496,6 @@ export function RegisterPage() {
                         <input className="rp-text-input" placeholder="Last name" value={lastName} onChange={e => setLastName(e.target.value)} />
                       </InputWrap>
                     </div>
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label className="rp-label">Email <span style={{color:'var(--ash)',fontWeight:400}}>(optional)</span></label>
-                    <InputWrap icon={<Ico.Mail />}>
-                      <input className="rp-text-input" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} />
-                    </InputWrap>
                   </div>
 
                   {/* Phone */}
@@ -1142,15 +1516,6 @@ export function RegisterPage() {
                     </InputWrap>
                   </div>
 
-                  {/* Unit toggle */}
-                  <div>
-                    <label className="rp-label">Measurement unit</label>
-                    <div className="rp-unit-toggle">
-                      <button type="button" className={`rp-unit-btn${unit === 'cm' ? ' is-active' : ''}`} onClick={() => setUnit('cm')}>Centimetres</button>
-                      <button type="button" className={`rp-unit-btn${unit === 'in' ? ' is-active' : ''}`} onClick={() => setUnit('in')}>Inches</button>
-                    </div>
-                  </div>
-
                   {/* Password */}
                   <div>
                     <label className="rp-label">Password</label>
@@ -1167,20 +1532,25 @@ export function RegisterPage() {
                     </InputWrap>
                   </div>
 
+                  {/* Email */}
+                  <div>
+                    <label className="rp-label">Email address <span style={{color:'var(--ash)',fontWeight:400}}>(optional)</span></label>
+                    <InputWrap icon={<Ico.Mail />}>
+                      <input className="rp-text-input" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} />
+                    </InputWrap>
+                  </div>
+
                   {error && (
                     <div className="rp-error-banner" key={errorKey}>
                       <Ico.Alert /> {error}
                     </div>
                   )}
 
-                  <div className="rp-actions" style={{ marginTop: 8 }}>
-                    <button type="button" className="rp-btn-back" onClick={() => go('guide', 'back')}>
-                      <Ico.Back /> Back
-                    </button>
+                  <div className="rp-actions rp-account-actions" style={{ marginTop: 8 }}>
                     <button type="submit" className="rp-btn-next" disabled={loading}>
                       {loading
                         ? <><div className="rp-spinner" /> Sending code…</>
-                        : <>Send verification code <Ico.Arrow /></>
+                        : <>Create account <Ico.Arrow /></>
                       }
                     </button>
                   </div>
@@ -1192,6 +1562,34 @@ export function RegisterPage() {
 
         </PhaseContainer>
       </main>
+
+      <MeasurementValidationDialog
+        warning={measurementWarning}
+        onEditValue={() => {
+          setMeasurementWarning(null);
+          setPendingRegistrationDraft(null);
+          go('guide', 'back');
+        }}
+        onKeepEnteredValue={() => {
+          const registration = pendingRegistrationDraft;
+          setMeasurementWarning(null);
+          setPendingRegistrationDraft(null);
+          if (registration) void sendVerificationCode(registration);
+        }}
+        onUseSuggestedValue={() => {
+          const warning = measurementWarning;
+          const registration = pendingRegistrationDraft;
+          if (!warning || !registration) return;
+          const correctedMeasurements = {
+            ...registration.measurements,
+            [warning.field]: String(warning.suggestedValue),
+          };
+          setMeasurements(current => ({ ...current, [warning.field]: String(warning.suggestedValue) }));
+          setMeasurementWarning(null);
+          setPendingRegistrationDraft(null);
+          void sendVerificationCode({ ...registration, measurements: correctedMeasurements });
+        }}
+      />
     </div>
   );
 }

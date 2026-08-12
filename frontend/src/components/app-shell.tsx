@@ -18,12 +18,16 @@ const CSS = `
     --cloud: #EFEFEF;
     --white: #FFFFFF;
     --nav-h: 64px;
+    --mobile-tab-h: 80px;
     --ease: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   /* ── Base reset for the shell ── */
   .as-root {
     min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    overflow-x: hidden;
     background: var(--paper);
     display: flex;
     flex-direction: column;
@@ -32,7 +36,11 @@ const CSS = `
   /* ── Page offset (below fixed TopNav) ── */
   .as-offset {
     flex: 1;
+    min-height: calc(100dvh - var(--nav-h));
+    width: 100%;
+    overflow-x: hidden;
     padding-top: var(--nav-h);
+    padding-bottom: calc(var(--mobile-tab-h) + env(safe-area-inset-bottom, 0px));
     display: flex;
     flex-direction: column;
   }
@@ -40,11 +48,15 @@ const CSS = `
   /* ── Route content area ── */
   .as-content {
     flex: 1;
+    width: 100%;
+    min-width: 0;
     /* Page transitions are driven by .as-page-enter on the inner wrapper */
   }
 
   /* ── Page transition wrapper ── */
   .as-page {
+    width: 100%;
+    min-width: 0;
     animation: as-pageIn 0.32s var(--ease) both;
   }
 
@@ -82,7 +94,7 @@ const CSS = `
   /* ── Scroll-to-top fade button ── */
   .as-scroll-top {
     position: fixed;
-    right: 32px; bottom: 32px;
+    right: 32px; bottom: calc(var(--mobile-tab-h) + 32px + env(safe-area-inset-bottom, 0px));
     width: 40px; height: 40px;
     border-radius: 50%;
     background: var(--ink);
@@ -103,10 +115,36 @@ const CSS = `
      Pages using the shared narrow layout get this cap. ── */
   .as-inner {
     width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  @media (max-width: 960px) {
+    .as-scroll-top {
+      right: 18px;
+      bottom: calc(var(--mobile-tab-h) + 18px + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  @media (max-width: 640px) {
+    :root {
+      --nav-h: 72px;
+    }
+
+    .as-offset {
+      padding-bottom: calc(var(--mobile-tab-h) + 12px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .as-scroll-top {
+      display: none;
+    }
   }
 `;
 
-if (!document.getElementById('as-styles')) {
+const appShellStyles = document.getElementById('as-styles');
+if (appShellStyles) {
+  appShellStyles.textContent = CSS;
+} else {
   const s = document.createElement('style');
   s.id = 'as-styles';
   s.textContent = CSS;

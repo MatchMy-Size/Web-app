@@ -1248,35 +1248,25 @@
 
 
 
-import { useEffect, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 import appStoreIcon from '@/assets/images/appstore.png';
-import adidasBrand from '@/assets/images/brands/adidas.png';
-import bershkaBrand from '@/assets/images/brands/bershika.png';
-import calvinKleinBrand from '@/assets/images/brands/calvin-klein.png';
 import cameraIcon from '@/assets/images/camera.png';
 import clothesIcon from '@/assets/images/clothes.png';
-import gapBrand from '@/assets/images/brands/gap.png';
-import hmBrand from '@/assets/images/brands/h-and-m.png';
-import levisBrand from '@/assets/images/brands/levis.png';
+import fashionFigure from '@/assets/images/figure.png';
 import lockIcon from '@/assets/images/lock.png';
-import marksAndSpencerBrand from '@/assets/images/brands/m-and-s.jpg';
-import mangoBrand from '@/assets/images/brands/mango.png';
-import mimosaBrand from '@/assets/images/brands/mimosa.png';
 import playStoreIcon from '@/assets/images/playstore.png';
-import pullAndBearBrand from '@/assets/images/brands/pull-and-bear.png';
-import pumaBrand from '@/assets/images/brands/puma.png';
+import partnerImage from '@/assets/images/partner.png';
 import qrCodeIcon from '@/assets/images/qr-code.png';
 import rulerIcon from '@/assets/images/ruler.png';
 import scaleIcon from '@/assets/images/scale.png';
 import searchIcon from '@/assets/images/search.png';
-import springAndSummerBrand from '@/assets/images/brands/spring-and-summer.png';
 import starIcon from '@/assets/images/star.png';
-import tommyHilfigerBrand from '@/assets/images/brands/tommy-hilfiger.png';
 import tshirtIcon from '@/assets/images/t-shirt.png';
-import uniqloBrand from '@/assets/images/brands/uniqlo.png';
-import zaraBrand from '@/assets/images/brands/zara.png';
 import { AppLogo } from '@/components/app-logo';
+import { BRAND_LOGOS, getBrandLogo } from '@/lib/brand-logos';
+import { fetchPublicBrands, LOCAL_LANDING_BRANDS, type LandingBrand } from '@/lib/public-brands';
+import { getPublicSiteFeedback, type PublicSiteFeedback } from '@/lib/site-feedback';
 
 /* ─────────────────────────────────────────────
    Google Fonts
@@ -1351,7 +1341,6 @@ const CSS = `
     align-items: center;
     gap: 24px;
     width: max-content;
-    animation: fb-scroll 20s linear infinite;
     will-change: transform;
   }
   .fb-group {
@@ -1367,31 +1356,41 @@ const CSS = `
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 30px 36px;
-    background: var(--white);
-    border: 1px solid var(--cloud);
-    border-radius: 24px;
-    box-shadow: 0 18px 44px rgba(13,13,13,0.06);
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
     user-select: none;
     cursor: default;
-    transition: border-color 0.22s, box-shadow 0.22s, transform 0.22s;
+    transition: transform 0.22s;
   }
   .fb-logo img {
-    width: 100%;
-    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
     display: block;
     object-fit: contain;
+    mix-blend-mode: multiply;
+  }
+  .fb-logo-wordmark {
+    display: block;
+    max-width: 100%;
+    color: var(--ink);
+    font-family: var(--fd);
+    font-size: clamp(28px, 3vw, 44px);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    text-align: center;
+    text-transform: uppercase;
   }
   .fb-logo:hover {
-    border-color: var(--sage-dark);
-    box-shadow: 0 22px 52px rgba(13,13,13,0.12);
-    transform: translateY(-6px);
+    transform: scale(1.05);
   }
-  .fb-scene:hover .fb-track { animation-play-state: paused; }
 
   /* Stats */
   .lp-stats { background: var(--ink); padding: 32px 56px; }
-  .lp-stats-inner { max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+  .lp-stats-inner { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: repeat(2, 1fr); }
   .lp-stat { text-align: center; padding: 16px; border-right: 1px solid rgba(255,255,255,0.08); }
   .lp-stat:last-child { border-right: none; }
   .lp-stat-num { font-family: var(--fd); font-size: 44px; font-weight: 700; color: var(--white); letter-spacing: -1px; line-height: 1; margin-bottom: 6px; }
@@ -1409,22 +1408,310 @@ const CSS = `
   .lp-section-sub { font-size: 16px; color: var(--ash); max-width: 520px; line-height: 1.75; }
 
   /* How it works */
-  .lp-how { background: var(--white); }
-  .lp-how-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; margin-top: 64px; }
-  .lp-steps { display: flex; flex-direction: column; }
-  .lp-step { display: flex; gap: 22px; padding: 26px 0; border-bottom: 1px solid var(--cloud); cursor: default; }
-  .lp-step:first-child { border-top: 1px solid var(--cloud); }
-  .lp-step:hover .lp-step-num { background: var(--ink); color: var(--white); }
-  .lp-step-num { width: 40px; height: 40px; border-radius: 10px; background: var(--paper); border: 1px solid var(--cloud); display: flex; align-items: center; justify-content: center; font-family: var(--fd); font-size: 18px; font-weight: 700; color: var(--ink); flex-shrink: 0; transition: all 0.2s; }
-  .lp-step-title { font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .lp-how { background: var(--white); position: relative; overflow: hidden; }
+  .lp-how-grid {
+    display: grid;
+    grid-template-columns: minmax(290px, 0.78fr) minmax(620px, 1.22fr);
+    gap: clamp(42px, 5vw, 76px);
+    align-items: center;
+    margin-top: 52px;
+  }
+  .lp-steps {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .lp-steps::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 38px;
+    bottom: 38px;
+    width: 1px;
+    background: linear-gradient(180deg, rgba(73,102,87,0.28), rgba(73,102,87,0.08));
+  }
+  .lp-step {
+    position: relative;
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    gap: 20px;
+    padding: 26px 0;
+    border-bottom: 1px solid rgba(13,13,13,0.08);
+    cursor: default;
+  }
+  .lp-step:first-child { border-top: 1px solid rgba(13,13,13,0.08); }
+  .lp-step:hover .lp-step-num,
+  .lp-step:first-child .lp-step-num {
+    background: #EEF3EC;
+    border-color: rgba(73,102,87,0.3);
+    color: #496657;
+  }
+  .lp-step-num {
+    position: relative;
+    z-index: 1;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--paper);
+    border: 1px solid var(--cloud);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--fd);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
+    flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+  }
+  .lp-step-kicker {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 6px;
+  }
+  .lp-step-icon {
+    width: 20px;
+    height: 20px;
+    color: #496657;
+    opacity: 0.72;
+    flex-shrink: 0;
+  }
+  .lp-step-icon svg,
+  .lp-meas-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    stroke: currentColor;
+  }
+  .lp-step-title { font-size: 15px; font-weight: 600; color: var(--ink); }
   .lp-step-desc { font-size: 13.5px; color: var(--ash); line-height: 1.65; }
-  .lp-how-vis { background: var(--paper); border-radius: 24px; border: 1px solid var(--cloud); padding: 32px; position: relative; overflow: hidden; }
-  .lp-how-vis-glow { position: absolute; inset: 0; background: radial-gradient(ellipse at 70% 20%, rgba(195,216,193,0.2) 0%, transparent 65%); pointer-events: none; }
-  .lp-meas-label-col { font-size: 11px; font-weight: 600; color: var(--ash); width: 72px; text-align: right; }
-  .lp-bar-wrap { flex: 1; background: var(--cloud); border-radius: 999px; height: 8px; overflow: hidden; }
-  .lp-bar { height: 100%; border-radius: 999px; background: var(--sage-deep); }
-  .lp-meas-val { font-size: 12px; font-weight: 700; color: var(--ink); width: 48px; }
-  .lp-score { background: var(--sage-light); border: 1px solid var(--sage-dark); border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 700; color: var(--sage-deep); }
+  .lp-how-vis {
+    min-height: 620px;
+    background: #FAFAF7;
+    border-radius: 24px;
+    border: 1px solid rgba(13,13,13,0.08);
+    padding: clamp(24px, 2.5vw, 32px);
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: minmax(300px, 1fr) minmax(290px, 0.9fr);
+    gap: clamp(18px, 2.4vw, 30px);
+    align-items: center;
+  }
+  .lp-how-vis-glow {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 38% 54%, rgba(238,243,236,0.86) 0%, transparent 46%),
+      radial-gradient(ellipse at 82% 20%, rgba(195,216,193,0.16) 0%, transparent 62%);
+    pointer-events: none;
+  }
+  .lp-fashion-figure-wrap {
+    position: relative;
+    z-index: 1;
+    min-height: 560px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    align-self: stretch;
+  }
+  .lp-fashion-figure {
+    width: min(100%, clamp(340px, 28vw, 430px));
+    height: clamp(500px, 39vw, 620px);
+    max-width: 430px;
+    max-height: 620px;
+    object-fit: contain;
+    filter: drop-shadow(0 26px 36px rgba(13,13,13,0.06));
+    opacity: 0;
+    transform: translateY(18px);
+    animation: lp-figureIn 0.78s 0.2s var(--ease) both;
+  }
+  .lp-measuring-tape,
+  .lp-fabric-art {
+    position: absolute;
+    pointer-events: none;
+    color: #496657;
+  }
+  .lp-measuring-tape {
+    width: 740px;
+    height: auto;
+    left: -170px;
+    top: -92px;
+    opacity: 0.1;
+    transform: rotate(-5deg);
+  }
+  .lp-fabric-art {
+    width: 620px;
+    right: -250px;
+    bottom: -112px;
+    opacity: 0.14;
+  }
+  .lp-editorial-note {
+    position: absolute;
+    z-index: 2;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.24em;
+    color: rgba(73,102,87,0.2);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .lp-note-fit { left: -4px; bottom: 58px; transform: rotate(-90deg); transform-origin: left bottom; }
+  .lp-note-return { right: 4px; top: 38px; }
+  .lp-measurement-card {
+    position: relative;
+    z-index: 2;
+    width: min(100%, 360px);
+    justify-self: end;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid rgba(13,13,13,0.08);
+    border-radius: 22px;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.05);
+    backdrop-filter: blur(12px);
+  }
+  .lp-measurement-card-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .lp-measurement-card-title p {
+    font-size: 11px;
+    font-weight: 700;
+    color: #666863;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .lp-measurement-card-title span {
+    font-family: var(--fd);
+    font-size: 18px;
+    font-weight: 600;
+    color: #496657;
+  }
+  .lp-meas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .lp-meas-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 52px;
+    gap: 12px;
+    align-items: center;
+  }
+  .lp-meas-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .lp-meas-icon {
+    width: 18px;
+    height: 18px;
+    color: #496657;
+    opacity: 0.64;
+    flex-shrink: 0;
+  }
+  .lp-meas-label-col {
+    font-size: 10px;
+    font-weight: 700;
+    color: #666863;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .lp-bar-wrap {
+    position: relative;
+    height: 7px;
+    background: rgba(13,13,13,0.07);
+    border-radius: 999px;
+  }
+  .lp-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    border-radius: 999px;
+    background: #496657;
+  }
+  .lp-bar-marker {
+    position: absolute;
+    top: 50%;
+    left: var(--x);
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #496657;
+    border: 2px solid var(--white);
+    box-shadow: 0 0 0 1px rgba(73,102,87,0.24);
+    transform: translate(-50%, -50%) scale(0.72);
+    opacity: 0;
+    animation: lp-markerIn 0.42s var(--ease) both;
+  }
+  .lp-meas-val {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .lp-card-result {
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid rgba(13,13,13,0.1);
+  }
+  .lp-result-brand {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+  .lp-result-brand span {
+    color: #666863;
+    font-weight: 600;
+  }
+  .lp-result-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #666863;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .lp-result-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+  .lp-result-size {
+    font-family: var(--fd);
+    font-size: 64px;
+    font-weight: 700;
+    line-height: 0.9;
+    color: var(--ink);
+  }
+  .lp-result-match {
+    border-radius: 999px;
+    background: #EEF3EC;
+    border: 1px solid rgba(73,102,87,0.16);
+    color: #496657;
+    padding: 7px 12px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
 
   /* Features */
   .lp-features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 64px; }
@@ -1440,6 +1727,29 @@ const CSS = `
   .lp-brands-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-top: 48px; }
   .lp-brand-pill { background: var(--paper); border: 1px solid var(--cloud); border-radius: 12px; padding: 14px 10px; text-align: center; font-size: 13px; font-weight: 600; color: var(--ash); transition: all 0.2s; cursor: default; }
   .lp-brand-pill:hover { background: var(--white); border-color: var(--ink); color: var(--ink); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.07); }
+
+  /* Seller partnership */
+  .lp-partner { padding: 100px 56px; background: var(--paper); }
+  .lp-partner-inner { max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr); align-items: stretch; border: 1px solid var(--cloud); background: var(--white); overflow: hidden; }
+  .lp-partner-media { min-height: 480px; background: var(--cloud); }
+  .lp-partner-media img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; }
+  .lp-partner-copy { display: flex; flex-direction: column; justify-content: center; padding: 64px; }
+  .lp-partner-title { margin: 0 0 18px; font-family: var(--fd); font-size: clamp(40px, 4vw, 58px); font-weight: 700; line-height: 1.06; letter-spacing: 0; color: var(--ink); }
+  .lp-partner-lead { margin: 0 0 14px; font-size: 18px; font-weight: 600; line-height: 1.55; color: var(--ink); }
+  .lp-partner-description { margin: 0 0 34px; max-width: 480px; font-size: 15px; line-height: 1.75; color: var(--ash); }
+  .lp-partner-button { align-self: flex-start; min-height: 48px; padding: 0 24px; border: 0; border-radius: 8px; background: var(--ink); color: var(--white); font: 600 14px var(--fs); cursor: pointer; transition: transform 0.15s, opacity 0.2s; }
+  .lp-partner-button:hover { opacity: 0.86; transform: translateY(-2px); }
+  .lp-partner-button:active { transform: scale(0.98); }
+
+  /* Customer stories */
+  .lp-testimonials { background: var(--paper); }
+  .lp-testimonials-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 50px; }
+  .lp-testimonial-card { display: flex; flex-direction: column; min-height: 240px; padding: 28px; border: 1px solid var(--cloud); border-radius: 20px; background: var(--white); box-shadow: 0 16px 46px rgba(13,13,13,0.045); animation: lp-fadeUp 0.55s var(--ease) both; }
+  .lp-testimonial-stars { color: var(--sage-deep); font-size: 15px; letter-spacing: 2px; }
+  .lp-testimonial-quote { margin: 18px 0 28px; color: var(--ink); font-family: var(--fd); font-size: 23px; font-weight: 600; line-height: 1.35; }
+  .lp-testimonial-author { display: flex; align-items: center; gap: 11px; margin-top: auto; color: var(--ash); font-size: 12px; font-weight: 700; }
+  .lp-testimonial-avatar { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: var(--white); font-size: 12px; font-weight: 800; }
+  .lp-testimonial-verified { display: block; margin-top: 1px; color: var(--sage-deep); font-size: 9px; font-weight: 800; letter-spacing: 0.45px; text-transform: uppercase; }
 
   /* App section */
   .lp-app-section { padding: 110px 56px; background: var(--ink); position: relative; overflow: hidden; }
@@ -1575,14 +1885,47 @@ const CSS = `
   @keyframes lp-float     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
   @keyframes lp-chip2     { 0%,100%{transform:translate(0,0)} 50%{transform:translate(4px,-7px)} }
   @keyframes lp-growBar   { from{width:0} to{width:var(--w)} }
+  @keyframes lp-markerIn  { from{opacity:0;transform:translate(-50%,-50%) scale(.72)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
+  @keyframes lp-figureIn  { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
   @keyframes lp-pulseDot  { 0%,100%{opacity:1;box-shadow:0 0 5px var(--sage)} 50%{opacity:.5;box-shadow:0 0 2px var(--sage)} }
-  @keyframes fb-scroll    { from{transform:translateX(0)} to{transform:translateX(calc(-50% - 12px))} }
+
+  @media (max-width: 1100px) {
+    .lp-testimonials-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .lp-partner-inner { grid-template-columns: 1fr 1fr; }
+    .lp-partner-copy { padding: 44px; }
+    body .lp-how-grid {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+    .lp-how-vis {
+      min-height: auto;
+      grid-template-columns: minmax(280px, 0.84fr) minmax(310px, 1fr);
+      padding: 28px;
+    }
+    .lp-fashion-figure-wrap {
+      min-height: 460px;
+    }
+    .lp-fashion-figure {
+      width: clamp(350px, 42vw, 460px);
+    }
+    .lp-measuring-tape {
+      left: -220px;
+      top: -112px;
+    }
+  }
 
   @media (max-width: 700px) {
     .fb-scene { height: 330px; }
     .fb-track, .fb-group { gap: 16px; }
-    .fb-logo { width: 190px; height: 124px; padding: 24px 30px; border-radius: 20px; }
-    @keyframes fb-scroll { from{transform:translateX(0)} to{transform:translateX(calc(-50% - 8px))} }
+    .fb-logo { width: 190px; height: 124px; }
+    .lp-testimonials-grid { grid-template-columns: 1fr; }
+    .lp-partner { padding: 56px 20px; }
+    .lp-partner-inner { grid-template-columns: 1fr; }
+    .lp-partner-media { min-height: 0; aspect-ratio: 4 / 3; }
+    .lp-partner-copy { padding: 32px 24px; }
+    .lp-partner-title { font-size: 38px; }
+    .lp-partner-lead { font-size: 16px; }
+    .lp-partner-button { width: 100%; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1594,10 +1937,34 @@ const CSS = `
     }
     .fb-track { animation: none; }
     .fb-logo { scroll-snap-align: center; }
+    .lp-fashion-figure,
+    .lp-bar,
+    .lp-bar-marker,
+    .lp-reveal,
+    .lp-nav,
+    .lp-hero-eyebrow,
+    .lp-hero-h1,
+    .lp-hero-sub,
+    .lp-hero-actions,
+    .lp-hero-right,
+    .lp-phone,
+    .lp-app-float-tag {
+      animation: none !important;
+      transition: none !important;
+    }
+    .lp-fashion-figure,
+    .lp-bar-marker,
+    .lp-reveal {
+      opacity: 1;
+      transform: none;
+    }
   }
 `;
 
-if (!document.getElementById('lp-styles')) {
+const landingStyles = document.getElementById('lp-styles');
+if (landingStyles) {
+  landingStyles.textContent = CSS;
+} else {
   const s = document.createElement('style');
   s.id = 'lp-styles';
   s.textContent = CSS;
@@ -1607,42 +1974,95 @@ if (!document.getElementById('lp-styles')) {
 /* ═══════════════════════════════════════════════
    AUTO-SCROLLING BRANDS
 ═══════════════════════════════════════════════ */
-const FB_BRANDS = [
-  { id:'hm',      name:'H&M',             src:hmBrand },
-  { id:'zara',    name:'Zara',            src:zaraBrand },
-  { id:'adidas',  name:'Adidas',          src:adidasBrand },
-  { id:'tommy',   name:'Tommy Hilfiger',  src:tommyHilfigerBrand },
-  { id:'gap',     name:'Gap',             src:gapBrand },
-  { id:'uniqlo',  name:'Uniqlo',          src:uniqloBrand },
-  { id:'spring',  name:'Spring & Summer', src:springAndSummerBrand },
-  { id:'pb',      name:'Pull&Bear',        src:pullAndBearBrand },
-  { id:'levis',   name:"Levi's",          src:levisBrand },
-  { id:'puma',    name:'Puma',            src:pumaBrand },
-  { id:'mimosa',  name:'Mimosa',          src:mimosaBrand },
-  { id:'mango',   name:'Mango',           src:mangoBrand },
-  { id:'ms',      name:'Marks & Spencer', src:marksAndSpencerBrand },
-  { id:'bershka', name:'Bershka',         src:bershkaBrand },
-  { id:'ck',      name:'Calvin Klein',    src:calvinKleinBrand },
-];
-
-function BrandLogoGroup({ duplicate = false }:{ duplicate?: boolean }) {
+function BrandLogoMark({ brand, duplicate }: { brand: LandingBrand; duplicate: boolean }) {
+  const [imageFailed, setImageFailed] = useState(false);
   return (
-    <div className="fb-group" aria-hidden={duplicate || undefined}>
-      {FB_BRANDS.map(brand=>(
-        <div key={brand.id} className="fb-logo">
-          <img src={brand.src} alt={duplicate ? '' : brand.name}/>
-        </div>
-      ))}
+    <div className="fb-logo">
+      {brand.src && !imageFailed
+        ? <img src={brand.src} alt={duplicate ? '' : brand.name} onError={() => setImageFailed(true)} />
+        : <span className="fb-logo-wordmark" aria-hidden={duplicate || undefined}>{brand.name}</span>}
     </div>
   );
 }
 
-function AutoScrollingBrands() {
+function BrandLogoGroup({
+  brands,
+  duplicate = false,
+  groupRef,
+}: {
+  brands: LandingBrand[];
+  duplicate?: boolean;
+  groupRef?: (element: HTMLDivElement | null) => void;
+}) {
   return (
-    <div className="fb-scene" aria-label="Supported clothing brands">
-      <div className="fb-track">
-        <BrandLogoGroup/>
-        <BrandLogoGroup duplicate/>
+    <div ref={groupRef} className="fb-group" aria-hidden={duplicate || undefined}>
+      {brands.map(brand => <BrandLogoMark key={brand.key} brand={brand} duplicate={duplicate} />)}
+    </div>
+  );
+}
+
+function AutoScrollingBrands({ brands }: { brands: LandingBrand[] }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const primaryGroupRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<Animation | null>(null);
+  const brandSequenceKey = brands.map(brand => brand.key).join('|');
+
+  useEffect(() => {
+    const track = trackRef.current;
+    const primaryGroup = primaryGroupRef.current;
+    if (!track || !primaryGroup || !brands.length) return;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const startAnimation = () => {
+      animationRef.current?.cancel();
+      animationRef.current = null;
+      track.style.transform = 'translateX(0)';
+      if (reducedMotion.matches) return;
+
+      const trackStyles = window.getComputedStyle(track);
+      const groupGap = Number.parseFloat(trackStyles.columnGap || trackStyles.gap) || 0;
+      const distance = primaryGroup.getBoundingClientRect().width + groupGap;
+      if (distance <= 0) return;
+
+      // Travel through the complete first group before the identical group takes its place.
+      const durationMs = Math.max(18_000, (distance / 180) * 1_000);
+      animationRef.current = track.animate(
+        [
+          { transform: 'translateX(0)' },
+          { transform: `translateX(-${distance}px)` },
+        ],
+        {
+          duration: durationMs,
+          iterations: Infinity,
+          easing: 'linear',
+        },
+      );
+    };
+
+    startAnimation();
+    const resizeObserver = new ResizeObserver(startAnimation);
+    resizeObserver.observe(primaryGroup);
+    reducedMotion.addEventListener('change', startAnimation);
+
+    return () => {
+      resizeObserver.disconnect();
+      reducedMotion.removeEventListener('change', startAnimation);
+      animationRef.current?.cancel();
+      animationRef.current = null;
+    };
+  }, [brandSequenceKey, brands.length]);
+
+  return (
+    <div
+      className="fb-scene"
+      aria-label={`Supported clothing brands. ${brands.length} brands in this carousel.`}
+      onMouseEnter={() => animationRef.current?.pause()}
+      onMouseLeave={() => animationRef.current?.play()}
+    >
+      <div ref={trackRef} className="fb-track" key={brandSequenceKey}>
+        <BrandLogoGroup brands={brands} groupRef={element => { primaryGroupRef.current = element; }}/>
+        <BrandLogoGroup brands={brands} duplicate/>
       </div>
     </div>
   );
@@ -1652,24 +2072,181 @@ function AutoScrollingBrands() {
    Other sub-components
 ───────────────────────────────────────────── */
 type MeasureBarStyle = CSSProperties & { '--w': string };
-function MeasureBar({ label,pct,val,delay=0 }:{label:string;pct:string;val:string;delay?:number}) {
-  const s:MeasureBarStyle={'--w':pct,width:pct,animation:`lp-growBar 1.4s ${delay}s cubic-bezier(0.22,1,0.36,1) both`};
-  return <div style={{display:'flex',alignItems:'center',gap:14}}><span className="lp-meas-label-col">{label}</span><div className="lp-bar-wrap"><div className="lp-bar" style={s}/></div><span className="lp-meas-val">{val}</span></div>;
+type MarkerStyle = CSSProperties & { '--x': string };
+type MeasurementKind = 'chest' | 'waist' | 'hips' | 'shoulder' | 'inseam';
+type StepIconKind = 'measure' | 'brand' | 'check';
+
+const MEASUREMENTS: Array<{ kind: MeasurementKind; label: string; pct: string; val: string }> = [
+  { kind: 'chest', label: 'Chest', pct: '78%', val: '92 cm' },
+  { kind: 'waist', label: 'Waist', pct: '62%', val: '78 cm' },
+  { kind: 'hips', label: 'Hips', pct: '84%', val: '98 cm' },
+  { kind: 'shoulder', label: 'Shoulder', pct: '54%', val: '44 cm' },
+  { kind: 'inseam', label: 'Inseam', pct: '70%', val: '80 cm' },
+];
+
+const getHowSteps = (brandCount: number) => [
+  { icon: 'measure' as const, title: 'Measure yourself', desc: 'Chest, waist, hips and more — guided step-by-step with illustrated guides for each measurement point.' },
+  { icon: 'brand' as const, title: 'Choose a brand', desc: `Browse ${brandCount} active brands across all clothing categories. Search, filter, or scan a QR tag in-store.` },
+  { icon: 'check' as const, title: 'Get your exact size', desc: 'Instantly see your recommended size with a fit score — no trial and error, no returns.' },
+];
+
+function StepIcon({ kind }: { kind: StepIconKind }) {
+  if (kind === 'brand') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M8 4 5 6.5l-2 3 3.2 2.1L8 9.5V20h8V9.5l1.8 2.1L21 9.5l-2-3L16 4l-2 2h-4L8 4Z" />
+      </svg>
+    );
+  }
+  if (kind === 'check') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="8.5" />
+        <path d="m8.3 12.3 2.4 2.4 5-5.3" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="4" y="6" width="16" height="12" rx="6" />
+      <path d="M8 9h.01M11 9h.01M14 9h.01M17 9h.01M8 15h8" />
+    </svg>
+  );
 }
+
+function MeasurementIcon({ kind }: { kind: MeasurementKind }) {
+  const common = { fill: 'none', strokeWidth: 1.75, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true };
+  if (kind === 'shoulder') {
+    return <svg viewBox="0 0 24 24" {...common}><path d="M4 12h16" /><path d="m7 9-3 3 3 3" /><path d="m17 9 3 3-3 3" /></svg>;
+  }
+  if (kind === 'inseam') {
+    return <svg viewBox="0 0 24 24" {...common}><path d="M12 4v16" /><path d="m9 7 3-3 3 3" /><path d="m9 17 3 3 3-3" /></svg>;
+  }
+  if (kind === 'waist') {
+    return <svg viewBox="0 0 24 24" {...common}><path d="M5 12c2.2-2 4.5-3 7-3s4.8 1 7 3" /><path d="M5 12c2.2 2 4.5 3 7 3s4.8-1 7-3" /></svg>;
+  }
+  if (kind === 'hips') {
+    return <svg viewBox="0 0 24 24" {...common}><path d="M6 11c1.8 4 3.8 6 6 6s4.2-2 6-6" /><path d="M8 7c1.2 1.1 2.5 1.6 4 1.6s2.8-.5 4-1.6" /></svg>;
+  }
+  return <svg viewBox="0 0 24 24" {...common}><path d="M5 12h14" /><path d="m8 9-3 3 3 3" /><path d="m16 9 3 3-3 3" /></svg>;
+}
+
+function HowItWorksStep({ icon, title, desc, index }: { icon: StepIconKind; title: string; desc: string; index: number }) {
+  return (
+    <div className="lp-step">
+      <div className="lp-step-num">{index + 1}</div>
+      <div>
+        <div className="lp-step-kicker">
+          <span className="lp-step-icon"><StepIcon kind={icon} /></span>
+          <div className="lp-step-title">{title}</div>
+        </div>
+        <div className="lp-step-desc">{desc}</div>
+      </div>
+    </div>
+  );
+}
+
+function MeasureBar({ kind, label, pct, val, delay = 0 }: { kind: MeasurementKind; label: string; pct: string; val: string; delay?: number }) {
+  const barStyle: MeasureBarStyle = {
+    '--w': pct,
+    width: pct,
+    animation: `lp-growBar 0.82s ${delay}s cubic-bezier(0.22,1,0.36,1) both`,
+  };
+  const markerStyle: MarkerStyle = {
+    '--x': pct,
+    animationDelay: `${delay + 0.46}s`,
+  };
+  return (
+    <div className="lp-meas-row">
+      <div className="lp-meas-meta">
+        <span className="lp-meas-icon"><MeasurementIcon kind={kind} /></span>
+        <span className="lp-meas-label-col">{label}</span>
+      </div>
+      <div className="lp-bar-wrap">
+        <div className="lp-bar" style={barStyle} />
+        <span className="lp-bar-marker" style={markerStyle} />
+      </div>
+      <span className="lp-meas-val">{val}</span>
+    </div>
+  );
+}
+
+function MeasurementCard() {
+  return (
+    <div className="lp-measurement-card">
+      <div className="lp-measurement-card-title">
+        <p>Your Measurements</p>
+        <span>Profile 01</span>
+      </div>
+      <div className="lp-meas-list">
+        {MEASUREMENTS.map((measurement, index) => (
+          <MeasureBar key={measurement.kind} {...measurement} delay={index * 0.1} />
+        ))}
+      </div>
+      <div className="lp-card-result">
+        <div className="lp-result-brand">H&amp;M <span>· Tops</span><span aria-hidden="true">→</span></div>
+        <span className="lp-result-label">Your recommended size</span>
+        <div className="lp-result-row">
+          <span className="lp-result-size">M</span>
+          <span className="lp-result-match">96% MATCH</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DecorativeMeasuringTape() {
+  return (
+    <svg className="lp-measuring-tape" viewBox="0 0 720 210" fill="none" aria-hidden="true">
+      <path d="M34 132C162 40 312 43 438 96c90 38 184 47 248-16" stroke="currentColor" strokeWidth="24" strokeLinecap="round" opacity="0.18" />
+      <path d="M34 132C162 40 312 43 438 96c90 38 184 47 248-16" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M50 124l11 14M94 98l8 12M140 76l11 16M190 59l8 13M240 54l11 18M292 60l8 13M342 73l10 16M392 91l8 13M444 99l9 17M494 115l7 13M546 121l7 17M598 115l8 13M646 98l10 16" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <text x="132" y="58" fill="currentColor" fontFamily="DM Sans, sans-serif" fontSize="15" fontWeight="700">70</text>
+      <text x="264" y="46" fill="currentColor" fontFamily="DM Sans, sans-serif" fontSize="15" fontWeight="700">80</text>
+      <text x="428" y="83" fill="currentColor" fontFamily="DM Sans, sans-serif" fontSize="15" fontWeight="700">90</text>
+      <text x="600" y="101" fill="currentColor" fontFamily="DM Sans, sans-serif" fontSize="15" fontWeight="700">100</text>
+    </svg>
+  );
+}
+
+function FabricLineArt() {
+  return (
+    <svg className="lp-fabric-art" viewBox="0 0 640 420" fill="none" aria-hidden="true">
+      <path d="M20 304C94 212 171 263 246 181c71-78 145-159 245-122 66 24 86 83 125 119" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M48 350c76-88 162-46 236-121 81-82 144-147 245-98 42 21 67 55 88 86" stroke="currentColor" strokeWidth="1" />
+      <path d="M152 385c46-79 131-90 204-108 79-20 120-67 145-136" stroke="currentColor" strokeWidth="0.9" />
+    </svg>
+  );
+}
+
+function FashionMeasurementIllustration() {
+  return (
+    <div className="lp-fashion-figure-wrap">
+      <DecorativeMeasuringTape />
+      <FabricLineArt />
+      <span className="lp-editorial-note lp-note-fit">Fit confidence every time</span>
+      <span className="lp-editorial-note lp-note-return">Better fits. Less returns.</span>
+      <img className="lp-fashion-figure" src={fashionFigure} alt="" aria-hidden="true" draggable={false} />
+    </div>
+  );
+}
+
 function FeatureCard({icon,title,desc}:{icon:ReactNode;title:string;desc:string}) {
   return <div className="lp-feature-card"><div className="lp-feature-icon">{icon}</div><div className="lp-feature-title">{title}</div><div className="lp-feature-desc">{desc}</div></div>;
 }
 
-const FEATURES=[
+const getFeatures = (brandCount: number) => [
   {icon:<img src={rulerIcon}  alt="" aria-hidden="true"/>,title:'Guided measurements',   desc:'Step-by-step illustrated guides make measuring yourself accurate and effortless — even for first timers.'},
-  {icon:<img src={searchIcon} alt="" aria-hidden="true"/>,title:'500+ brand database',    desc:'Every major brand and hundreds of niche labels, all with real sizing data mapped to your body.'},
+  {icon:<img src={searchIcon} alt="" aria-hidden="true"/>,title:`${brandCount} active brands`,desc:'Every active brand has real sizing data mapped to your body.'},
   {icon:<img src={qrCodeIcon} alt="" aria-hidden="true"/>,title:'QR scan in-store',       desc:'Scan any clothing tag QR code in a physical store. Get your size in under a second.'},
   {icon:<img src={clothesIcon}alt="" aria-hidden="true"/>,title:'Multi-category profiles',desc:'Different sizes for tops, trousers, dresses, and shoes — one profile handles every type you wear.'},
   {icon:<img src={scaleIcon}  alt="" aria-hidden="true"/>,title:'Outfit fit scoring',     desc:'Compare outfits across brands with a combined fit score so you know which complete look works best.'},
   {icon:<img src={lockIcon}   alt="" aria-hidden="true"/>,title:'Private by design',      desc:'Your measurements stay on your account. We never share or sell your sizing data.'},
 ];
-const BRANDS=['H&M','Zara','Nike','Uniqlo','Adidas','Mango',"Levi's",'Gap','Marks & Spencer','Pull & Bear','Massimo Dutti','Bershka'];
-const STATS=[{num:'500',suffix:'+',label:'Brands supported'},{num:'98',suffix:'%',label:'Size accuracy'},{num:'2',suffix:'M+',label:'Sizes matched'},{num:'0',suffix:'',label:'Returns from bad fit'}];
+const getStats = (brandCount: number) => [
+  {num:String(brandCount),suffix:'',label:'Active brands'},
+  {num:'98',suffix:'%',label:'Size accuracy'},
+];
 const APP_BULLETS=[
   {icon:<img src={cameraIcon} alt="" aria-hidden="true"/>,text:'Scan QR codes in-store for instant size recommendations'},
   {icon:<img src={tshirtIcon} alt="" aria-hidden="true"/>,text:'Guided measurement illustrations for every clothing type'},
@@ -1693,7 +2270,7 @@ function PhoneHome() {
         <div className="lp-ph-search"><div className="lp-ph-search-dot"/><div className="lp-ph-search-bar"/></div>
         <div className="lp-ph-chips"><div className="lp-ph-chip active">Tops</div><div className="lp-ph-chip">Jeans</div><div className="lp-ph-chip">Shoes</div></div>
         <div className="lp-ph-grid">
-          {[{brand:'H&M',score:'96%',size:'M'},{brand:'Zara',score:'91%',size:'S'},{brand:'Nike',score:'98%',size:'L'},{brand:'Uniqlo',score:'94%',size:'M'}].map(({brand,score,size})=>(
+          {[{brand:'EKKO',score:'96%',size:'M'},{brand:'King Street',score:'91%',size:'S'},{brand:'Hustle',score:'98%',size:'L'},{brand:'ODEL',score:'94%',size:'M'}].map(({brand,score,size})=>(
             <div className="lp-ph-card" key={brand}>
               <div className="lp-ph-card-img"><div style={{width:'100%',height:'100%',background:'var(--cloud)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>👕</div><div className="lp-ph-card-score">{score}</div></div>
               <div className="lp-ph-card-body"><div className="lp-ph-card-brand">{brand}</div><div className="lp-ph-card-size">{size}</div></div>
@@ -1716,7 +2293,7 @@ function PhoneResult() {
       <div className="lp-phone-notch"><div className="lp-phone-notch-cam"/></div>
       <div className="lp-phone-screen" style={{background:'var(--ink)'}}>
         <div className="lp-ph-result-topbar"><div className="lp-ph-result-back"><div className="lp-ph-result-back-line"/></div><span className="lp-ph-result-label">Size result</span><div style={{width:20}}/></div>
-        <div className="lp-ph-brand-section"><div className="lp-ph-brand-logo">H&M</div><div><div className="lp-ph-brand-name-sm">H&M</div><div className="lp-ph-brand-cat-sm">Tops & Shirts</div></div><div className="lp-ph-score-badge">96%</div></div>
+        <div className="lp-ph-brand-section"><div className="lp-ph-brand-logo">EKKO</div><div><div className="lp-ph-brand-name-sm">EKKO</div><div className="lp-ph-brand-cat-sm">Tops & Shirts</div></div><div className="lp-ph-score-badge">96%</div></div>
         <div className="lp-ph-size-hero"><div className="lp-ph-size-eyebrow">Your size</div><div className="lp-ph-size-big">M</div><div className="lp-ph-size-tag">✓ Excellent fit</div></div>
         <div className="lp-ph-meas-row">{[['Chest','92 cm'],['Waist','78 cm'],['Shoulder','44 cm']].map(([l,v])=><div className="lp-ph-meas-chip" key={l}><div className="lp-ph-meas-chip-label">{l}</div><div className="lp-ph-meas-chip-val">{v}</div></div>)}</div>
         <div className="lp-ph-cta-btn">Find in store →</div>
@@ -1729,6 +2306,40 @@ function PhoneResult() {
    Main page
 ───────────────────────────────────────────── */
 export function LandingPage() {
+  const [publicFeedback, setPublicFeedback] = useState<PublicSiteFeedback[]>([]);
+  const [landingBrands, setLandingBrands] = useState<LandingBrand[]>(LOCAL_LANDING_BRANDS);
+  const animatedBrands = useMemo(() => {
+    const seen = new Set<string>();
+    return landingBrands.filter(brand => {
+      const knownBrand = getBrandLogo(brand.name);
+      const identity = knownBrand
+        ? `brand:${knownBrand.key}`
+        : brand.src
+          ? `image:${brand.src.trim().toLowerCase()}`
+          : `name:${brand.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+      if (seen.has(identity)) return false;
+      seen.add(identity);
+      return true;
+    });
+  }, [landingBrands]);
+  const brandCount = landingBrands.length;
+  const features = getFeatures(brandCount);
+  const stats = getStats(brandCount);
+
+  useEffect(() => {
+    let active = true;
+    void fetchPublicBrands()
+      .then(brands => {
+        if (active && brands.length) setLandingBrands(brands);
+      })
+      .catch(() => {
+        // The complete local logo set remains visible while the API is unavailable.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   useEffect(() => {
     const els = document.querySelectorAll('.lp-reveal');
     const io = new IntersectionObserver(
@@ -1737,6 +2348,20 @@ export function LandingPage() {
     );
     els.forEach(el => io.observe(el));
     return () => io.disconnect();
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    void getPublicSiteFeedback()
+      .then(feedback => {
+        if (active) setPublicFeedback(feedback);
+      })
+      .catch(() => {
+        if (active) setPublicFeedback([]);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (
@@ -1750,8 +2375,8 @@ export function LandingPage() {
             <span className="lp-logo-tagline">Find Your Perfect Fit</span>
           </div>
         </a>
-        <ul className="lp-nav-links"><li><a href="#how">How it works</a></li><li><a href="#features">Features</a></li><li><a href="#app">Mobile app</a></li><li><a href="#brands">Brands</a></li></ul>
-        <div className="lp-nav-cta"><button className="lp-btn-ghost" onClick={()=>window.location.href='/auth/login'}>Sign in</button><button className="lp-btn-ink" onClick={()=>window.location.href='/auth/register'}>Get started →</button></div>
+        <ul className="lp-nav-links"><li><a href="#how">How it works</a></li><li><a href="#features">Features</a></li><li><a href="#app">Mobile app</a></li><li><a href="#brands">Brands</a></li>{publicFeedback.length > 0 && <li><a href="#reviews">Reviews</a></li>}</ul>
+        <div className="lp-nav-cta"><button className="lp-btn-ghost" onClick={()=>window.location.href='/seller/login'}>For sellers</button><button className="lp-btn-ghost" onClick={()=>window.location.href='/auth/login'}>Sign in</button><button className="lp-btn-ink" onClick={()=>window.location.href='/auth/register'}>Get started →</button></div>
       </nav>
 
       {/* ── Hero ── */}
@@ -1759,7 +2384,7 @@ export function LandingPage() {
         <div className="lp-hero">
           {/* Left — copy */}
           <div>
-            <div className="lp-hero-eyebrow"><div className="lp-hero-eyebrow-dot"/><span>500+ brands · Perfect fit every time</span></div>
+            <div className="lp-hero-eyebrow"><div className="lp-hero-eyebrow-dot"/><span>{brandCount} active brands · Perfect fit every time</span></div>
             <h1 className="lp-hero-h1">Wear what<br/>actually <em>fits</em><br/>you.</h1>
             <p className="lp-hero-sub">Enter your measurements once. MatchMySize tells you exactly which size to order across every brand — no more returns, no more guessing.</p>
             <div className="lp-hero-actions">
@@ -1769,14 +2394,14 @@ export function LandingPage() {
           </div>
           {/* Right — horizontally auto-scrolling brand logos */}
           <div className="lp-hero-right">
-            <AutoScrollingBrands/>
+            <AutoScrollingBrands brands={animatedBrands}/>
           </div>
         </div>
       </section>
 
       <div className="lp-stats">
         <div className="lp-stats-inner">
-          {STATS.map(({num,suffix,label},i)=>(
+          {stats.map(({num,suffix,label},i)=>(
             <div key={label} className={`lp-stat lp-reveal lp-d${i}`}><div className="lp-stat-num">{num}<span>{suffix}</span></div><div className="lp-stat-label">{label}</div></div>
           ))}
         </div>
@@ -1789,26 +2414,14 @@ export function LandingPage() {
           <p className="lp-section-sub lp-reveal lp-d2">No tape measure expertise required. We guide you through every measurement with clear illustrations.</p>
           <div className="lp-how-grid">
             <div className="lp-steps lp-reveal lp-d2">
-              {[['Measure yourself','Chest, waist, hips and more — guided step-by-step with illustrated guides for each measurement point.'],['Choose a brand','Browse 500+ brands across all clothing categories. Search, filter, or scan a QR tag in-store.'],['Get your exact size','Instantly see your recommended size with a fit score — no trial and error, no returns.']].map(([title,desc],i)=>(
-                <div key={title} className="lp-step"><div className="lp-step-num">{i+1}</div><div><div className="lp-step-title">{title}</div><div className="lp-step-desc">{desc}</div></div></div>
+              {getHowSteps(brandCount).map((step,i)=>(
+                <HowItWorksStep key={step.title} {...step} index={i} />
               ))}
             </div>
             <div className="lp-how-vis lp-reveal lp-d3">
               <div className="lp-how-vis-glow"/>
-              <div style={{position:'relative',zIndex:1,display:'flex',flexDirection:'column',gap:14}}>
-                <p style={{fontSize:11,fontWeight:600,color:'var(--ash)',letterSpacing:'0.6px',textTransform:'uppercase',marginBottom:8}}>Your measurements</p>
-                <MeasureBar label="Chest"    pct="78%" val="92 cm" delay={0}/>
-                <MeasureBar label="Waist"    pct="62%" val="78 cm" delay={0.12}/>
-                <MeasureBar label="Hips"     pct="84%" val="98 cm" delay={0.24}/>
-                <MeasureBar label="Shoulder" pct="54%" val="44 cm" delay={0.36}/>
-                <MeasureBar label="Inseam"   pct="70%" val="80 cm" delay={0.48}/>
-                <div style={{marginTop:24,paddingTop:20,borderTop:'1px solid var(--cloud)'}}>
-                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                    <span style={{fontSize:13,fontWeight:600,color:'var(--ink)'}}>H&M Tops → Size</span>
-                    <div style={{display:'flex',alignItems:'center',gap:8}}><span style={{fontFamily:'var(--fd)',fontSize:34,fontWeight:700,color:'var(--ink)',letterSpacing:-1}}>M</span><span className="lp-score">96%</span></div>
-                  </div>
-                </div>
-              </div>
+              <FashionMeasurementIllustration />
+              <MeasurementCard />
             </div>
           </div>
         </div>
@@ -1819,7 +2432,7 @@ export function LandingPage() {
           <div className="lp-eyebrow lp-reveal"><div className="lp-eyebrow-line"/><span>Features</span></div>
           <h2 className="lp-section-title lp-reveal lp-d1">Built for how you <em>actually</em> shop</h2>
           <div className="lp-features-grid">
-            {FEATURES.map(({icon,title,desc},i)=>(
+            {features.map(({icon,title,desc},i)=>(
               <div key={title} className={`lp-reveal lp-d${i%6}`}><FeatureCard icon={icon} title={title} desc={desc}/></div>
             ))}
           </div>
@@ -1850,11 +2463,52 @@ export function LandingPage() {
         <div className="lp-section-inner">
           <div className="lp-eyebrow lp-reveal"><div className="lp-eyebrow-line"/><span>Supported brands</span></div>
           <h2 className="lp-section-title lp-reveal lp-d1">Every brand, <em>one profile</em></h2>
-          <p className="lp-section-sub lp-reveal lp-d2">From fast fashion to luxury — if they make clothes, we have their sizing.</p>
-          <div className="lp-brands-grid">{BRANDS.map((b,i)=><div key={b} className={`lp-brand-pill lp-reveal lp-d${i%6}`}>{b}</div>)}</div>
-          <p className="lp-reveal" style={{marginTop:32,fontSize:13,color:'var(--ash)',textAlign:'center'}}>+ 488 more brands and growing</p>
+          <p className="lp-section-sub lp-reveal lp-d2">Discover every active seller brand registered with MatchMySize.</p>
+          <div className="lp-brands-grid">
+            {landingBrands.map(brand => <div key={brand.key} className="lp-brand-pill">{brand.name}</div>)}
+          </div>
+          <p className="lp-reveal" style={{marginTop:32,fontSize:13,color:'var(--ash)',textAlign:'center'}}>{brandCount} registered brands and growing.</p>
         </div>
       </section>
+
+      <section className="lp-partner" id="partners">
+        <div className="lp-partner-inner lp-reveal">
+          <div className="lp-partner-media">
+            <img src={partnerImage} alt="MatchMySize seller partnership" />
+          </div>
+          <div className="lp-partner-copy">
+            <div className="lp-eyebrow"><div className="lp-eyebrow-line"/><span>For sellers</span></div>
+            <h2 className="lp-partner-title">Partner with MatchMySize</h2>
+            <p className="lp-partner-lead">Help shoppers find the right size with confidence.</p>
+            <p className="lp-partner-description">Add your brand’s size information, showcase your products, and connect with customers looking for a better fit.</p>
+            <button className="lp-partner-button" onClick={()=>window.location.href='/seller/register'}>Become a Partner →</button>
+          </div>
+        </div>
+      </section>
+
+      {publicFeedback.length > 0 && (
+        <section className="lp-section lp-testimonials" id="reviews">
+          <div className="lp-section-inner">
+            <div className="lp-eyebrow"><div className="lp-eyebrow-line"/><span>Customer stories</span></div>
+            <h2 className="lp-section-title">What our customers <em>really think</em></h2>
+            <p className="lp-section-sub">Public feedback shared by registered MatchMySize customers.</p>
+            <div className="lp-testimonials-grid">
+              {publicFeedback.map((feedback, index) => (
+                <article className="lp-testimonial-card" key={feedback.id} style={{animationDelay: `${Math.min(index, 5) * 0.08}s`}}>
+                  <div className="lp-testimonial-stars" aria-label={`${feedback.rating} out of 5 stars`}>
+                    {'★'.repeat(feedback.rating)}<span style={{color:'var(--cloud)'}}>{'★'.repeat(5 - feedback.rating)}</span>
+                  </div>
+                  <blockquote className="lp-testimonial-quote">“{feedback.message}”</blockquote>
+                  <div className="lp-testimonial-author">
+                    <div className="lp-testimonial-avatar" aria-hidden="true">{feedback.displayName.charAt(0).toUpperCase()}</div>
+                    <div>{feedback.displayName}<span className="lp-testimonial-verified">Registered customer</span></div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="lp-cta">
         <div className="lp-cta-glow"/>

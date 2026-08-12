@@ -1,10 +1,13 @@
 package com.matchmysize.catalog.application;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.matchmysize.shared.config.JsonMaps;
+import com.matchmysize.shared.measurement.MeasurementUnits;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +18,15 @@ public class CatalogService {
         List<Map<String, Object>> brandRows,
         Map<String, Map<String, Object>> sellers
     ) {}
+
+    public record CatalogSummary(
+        long brandCount,
+        long catalogRowCount,
+        long sellerCount,
+        List<String> brandNames
+    ) {}
+
+    public record PublicBrand(String key, String name, String logoUrl) {}
 
     private record SellerProfile(String sourceAccountId, Map<String, Object> profileData) {}
 
@@ -36,6 +48,7 @@ public class CatalogService {
             .query((rs, rowNum) -> {
                 var row = jsonMaps.read(rs.getString("raw_json"));
                 row.put("id", rs.getString("catalog_id"));
+                MeasurementUnits.normalizeCatalogRecord(row);
                 return row;
             })
             .list();
@@ -62,6 +75,70 @@ public class CatalogService {
         return new CatalogBootstrap(brandRows, sellers);
     }
 
+    @Transactional(readOnly = true)
+    public CatalogSummary summary() {
+        var brandCount = jdbc.sql("""
+                select count(distinct coalesce(nullif(trim(business_name), ''), nullif(trim(brand_name), '')))
+                  from brand_size_measurements
+                 where active = true
+                """)
+            .query(Long.class)
+            .single();
+        var catalogRowCount = jdbc.sql("select count(*) from brand_size_measurements where active = true")
+            .query(Long.class)
+            .single();
+        var sellerCount = jdbc.sql("""
+                select count(*) from app_users
+                 where role = 'seller' and status = 'active'
+                """)
+            .query(Long.class)
+            .single();
+        var brandNames = jdbc.sql("""
+                select distinct coalesce(nullif(trim(business_name), ''), nullif(trim(brand_name), '')) as brand_name
+                  from brand_size_measurements
+                 where active = true
+                   and coalesce(nullif(trim(business_name), ''), nullif(trim(brand_name), '')) is not null
+                 order by brand_name
+                """)
+            .query(String.class)
+            .list();
+
+        return new CatalogSummary(brandCount, catalogRowCount, sellerCount, brandNames);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PublicBrand> publicBrands() {
+        return jdbc.sql("""
+                select id, profile_data::text as profile_json
+                  from app_users
+                 where role = 'seller'
+                   and status = 'active'
+                 order by lower(coalesce(
+                     nullif(trim(profile_data ->> 'businessName'), ''),
+                     nullif(trim(profile_data ->> 'brandName'), ''),
+                     nullif(trim(profile_data ->> 'displayName'), ''),
+                     'seller'
+                 )), id
+                """)
+            .query((rs, rowNum) -> {
+                var id = rs.getLong("id");
+                var profile = jsonMaps.read(rs.getString("profile_json"));
+                var name = firstText(
+                    profile,
+                    "businessName", "brandName", "storeName", "shopName",
+                    "companyName", "sellerName", "displayName"
+                );
+                if (name == null) name = "Seller brand";
+                var logoUrl = firstText(
+                    profile,
+                    "photoURL", "photoUrl", "logoUrl", "logoURL", "imageUrl",
+                    "imageURL", "profilePhoto", "profileImage"
+                );
+                return new PublicBrand("seller-" + id, name, logoUrl);
+            })
+            .list();
+    }
+
     private Map<String, Object> publicSeller(String id, Map<String, Object> profile) {
         var displayName = firstText(profile, "displayName");
         if (displayName == null) {
@@ -84,12 +161,33 @@ public class CatalogService {
         result.put("uid", id);
         result.put("businessName", businessName);
         result.put("displayName", displayName);
+        result.put("logoKey", firstText(profile, "logoKey"));
         result.put("photoURL", firstText(
             profile,
             "photoURL", "photoUrl", "imageUrl", "imageURL", "profilePhoto",
             "profileImage", "bannerImage", "bannerURL", "bannerUrl", "logoUrl", "logoURL"
         ));
+        result.put("websiteUrl", safePublicUrl(profile, "websiteUrl", "website"));
+        result.put("instagramUrl", safePublicUrl(profile, "instagramUrl", "instagram"));
+        result.put("facebookUrl", safePublicUrl(profile, "facebookUrl", "facebook"));
+        result.put("tiktokUrl", safePublicUrl(profile, "tiktokUrl", "tiktok"));
         return result;
+    }
+
+    private String safePublicUrl(Map<String, Object> profile, String... keys) {
+        var value = firstText(profile, keys);
+        if (value == null) return null;
+        if (value.matches("(?i)^[a-z][a-z0-9+.-]*:.*") && !value.matches("(?i)^https?://.*")) return null;
+        var candidate = value.matches("(?i)^https?://.*") ? value : "https://" + value;
+        try {
+            var uri = new URI(candidate);
+            var scheme = uri.getScheme();
+            return ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) && uri.getHost() != null
+                ? uri.toString()
+                : null;
+        } catch (URISyntaxException ignored) {
+            return null;
+        }
     }
 
     private String firstText(Map<String, Object> map, String... keys) {

@@ -25,6 +25,38 @@ export const signInWithPhonePassword = async (
   return storeSession(session);
 };
 
+export const signInSeller = async (
+  identifier: string,
+  password: string,
+): Promise<AuthResult> => {
+  const session = await apiRequest<SessionResponse>('/api/auth/seller/login', {
+    method: 'POST',
+    authenticated: false,
+    body: { identifier: identifier.trim(), password },
+  });
+  return storeSession(session);
+};
+
+export type SellerRegistration = {
+  phoneNumber: string;
+  email: string;
+  password: string;
+  otpSessionId: string;
+  businessName: string;
+  contactName: string;
+  address?: string;
+  photoUrl?: string;
+};
+
+export const registerSeller = async (registration: SellerRegistration): Promise<AuthResult> => {
+  const session = await apiRequest<SessionResponse>('/api/auth/seller/register', {
+    method: 'POST',
+    authenticated: false,
+    body: registration,
+  });
+  return storeSession(session);
+};
+
 export const createUserWithPhonePassword = async (
   phoneNumber: string,
   password: string,
@@ -39,8 +71,9 @@ export const createUserWithPhonePassword = async (
     return storeSession(session);
   } catch (error) {
     if (error instanceof ApiError && error.status === 409) {
-      const conflict = new Error(error.message) as Error & { code?: string };
-      conflict.code = 'auth/email-already-in-use';
+      const conflict = new Error(error.message) as Error & { code?: string; status?: number };
+      conflict.code = error.code === 'account_exists' ? 'auth/phone-already-in-use' : (error.code ?? 'auth/phone-already-in-use');
+      conflict.status = error.status;
       throw conflict;
     }
     throw error;
@@ -54,6 +87,18 @@ export const attachPasswordToVerifiedPhone = async (
 ) => {
   await apiRequest('/api/auth/password', {
     method: 'PUT',
+    body: { phoneNumber, password, otpSessionId },
+  });
+};
+
+export const resetPasswordWithVerifiedPhone = async (
+  phoneNumber: string,
+  password: string,
+  otpSessionId: string,
+) => {
+  await apiRequest('/api/auth/password/reset', {
+    method: 'POST',
+    authenticated: false,
     body: { phoneNumber, password, otpSessionId },
   });
 };

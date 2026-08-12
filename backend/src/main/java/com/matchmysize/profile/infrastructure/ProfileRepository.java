@@ -88,4 +88,14 @@ public class ProfileRepository {
             .param("memberData", jsonMaps.write(memberData))
             .update();
     }
+
+    public int deleteFamilyMember(long appUserId, String memberKey) {
+        return jdbc.sql("""
+                delete from family_members
+                 where app_user_id = :appUserId and member_key = :memberKey
+                """)
+            .param("appUserId", appUserId)
+            .param("memberKey", memberKey)
+            .update();
+    }
 }

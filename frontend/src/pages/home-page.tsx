@@ -4,7 +4,14 @@ import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/context/auth-context';
 import rulerIcon from '@/assets/images/ruler.png';
+import {
+  submitFitFeedback,
+  type FitExperience,
+  type FitOutcome,
+} from '@/lib/fit-feedback';
+import { getClothingTemplate, normalizeGender } from '@/lib/measurement';
 import { resolveBrandDisplay, type EnrichedRecommendation } from '@/lib/recommendation-view';
+import type { BrandRecommendation } from '@/lib/size-recommendation';
 import { getCategoryBadge, useRecommendationData } from '@/lib/use-recommendation-data';
 
 /* ─────────────────────────────────────────────
@@ -236,19 +243,169 @@ const CSS = `
   }
   .hp-stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
   .hp-stat-card.accent { background: var(--ink); border-color: var(--ink); }
+  .hp-stat-card-perfect {
+    position: relative;
+    border-color: rgba(122,158,120,0.46);
+    box-shadow:
+      0 0 0 1px rgba(122,158,120,0.18),
+      0 0 26px rgba(122,158,120,0.24),
+      0 14px 34px rgba(122,158,120,0.12);
+  }
+  .hp-stat-card-perfect::before {
+    content: '';
+    position: absolute;
+    inset: -10px;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 18% 28%, rgba(195,216,193,0.52), transparent 38%),
+      radial-gradient(circle at 86% 18%, rgba(122,158,120,0.24), transparent 42%),
+      radial-gradient(circle at 72% 92%, rgba(195,216,193,0.38), transparent 44%);
+    filter: blur(12px);
+    --hp-glow-opacity: 0.72;
+    opacity: 0.72;
+    animation: hp-cardGlowIn 0.72s 0.18s var(--ease) both;
+  }
+  .hp-stat-card-perfect > * {
+    position: relative;
+    z-index: 1;
+  }
+  .hp-stat-card-average {
+    position: relative;
+    overflow: hidden;
+  }
+  .hp-stat-card-average::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    right: -24px;
+    bottom: -46px;
+    height: 92px;
+    background: radial-gradient(ellipse at center, rgba(195,216,193,0.42), transparent 66%);
+    --hp-glow-opacity: 0.55;
+    opacity: 0.55;
+    pointer-events: none;
+    animation: hp-cardGlowIn 0.72s 0.22s var(--ease) both;
+  }
+  .hp-stat-card-average > * {
+    position: relative;
+    z-index: 1;
+  }
+  .hp-stat-layout {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px;
+  }
+  .hp-stat-copy {
+    min-width: 0;
+  }
   .hp-stat-label { font-size: 11px; font-weight: 600; color: var(--ash); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
   .hp-stat-card.accent .hp-stat-label { color: rgba(255,255,255,0.45); }
   .hp-stat-num { font-family: var(--fd); font-size: 32px; font-weight: 700; color: var(--ink); letter-spacing: -0.8px; line-height: 1; }
+  .hp-stat-num .hp-stat-value {
+    color: inherit;
+  }
+  .hp-stat-num-perfect {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 44px;
+  }
+  .hp-stat-check {
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(122,158,120,0.13);
+    color: #496657;
+    opacity: 0;
+    transform: scale(0.82);
+    animation: hp-checkIn 0.3s 0.62s var(--ease) both;
+  }
+  .hp-stat-num .hp-stat-check {
+    color: #496657;
+  }
+  .hp-stat-check svg {
+    width: 11px;
+    height: 11px;
+  }
+  .hp-stat-sparkle {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #7A9E78;
+    opacity: 0;
+    pointer-events: none;
+    animation: hp-sparklePop 0.62s 0.68s ease-out both;
+  }
+  .hp-stat-sparkle.one {
+    top: -5px;
+    right: 4px;
+  }
+  .hp-stat-sparkle.two {
+    top: 4px;
+    right: -12px;
+    width: 4px;
+    height: 4px;
+    animation-delay: 0.76s;
+  }
+  .hp-stat-sparkle.three {
+    right: -5px;
+    bottom: -3px;
+    width: 3px;
+    height: 3px;
+    animation-delay: 0.82s;
+  }
   .hp-stat-card.accent .hp-stat-num { color: var(--white); }
   .hp-stat-num span { color: var(--sage-deep); }
   .hp-stat-card.accent .hp-stat-num span { color: var(--sage); }
   .hp-stat-sub { font-size: 12px; color: var(--ash); margin-top: 4px; }
   .hp-stat-card.accent .hp-stat-sub { color: rgba(255,255,255,0.35); }
+  .hp-fit-ring {
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+    color: #496657;
+    opacity: 0;
+    animation: hp-ringIn 0.4s 0.2s var(--ease) both;
+  }
+  .hp-fit-ring svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    transform: rotate(-90deg);
+  }
+  .hp-fit-ring-track,
+  .hp-fit-ring-progress {
+    fill: none;
+    stroke-width: 3.4;
+  }
+  .hp-fit-ring-track {
+    stroke: #E8ECE8;
+  }
+  .hp-fit-ring-progress {
+    stroke: #496657;
+    stroke-linecap: round;
+    stroke-dasharray: 100;
+  }
 
   /* ── Filter bar ── */
   .hp-filter-bar {
     display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
     animation: hp-fadeUp 0.5s 0.18s var(--ease) both;
+  }
+  .hp-mobile-summary { display: contents; }
+  .hp-results-scroll { display: contents; }
+  .hp-filter-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
   }
   .hp-filter-label {
     font-size: 11px; font-weight: 700; color: var(--ash);
@@ -270,20 +427,49 @@ const CSS = `
     background: var(--ink); border-color: var(--ink); color: var(--white);
   }
   .hp-pill.is-add {
-    border-style: dashed; color: var(--sage-deep);
-    border-color: var(--sage-dark); background: var(--sage-light);
+    border-color: var(--cloud);
+    background: var(--white);
+    color: var(--ash);
   }
-  .hp-pill.is-add:hover { background: var(--sage); }
+  .hp-pill.is-add:hover { background: var(--cloud); color: var(--ink); }
   .hp-pill-count {
-    background: rgba(255,255,255,0.2); border-radius: 999px;
+    background: var(--cloud); color: var(--ash); border-radius: 999px;
     padding: 0 6px; font-size: 10px; font-weight: 800;
     min-width: 18px; text-align: center;
+  }
+  .hp-pill.is-active .hp-pill-count {
+    background: #2A2A2A;
+    color: var(--white);
   }
   .hp-pill:not(.is-active) .hp-pill-count {
     background: var(--cloud); color: var(--ash);
   }
 
   .hp-filter-divider { width: 1px; height: 24px; background: var(--cloud); }
+
+  .hp-measurement-prompt {
+    display: flex; align-items: center; gap: 14px;
+    padding: 15px 18px;
+    border: 1px solid var(--sage-dark); border-radius: 14px;
+    background: var(--sage-light);
+    animation: hp-fadeUp 0.5s 0.22s var(--ease) both;
+  }
+  .hp-measurement-prompt-icon {
+    width: 34px; height: 34px; flex: 0 0 auto;
+    display: grid; place-items: center;
+    color: var(--sage-deep); background: rgba(255,255,255,0.6); border-radius: 10px;
+  }
+  .hp-measurement-prompt-icon svg { width: 18px; height: 18px; }
+  .hp-measurement-prompt-copy { min-width: 0; }
+  .hp-measurement-prompt-title { color: var(--ink); font-size: 13px; font-weight: 700; }
+  .hp-measurement-prompt-sub { margin-top: 2px; color: var(--ash); font-size: 12px; line-height: 1.45; }
+  .hp-measurement-prompt-btn {
+    flex: 0 0 auto; margin-left: auto; padding: 8px 12px;
+    border: 1px solid var(--sage-dark); border-radius: 9px;
+    color: var(--sage-deep); background: var(--white);
+    font-family: var(--fs); font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  .hp-measurement-prompt-btn:hover { background: var(--paper); }
 
   /* ── Section header ── */
   .hp-section-header {
@@ -343,6 +529,19 @@ const CSS = `
     transform: translateY(-5px);
     box-shadow: 0 16px 48px rgba(0,0,0,0.09);
   }
+  .hp-product-card.perfect {
+    border-color: rgba(122,158,120,0.5);
+    box-shadow:
+      0 0 0 1px rgba(122,158,120,0.16),
+      0 0 24px rgba(122,158,120,0.22),
+      0 12px 30px rgba(122,158,120,0.12);
+  }
+  .hp-product-card.perfect:hover {
+    box-shadow:
+      0 0 0 1px rgba(122,158,120,0.22),
+      0 0 30px rgba(122,158,120,0.26),
+      0 16px 42px rgba(122,158,120,0.16);
+  }
   .hp-product-card:focus-visible {
     outline: 3px solid rgba(122,158,120,0.34);
     outline-offset: 4px;
@@ -358,6 +557,12 @@ const CSS = `
   .hp-card-image-placeholder {
     font-size: 40px; opacity: 0.25;
   }
+  .hp-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 12px;
+  }
   .hp-card-score-badge {
     position: absolute; top: 10px; right: 10px;
     border-radius: 999px; padding: 4px 10px;
@@ -365,8 +570,9 @@ const CSS = `
     display: flex; align-items: center; gap: 4px;
   }
   .hp-card-score-badge.perfect { background: var(--ink); color: var(--white); }
-  .hp-card-score-badge.great   { background: var(--sage-light); color: var(--sage-deep); border: 1px solid var(--sage-dark); }
+  .hp-card-score-badge.great   { background: var(--cloud); color: var(--ash); }
   .hp-card-score-badge.fair    { background: var(--cloud); color: var(--ash); }
+  .hp-card-score-badge.unavailable { background: var(--cloud); color: var(--ash); }
 
   .hp-card-body {
     padding: 16px 18px 18px;
@@ -376,7 +582,7 @@ const CSS = `
     min-height: 160px;
   }
   .hp-card-brand { font-size: 11px; font-weight: 700; color: var(--ash); letter-spacing: 0.4px; text-transform: uppercase; margin-bottom: 4px; }
-  .hp-card-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; line-height: 1.35; }
+  .hp-card-title { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 6px; line-height: 1.35; }
   .hp-card-sub { font-size: 12px; color: var(--ash); margin-bottom: 12px; }
 
   .hp-card-footer {
@@ -395,9 +601,32 @@ const CSS = `
   .hp-card-fit-pill {
     font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
   }
-  .hp-card-fit-pill.perfect { background: rgba(13,13,13,0.07); color: var(--ink); }
-  .hp-card-fit-pill.great   { background: var(--sage-light); color: var(--sage-deep); }
+  .hp-card-fit-pill.perfect { background: var(--cloud); color: var(--ink); }
+  .hp-card-fit-pill.great   { background: var(--cloud); color: var(--ash); }
   .hp-card-fit-pill.fair    { background: var(--cloud); color: var(--ash); }
+  .hp-card-unavailable { font-size: 11px; line-height: 1.4; color: var(--ash); font-weight: 600; }
+  .hp-card-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-start;
+    min-height: 30px;
+    margin-top: 12px;
+    padding: 0 11px;
+    border: 1px solid var(--ink);
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--white);
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    transition: background 0.18s, border-color 0.18s, color 0.18s;
+  }
+  .hp-product-card:hover .hp-card-action {
+    background: #2A2A2A;
+    border-color: var(--ink);
+    color: var(--white);
+  }
 
   /* ── Recommendation details modal ── */
   .hp-modal-backdrop {
@@ -467,6 +696,7 @@ const CSS = `
   .hp-modal-score.perfect { background: var(--ink); color: var(--white); }
   .hp-modal-score.great { background: var(--sage-light); color: var(--sage-deep); border: 1px solid var(--sage-dark); }
   .hp-modal-score.fair { background: var(--cloud); color: var(--ash); }
+  .hp-modal-score.unavailable { background: var(--cloud); color: var(--ash); }
   .hp-modal-body { padding: 22px 26px 26px; }
   .hp-modal-eyebrow { margin-bottom: 6px; color: var(--ash); font-size: 11px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; }
   .hp-modal-title { margin: 0; color: var(--ink); font-family: var(--fd); font-size: 32px; font-weight: 700; line-height: 1.08; letter-spacing: -0.7px; }
@@ -490,11 +720,55 @@ const CSS = `
   .hp-modal-fit.perfect { background: rgba(13,13,13,0.07); color: var(--ink); }
   .hp-modal-fit.great { background: var(--sage-light); color: var(--sage-deep); }
   .hp-modal-fit.fair { background: var(--cloud); color: var(--ash); }
+  .hp-modal-unavailable { display: flex; align-items: flex-start; gap: 9px; margin-top: 18px; padding: 14px; border: 1px solid var(--cloud); border-radius: 12px; background: var(--paper); color: var(--ash); font-size: 13px; line-height: 1.5; }
+  .hp-modal-unavailable svg { width: 17px; height: 17px; flex: 0 0 auto; margin-top: 1px; color: var(--sage-deep); }
+  .hp-modal-unavailable strong { display: block; margin-bottom: 3px; color: var(--ink); }
   .hp-modal-metrics { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-top: 16px; }
   .hp-modal-metric { padding: 13px 14px; border: 1px solid var(--cloud); border-radius: 12px; background: var(--paper); }
   .hp-modal-metric-label { color: var(--ash); font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
   .hp-modal-metric-value { margin-top: 3px; color: var(--ink); font-size: 14px; font-weight: 700; }
+  .hp-modal-confidence-note { display: flex; align-items: flex-start; gap: 10px; margin-top: 12px; padding: 13px 14px; border-radius: 12px; font-size: 12.5px; line-height: 1.5; }
+  .hp-modal-confidence-note.high { border: 1px solid var(--sage-dark); background: var(--sage-light); color: var(--sage-deep); }
+  .hp-modal-confidence-note.limited { border: 1px solid var(--cloud); background: var(--paper); color: var(--ash); }
+  .hp-modal-confidence-note strong { display: block; margin-bottom: 2px; color: var(--ink); font-size: 12px; }
+  .hp-modal-confidence-dot { width: 8px; height: 8px; margin-top: 5px; flex: 0 0 auto; border-radius: 50%; background: currentColor; }
+  .hp-modal-reasons { margin-top: 16px; padding: 15px 16px; border: 1px solid var(--cloud); border-radius: 12px; background: var(--paper); }
+  .hp-modal-reasons-title { color: var(--ink); font-size: 11px; font-weight: 800; letter-spacing: 0.55px; text-transform: uppercase; }
+  .hp-modal-reasons ul { display: grid; gap: 7px; margin: 10px 0 0; padding-left: 18px; color: var(--ash); font-size: 12.5px; line-height: 1.5; }
+  .hp-modal-missing { display: flex; align-items: flex-start; gap: 9px; margin-top: 12px; padding: 13px 14px; border: 1px solid var(--sage-dark); border-radius: 12px; background: var(--sage-light); color: var(--sage-deep); font-size: 12.5px; line-height: 1.5; }
+  .hp-modal-missing svg { width: 16px; height: 16px; flex: 0 0 auto; margin-top: 1px; }
+  .hp-modal-add-measurements { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; margin-top: 10px; padding: 0 12px; border: 1px solid var(--sage-deep); border-radius: 8px; background: var(--white); color: var(--sage-deep); font-family: var(--fs); font-size: 11px; font-weight: 800; cursor: pointer; }
+  .hp-modal-add-measurements:hover { background: var(--paper); }
   .hp-modal-note { margin-top: 14px; color: var(--ash); font-size: 11px; line-height: 1.55; }
+  .hp-modal-brand-links { margin: 14px 0 2px; padding: 13px 14px; border: 1px solid var(--cloud); border-radius: 13px; background: var(--white); }
+  .hp-modal-brand-links-title { color: var(--ink); font-size: 11px; font-weight: 800; letter-spacing: .55px; text-transform: uppercase; }
+  .hp-modal-brand-links-copy { margin-top: 3px; color: var(--ash); font-size: 11.5px; }
+  .hp-modal-brand-links-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 11px; }
+  .hp-modal-brand-link { display: inline-flex; align-items: center; min-height: 35px; padding: 0 12px; border: 1px solid #dedfd9; border-radius: 9px; background: var(--paper); color: var(--ink); font-family: var(--fs); font-size: 11px; font-weight: 800; text-decoration: none; transition: .18s ease; }
+  .hp-modal-brand-link:hover { border-color: var(--sage-dark); background: var(--sage-light); color: var(--sage-deep); transform: translateY(-1px); }
+  .hp-modal-brand-links-empty { margin-top: 5px; color: var(--ash); font-size: 11.5px; line-height: 1.45; }
+  .hp-fit-feedback { margin-top: 18px; padding: 17px; border: 1px solid var(--cloud); border-radius: 15px; background: var(--paper); }
+  .hp-fit-feedback-heading { color: var(--ink); font-size: 14px; font-weight: 800; }
+  .hp-fit-feedback-copy { margin-top: 4px; color: var(--ash); font-size: 12px; line-height: 1.5; }
+  .hp-fit-feedback-open { min-height: 38px; margin-top: 13px; padding: 0 15px; border: 0; border-radius: 9px; background: var(--ink); color: var(--white); font-family: var(--fs); font-size: 12px; font-weight: 800; cursor: pointer; }
+  .hp-fit-feedback-form { display: grid; gap: 14px; margin-top: 16px; }
+  .hp-fit-feedback-field { display: grid; gap: 8px; }
+  .hp-fit-feedback-label { color: var(--ink); font-size: 11px; font-weight: 800; letter-spacing: 0.35px; }
+  .hp-fit-feedback-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .hp-fit-feedback-options.outcomes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hp-fit-feedback-option { min-height: 38px; padding: 7px 9px; border: 1px solid var(--mist); border-radius: 9px; background: var(--white); color: var(--ash); font-family: var(--fs); font-size: 11px; font-weight: 700; cursor: pointer; transition: border-color 0.18s, background 0.18s, color 0.18s; }
+  .hp-fit-feedback-option:hover { border-color: var(--sage-dark); color: var(--ink); }
+  .hp-fit-feedback-option.active { border-color: var(--ink); background: var(--ink); color: var(--white); }
+  .hp-fit-feedback-note { width: 100%; min-height: 82px; resize: vertical; padding: 11px 12px; border: 1px solid var(--mist); border-radius: 9px; background: var(--white); color: var(--ink); font: 12px/1.5 var(--fs); outline: none; }
+  .hp-fit-feedback-note:focus { border-color: var(--sage-deep); box-shadow: 0 0 0 3px rgba(122,158,120,0.12); }
+  .hp-fit-feedback-count { color: var(--ash); font-size: 10px; text-align: right; }
+  .hp-fit-feedback-actions { display: flex; gap: 8px; }
+  .hp-fit-feedback-submit, .hp-fit-feedback-cancel { min-height: 39px; padding: 0 14px; border-radius: 9px; font-family: var(--fs); font-size: 11px; font-weight: 800; cursor: pointer; }
+  .hp-fit-feedback-submit { flex: 1; border: 0; background: var(--ink); color: var(--white); }
+  .hp-fit-feedback-submit:disabled { cursor: not-allowed; opacity: 0.45; }
+  .hp-fit-feedback-cancel { border: 1px solid var(--mist); background: var(--white); color: var(--ash); }
+  .hp-fit-feedback-error { color: var(--red); font-size: 11px; line-height: 1.45; }
+  .hp-fit-feedback-success { margin-top: 13px; padding: 12px 13px; border: 1px solid var(--sage-dark); border-radius: 10px; background: var(--sage-light); color: var(--sage-deep); font-size: 12px; font-weight: 700; line-height: 1.45; }
 
   /* ── Empty state ── */
   .hp-empty {
@@ -534,34 +808,6 @@ const CSS = `
     background: var(--white); border: 1px solid var(--cloud);
     border-radius: 18px; overflow: hidden;
   }
-
-  /* ── Tip banner ── */
-  .hp-tip {
-    display: flex; align-items: center; gap: 16px;
-    background: var(--sage-light);
-    border: 1px solid var(--sage-dark);
-    border-radius: 14px; padding: 18px 22px;
-    animation: hp-fadeUp 0.5s 0.35s var(--ease) both;
-  }
-  .hp-tip-icon {
-    width: 40px; height: 40px; border-radius: 10px;
-    background: rgba(163,191,161,0.4);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .hp-tip-icon svg { width: 18px; height: 18px; color: var(--sage-deep); }
-  .hp-tip-title { font-size: 13.5px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
-  .hp-tip-sub { font-size: 12.5px; color: var(--sage-deep); line-height: 1.5; }
-  .hp-tip-btn {
-    margin-left: auto; flex-shrink: 0;
-    font-family: var(--fs); font-size: 12.5px; font-weight: 700;
-    color: var(--ink); background: var(--white);
-    border: 1px solid var(--sage-dark); border-radius: 8px;
-    padding: 8px 16px; cursor: pointer; white-space: nowrap;
-    display: inline-flex; align-items: center; justify-content: center;
-    transition: all 0.15s;
-  }
-  .hp-tip-btn:hover { background: var(--ink); color: var(--white); border-color: var(--ink); }
 
   @media (max-width: 1200px) {
     .hp-stats-row {
@@ -611,6 +857,7 @@ const CSS = `
     .hp-body {
       padding: 24px 20px 96px;
     }
+
   }
 
   @media (max-width: 640px) {
@@ -634,20 +881,148 @@ const CSS = `
       justify-content: center;
     }
 
-    .hp-body {
-      padding: 20px 16px 96px;
-      gap: 20px;
+    .hp-root,
+    .hp-main {
+      min-height: 0;
     }
 
-    .hp-stats-row,
+    .hp-body {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      height: calc(100dvh - var(--nav-h, 72px) - var(--mobile-tab-h, 80px) - env(safe-area-inset-bottom, 0px));
+      min-height: 0;
+      overflow: hidden;
+      padding: 0 12px;
+      gap: 8px;
+    }
+
+    @supports not (height: 100dvh) {
+      .hp-body {
+        height: calc(100vh - var(--nav-h, 72px) - var(--mobile-tab-h, 80px));
+      }
+    }
+
+    .hp-mobile-summary {
+      position: relative;
+      top: auto;
+      z-index: 35;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 0 -12px;
+      padding: 8px 12px 10px;
+      background: var(--paper);
+      backdrop-filter: none;
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+      box-shadow: 0 8px 18px rgba(13,13,13,0.05);
+    }
+
+    .hp-results-scroll {
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 0 0 12px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .hp-results-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .hp-stats-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+    }
+
+    .hp-stat-card-total,
+    .hp-stat-card-brands {
+      display: none;
+    }
+
+    .hp-stat-card {
+      min-width: 0;
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 6px 16px rgba(13,13,13,0.04);
+    }
+
+    .hp-stat-card:hover {
+      transform: none;
+      box-shadow: 0 6px 16px rgba(13,13,13,0.04);
+    }
+
+    .hp-stat-card-perfect,
+    .hp-stat-card-perfect:hover {
+      box-shadow:
+        0 0 0 1px rgba(122,158,120,0.18),
+        0 0 20px rgba(122,158,120,0.24),
+        0 8px 20px rgba(122,158,120,0.12);
+    }
+
+    .hp-stat-label {
+      margin-bottom: 5px;
+      font-size: 9px;
+      letter-spacing: 0.45px;
+      white-space: nowrap;
+    }
+
+    .hp-stat-num {
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    .hp-stat-layout {
+      gap: 7px;
+    }
+
+    .hp-fit-ring {
+      width: 36px;
+      height: 36px;
+      flex-basis: 36px;
+    }
+
+    .hp-fit-ring-track,
+    .hp-fit-ring-progress {
+      stroke-width: 3.2;
+    }
+
+    .hp-stat-sub {
+      margin-top: 3px;
+      font-size: 10px;
+      line-height: 1.35;
+    }
+
     .hp-grid {
       grid-template-columns: 1fr;
+      gap: 8px;
     }
 
-    .hp-filter-bar,
+    .hp-filter-bar {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .hp-filter-section {
+      display: grid;
+      grid-template-columns: 62px minmax(0, 1fr);
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .hp-filter-label {
+      font-size: 10px;
+    }
+
     .hp-section-header,
-    .hp-tip,
-    .hp-card-footer {
+    .hp-measurement-prompt {
       flex-direction: column;
       align-items: flex-start;
     }
@@ -656,26 +1031,219 @@ const CSS = `
       display: none;
     }
 
-    .hp-tip-btn {
+    .hp-measurement-prompt-btn {
+      width: auto;
       margin-left: 0;
-      width: 100%;
-      justify-content: center;
+      min-height: 26px;
+      padding: 0 9px;
+      border-radius: 999px;
+      font-size: 10.5px;
+      white-space: nowrap;
     }
 
     .hp-pill-group {
       width: 100%;
-    }
-
-    .hp-pill-group {
       gap: 8px;
     }
 
+    .hp-pill-scroll {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding: 0 16px 3px 0;
+      scroll-padding-right: 16px;
+      scroll-snap-type: x proximity;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .hp-pill-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
     .hp-pill {
+      flex: 0 0 auto;
       justify-content: center;
+      min-height: 36px;
+      padding: 7px 10px;
+      font-size: 11.5px;
+      scroll-snap-align: start;
+    }
+
+    .hp-section-header {
+      gap: 6px;
+      margin-top: 0;
+    }
+
+    .hp-section-title {
+      font-size: 24px;
+    }
+
+    .hp-section-sub {
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .hp-measurement-prompt {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr) auto;
+      align-items: center;
+      min-height: 40px;
+      padding: 7px 9px;
+      gap: 7px;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .hp-measurement-prompt-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+    }
+
+    .hp-measurement-prompt-icon svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .hp-measurement-prompt-copy {
+      min-width: 0;
+    }
+
+    .hp-measurement-prompt-title {
+      font-size: 11.5px;
+      line-height: 1.2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .hp-measurement-prompt-sub {
+      display: none;
+    }
+
+    .hp-product-card {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr);
+      min-height: 104px;
+      border-radius: 12px;
+    }
+
+    .hp-product-card:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
+    .hp-product-card.perfect,
+    .hp-product-card.perfect:hover {
+      box-shadow:
+        0 0 0 1px rgba(122,158,120,0.16),
+        0 0 18px rgba(122,158,120,0.2),
+        0 8px 22px rgba(122,158,120,0.1);
+    }
+
+    .hp-card-image {
+      height: 100%;
+      min-height: 104px;
+      aspect-ratio: auto;
+      border-right: 1px solid var(--cloud);
+    }
+
+    .hp-card-image img {
+      object-fit: contain;
+      padding: 8px;
+    }
+
+    .hp-card-score-badge {
+      top: auto;
+      right: 6px;
+      bottom: 6px;
+      max-width: calc(100% - 12px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 3px 7px;
+      font-size: 9.5px;
+    }
+
+    .hp-card-score-badge.unavailable {
+      display: none;
     }
 
     .hp-card-body {
       min-height: 0;
+      padding: 9px 11px;
+      justify-content: space-between;
+    }
+
+    .hp-card-brand {
+      margin-bottom: 3px;
+      font-size: 10px;
+    }
+
+    .hp-card-title {
+      margin-bottom: 3px;
+      font-size: 13px;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .hp-card-sub {
+      margin-bottom: 6px;
+      font-size: 11px;
+    }
+
+    .hp-card-footer {
+      flex-direction: row;
+      align-items: center;
+      padding-top: 6px;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .hp-card-size {
+      font-size: 23px;
+    }
+
+    .hp-card-size-label {
+      font-size: 10px;
+    }
+
+    .hp-card-fit-pill {
+      margin-left: auto;
+      padding: 4px 8px;
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .hp-card-unavailable {
+      font-size: 10.5px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .hp-card-action {
+      min-height: 27px;
+      margin-top: 6px;
+      padding: 0 9px;
+      font-size: 10px;
+    }
+
+    .hp-skeleton-card {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr);
+      border-radius: 12px;
+    }
+
+    .hp-skeleton-card > .hp-skeleton {
+      height: auto !important;
+      min-height: 104px;
     }
 
     .hp-modal-backdrop { padding: 14px; }
@@ -683,6 +1251,52 @@ const CSS = `
     .hp-modal-image { height: 190px; }
     .hp-modal-body { padding: 20px; }
     .hp-modal-title { font-size: 29px; }
+  }
+
+  @media (max-width: 380px) {
+    .hp-stats-row {
+      gap: 6px;
+    }
+
+    .hp-stat-card {
+      padding: 9px;
+    }
+
+    .hp-stat-label {
+      font-size: 8.5px;
+    }
+
+    .hp-stat-num {
+      font-size: 22px;
+    }
+
+    .hp-stat-sub {
+      font-size: 9.5px;
+    }
+
+    .hp-fit-ring {
+      width: 32px;
+      height: 32px;
+      flex-basis: 32px;
+    }
+
+    .hp-filter-section {
+      grid-template-columns: 54px minmax(0, 1fr);
+    }
+
+    .hp-filter-label {
+      font-size: 9px;
+    }
+
+    .hp-product-card,
+    .hp-skeleton-card {
+      grid-template-columns: 78px minmax(0, 1fr);
+    }
+
+    .hp-card-image,
+    .hp-skeleton-card > .hp-skeleton {
+      min-height: 98px;
+    }
   }
 
   /* ── Error ── */
@@ -711,6 +1325,23 @@ const CSS = `
     from { background-position: 200% 0; }
     to   { background-position: -200% 0; }
   }
+  @keyframes hp-cardGlowIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.96); }
+    to   { opacity: var(--hp-glow-opacity, 0.72); transform: none; }
+  }
+  @keyframes hp-checkIn {
+    from { opacity: 0; transform: scale(0.82); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes hp-sparklePop {
+    0%   { opacity: 0; transform: translateY(2px) scale(0.4); }
+    32%  { opacity: 1; transform: translateY(-2px) scale(1); }
+    100% { opacity: 0; transform: translateY(-7px) scale(0.2); }
+  }
+  @keyframes hp-ringIn {
+    from { opacity: 0; transform: translateY(5px) scale(0.95); }
+    to   { opacity: 1; transform: none; }
+  }
   @keyframes hp-modalFade {
     from { opacity: 0; }
     to   { opacity: 1; }
@@ -721,11 +1352,34 @@ const CSS = `
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .hp-modal-backdrop, .hp-modal { animation: none; }
+    .hp-modal-backdrop,
+    .hp-modal,
+    .hp-stat-card-perfect::before,
+    .hp-stat-card-average::before,
+    .hp-stat-check,
+    .hp-fit-ring {
+      animation: none;
+    }
+    .hp-stat-card-perfect::before,
+    .hp-stat-card-average::before,
+    .hp-stat-check,
+    .hp-fit-ring {
+      opacity: 1;
+    }
+    .hp-stat-card-perfect::before,
+    .hp-stat-card-average::before {
+      opacity: var(--hp-glow-opacity, 0.72);
+    }
+    .hp-stat-sparkle {
+      display: none;
+    }
   }
 `;
 
-if (!document.getElementById('hp-styles')) {
+const homePageStyles = document.getElementById('hp-styles');
+if (homePageStyles) {
+  homePageStyles.textContent = CSS;
+} else {
   const s = document.createElement('style');
   s.id = 'hp-styles';
   s.textContent = CSS;
@@ -746,6 +1400,7 @@ const Ico = {
   Plus:     () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 3v10M3 8h10"/></svg>,
   Bulb:     () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M8 2a4 4 0 014 4c0 1.7-.9 3.1-2 4v1H6v-1c-1.1-.9-2-2.3-2-4a4 4 0 014-4z"/><path d="M6 13h4"/></svg>,
   Alert:    () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v4M8 11v.5"/></svg>,
+  Check:    () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3L12.5 5.5"/></svg>,
   Shirt:    () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M6 2l2 2 2-2 3 2-1.5 3H11v7H5V7H3.5L2 4l3-2z"/></svg>,
 };
 
@@ -756,61 +1411,195 @@ const MATCH_FILTERS = [
   { value: 'all',     label: 'All matches' },
   { value: 'perfect', label: 'Perfect fit' },
   { value: 'great',   label: 'Great fit'   },
-  { value: 'fair',    label: 'Can try'     },
 ] as const;
 type MatchFilter = typeof MATCH_FILTERS[number]['value'];
 
-function getScoreClass(score: number) {
-  if (score >= 75) return 'perfect';
-  if (score >= 60) return 'great';
-  return 'fair';
+function isRecommendationAvailable(card: BrandRecommendation) {
+  return card.availability === 'recommended';
 }
-function getFitLabel(score: number) {
-  if (score >= 75) return 'Perfect fit';
-  if (score >= 60) return 'Great fit';
-  return 'Can try';
+function isPerfectFit(card: BrandRecommendation) {
+  return isRecommendationAvailable(card) && card.matchScore >= 75 && card.confidence === 'high';
+}
+function isGreatFit(card: BrandRecommendation) {
+  return isRecommendationAvailable(card) && card.matchScore >= 60 && !isPerfectFit(card);
+}
+function getScoreClass(card: EnrichedRecommendation) {
+  if (!isRecommendationAvailable(card)) return 'unavailable';
+  return isPerfectFit(card) ? 'perfect' : 'great';
+}
+function getFitLabel(card: EnrichedRecommendation) {
+  return isPerfectFit(card) ? 'Perfect fit' : 'Great fit';
+}
+function formatMeasurementKeys(keys: string[]) {
+  const labels = keys.map((key) => key.charAt(0).toUpperCase() + key.slice(1));
+  if (labels.length < 2) return labels[0] ?? 'Primary measurement';
+  return `${labels.slice(0, -1).join(', ')} or ${labels[labels.length - 1]}`;
+}
+function prettifyBrandName(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (trimmed === trimmed.toUpperCase()) {
+    return trimmed.toLowerCase().replace(/\b[a-z]/g, letter => letter.toUpperCase());
+  }
+  return trimmed;
+}
+function combineBrandAndProduct(brand: string, title: string) {
+  const cleanBrand = prettifyBrandName(brand);
+  const cleanTitle = title.trim();
+  if (!cleanBrand) return cleanTitle;
+  if (!cleanTitle || cleanTitle.toLowerCase().startsWith(cleanBrand.toLowerCase())) return cleanTitle || cleanBrand;
+  return `${cleanBrand} ${cleanTitle}`;
+}
+function normalizeMeasurementKeyForPrompt(key: string) {
+  return key.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+function isEnteredMeasurement(value: unknown) {
+  const numeric = typeof value === 'number' ? value : typeof value === 'string' ? Number.parseFloat(value) : NaN;
+  return Number.isFinite(numeric) && numeric > 0;
+}
+
+function getRecommendationEmptyState(
+  status: string | undefined,
+  hasProfile: boolean,
+  additionalMeasurementGuidance: string,
+) {
+  switch (status) {
+    case 'no-reliable-match':
+      return {
+        title: 'No reliable size recommendation yet',
+        description:
+          `None of the available size charts is close enough to your saved measurements. Check the values, then ${additionalMeasurementGuidance}`,
+        action: 'Review measurements',
+      };
+    case 'no-comparable-key-measurements':
+      return {
+        title: 'Primary measurement unavailable',
+        description:
+          `The available brand charts do not include your primary measurement for this category. ${additionalMeasurementGuidance} Or try another clothing category.`,
+        action: 'Add measurements',
+      };
+    case 'missing-measurements':
+      return {
+        title: 'Add measurements to get started',
+        description: 'Save your measurements before we can calculate a reliable size recommendation.',
+        action: 'Add measurements',
+      };
+    default:
+      return {
+        title: 'No matches yet',
+        description: hasProfile
+          ? 'Add more measurements or switch to another clothing category to unlock recommendations.'
+          : 'Complete your profile first to unlock size recommendations.',
+        action: 'Add measurements',
+      };
+  }
 }
 
 /* ─────────────────────────────────────────────
    Product card
 ───────────────────────────────────────────── */
 function ProductCard({ card, onOpen }: { card: EnrichedRecommendation; onOpen: () => void }) {
-  const cls = getScoreClass(card.matchScore);
+  const cls = getScoreClass(card);
+  const measurementUnavailable = !isRecommendationAvailable(card);
+  const unavailableMeasurements = formatMeasurementKeys(card.unavailablePrimaryMeasurementKeys);
   const image = card.imageUrl || card.seller?.photoURL || null;
+  const primaryLabel = combineBrandAndProduct(card.brandDisplay, card.title);
+  const visibleSubCategory =
+    card.subCategory?.trim() && card.subCategory.trim().toLowerCase() !== card.title.trim().toLowerCase()
+      ? card.subCategory.trim()
+      : null;
   return (
     <button
       type="button"
-      className="hp-product-card"
-      aria-label={`View ${card.brandDisplay} ${card.title} recommendation details`}
+      className={`hp-product-card ${cls}`}
+      aria-label={measurementUnavailable
+        ? `View ${primaryLabel} measurement availability details`
+        : `View ${primaryLabel} recommendation details`}
       onClick={onOpen}>
       <div className="hp-card-image">
         {image
-          ? <img src={image} alt={card.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ? <img src={image} alt={primaryLabel} />
           : <div className="hp-card-image-placeholder"><Ico.Shirt /></div>
         }
         <div className={`hp-card-score-badge ${cls}`}>
-          {card.matchScore}%
+          {measurementUnavailable ? 'Primary measurement unavailable' : `${card.matchScore}%`}
         </div>
       </div>
       <div className="hp-card-body">
-        <div className="hp-card-brand">{card.brandDisplay}</div>
-        <div className="hp-card-title">{card.title}</div>
-        {card.subCategory && <div className="hp-card-sub">{card.subCategory}</div>}
+        <div className="hp-card-title">{primaryLabel}</div>
+        {visibleSubCategory && <div className="hp-card-sub">{visibleSubCategory}</div>}
         <div className="hp-card-footer">
-          <div className="hp-card-size-wrap">
-            <span className="hp-card-size">{card.sizeLabel ?? '—'}</span>
-            <span className="hp-card-size-label">size</span>
-          </div>
-          <span className={`hp-card-fit-pill ${cls}`}>{getFitLabel(card.matchScore)}</span>
+          {measurementUnavailable ? (
+            <span className="hp-card-unavailable">Primary measurement unavailable: {unavailableMeasurements} is not included in this chart.</span>
+          ) : (
+            <>
+              <div className="hp-card-size-wrap">
+                <span className="hp-card-size">{card.sizeLabel ?? '—'}</span>
+                <span className="hp-card-size-label">size</span>
+              </div>
+              <span className={`hp-card-fit-pill ${cls}`}>{getFitLabel(card)}</span>
+            </>
+          )}
         </div>
+        <span className="hp-card-action">View fit details</span>
       </div>
     </button>
   );
 }
 
-function RecommendationDetailsModal({ card, onClose }: { card: EnrichedRecommendation; onClose: () => void }) {
-  const cls = getScoreClass(card.matchScore);
+function RecommendationDetailsModal({
+  card,
+  measurementProfileKey,
+  onClose,
+  onAddMeasurements,
+}: {
+  card: EnrichedRecommendation;
+  measurementProfileKey: string;
+  onClose: () => void;
+  onAddMeasurements: () => void;
+}) {
+  const cls = getScoreClass(card);
+  const measurementUnavailable = !isRecommendationAvailable(card);
+  const unavailableMeasurements = formatMeasurementKeys(card.unavailablePrimaryMeasurementKeys);
+  const missingMeasurements = formatMeasurementKeys(card.missingMeasurements);
   const image = card.imageUrl || card.seller?.photoURL || null;
+  const brandLinks = [
+    ['Website', card.seller?.websiteUrl],
+    ['Instagram', card.seller?.instagramUrl],
+    ['Facebook', card.seller?.facebookUrl],
+    ['TikTok', card.seller?.tiktokUrl],
+  ].filter((entry): entry is [string, string] => Boolean(entry[1]));
+  const [feedbackExpanded, setFeedbackExpanded] = useState(false);
+  const [experience, setExperience] = useState<FitExperience | null>(null);
+  const [outcome, setOutcome] = useState<FitOutcome | null>(null);
+  const [feedbackNote, setFeedbackNote] = useState('');
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+
+  const handleFeedbackSubmit = async () => {
+    if (!experience || !outcome || feedbackSubmitting) return;
+
+    setFeedbackSubmitting(true);
+    setFeedbackError(null);
+    try {
+      await submitFitFeedback({
+        catalogId: card.id,
+        measurementProfileKey,
+        experience,
+        outcome,
+        recommendationScore: card.score,
+        confidence: card.confidence,
+        note: feedbackNote.trim() || null,
+      });
+      setFeedbackSubmitted(true);
+      setFeedbackExpanded(false);
+    } catch (error) {
+      setFeedbackError(error instanceof Error ? error.message : 'Unable to save your fit feedback.');
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -835,7 +1624,9 @@ function RecommendationDetailsModal({ card, onClose }: { card: EnrichedRecommend
             ? <img src={image} alt={`${card.brandDisplay} ${card.title}`} />
             : <div className="hp-modal-image-placeholder"><Ico.Shirt /></div>
           }
-          <span className={`hp-modal-score ${cls}`}>{card.matchScore}% match</span>
+          <span className={`hp-modal-score ${cls}`}>
+            {measurementUnavailable ? 'Primary measurement unavailable' : `${card.matchScore}% match`}
+          </span>
         </div>
         <div className="hp-modal-body">
           <div className="hp-modal-eyebrow">{card.brandDisplay}</div>
@@ -843,17 +1634,43 @@ function RecommendationDetailsModal({ card, onClose }: { card: EnrichedRecommend
           {(card.subCategory || card.category) && (
             <div className="hp-modal-subcategory">{[card.subCategory, card.category].filter(Boolean).join(' · ')}</div>
           )}
-          <p className="hp-modal-copy">
-            According to your saved measurements, <strong>{card.sizeLabel || 'this size'}</strong> is your closest available match for this item.
-          </p>
-          <div className="hp-modal-result">
-            <div>
-              <div className="hp-modal-size-label">Your recommended size</div>
-              <div className="hp-modal-size"><strong>{card.sizeLabel || '—'}</strong><span>size</span></div>
-            </div>
-            <span className={`hp-modal-fit ${cls}`}>{getFitLabel(card.matchScore)}</span>
+          <div className="hp-modal-brand-links">
+            <div className="hp-modal-brand-links-title">{card.brandDisplay} links</div>
+            {brandLinks.length > 0 ? (
+              <div className="hp-modal-brand-links-list">
+                {brandLinks.map(([label, url]) => (
+                  <a className="hp-modal-brand-link" href={url} target="_blank" rel="noopener noreferrer" key={label}>
+                    {label} ↗
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="hp-modal-brand-links-empty">This brand has not added an official website or social link yet.</div>
+            )}
           </div>
+          <p className="hp-modal-copy">{card.explanation}</p>
+          {measurementUnavailable ? (
+            <div className="hp-modal-unavailable">
+              <Ico.Alert />
+              <div>
+                <strong>Primary measurement unavailable</strong>
+                <span>This brand's chart does not provide {unavailableMeasurements}, so it cannot be evaluated using your primary measurement.</span>
+              </div>
+            </div>
+          ) : (
+            <div className="hp-modal-result">
+              <div>
+                <div className="hp-modal-size-label">Your recommended size</div>
+                <div className="hp-modal-size"><strong>{card.recommendedSize || '—'}</strong><span>size</span></div>
+              </div>
+              <span className={`hp-modal-fit ${cls}`}>{getFitLabel(card)}</span>
+            </div>
+          )}
           <div className="hp-modal-metrics">
+            <div className="hp-modal-metric">
+              <div className="hp-modal-metric-label">Fit score</div>
+              <div className="hp-modal-metric-value">{card.score}%</div>
+            </div>
             <div className="hp-modal-metric">
               <div className="hp-modal-metric-label">Comparable measurements</div>
               <div className="hp-modal-metric-value">{card.commonMeasurementCount}</div>
@@ -862,7 +1679,131 @@ function RecommendationDetailsModal({ card, onClose }: { card: EnrichedRecommend
               <div className="hp-modal-metric-label">Key measurements matched</div>
               <div className="hp-modal-metric-value">{card.primaryMatchedCount} / {card.primaryExpectedCount}</div>
             </div>
+            <div className="hp-modal-metric">
+              <div className="hp-modal-metric-label">Fit confidence</div>
+              <div className="hp-modal-metric-value">{card.confidence === 'high' ? 'High' : 'Limited'}</div>
+            </div>
           </div>
+          <div className={`hp-modal-confidence-note ${card.confidence}`}>
+            <span className="hp-modal-confidence-dot" aria-hidden="true" />
+            <div>
+              <strong>{card.confidence === 'high' ? 'High confidence' : 'Limited confidence'}</strong>
+              <span>{card.confidenceExplanation}</span>
+            </div>
+          </div>
+          {card.reasons.length > 0 && (
+            <div className="hp-modal-reasons">
+              <div className="hp-modal-reasons-title">Why this result</div>
+              <ul>
+                {card.reasons.map(reason => <li key={reason}>{reason}</li>)}
+              </ul>
+            </div>
+          )}
+          {card.missingMeasurements.length > 0 && (
+            <div className="hp-modal-missing">
+              <Ico.Alert />
+              <div>
+                <span>Useful measurements to add: <strong>{missingMeasurements}</strong>. This brand's chart supports them, and they provide more comparison data.</span>
+                <br />
+                <button type="button" className="hp-modal-add-measurements" onClick={onAddMeasurements}>
+                  Add useful measurements
+                </button>
+              </div>
+            </div>
+          )}
+          {!measurementUnavailable && (
+            <div className="hp-fit-feedback">
+              <div className="hp-fit-feedback-heading">Did this recommendation fit?</div>
+              <div className="hp-fit-feedback-copy">
+                After trying or buying this item, tell us how it fit. Your feedback helps improve future recommendations.
+              </div>
+              {feedbackSubmitted ? (
+                <div className="hp-fit-feedback-success" role="status">
+                  Thank you — your fit feedback has been saved.
+                </div>
+              ) : !feedbackExpanded ? (
+                <button className="hp-fit-feedback-open" type="button" onClick={() => setFeedbackExpanded(true)}>
+                  Leave fit feedback
+                </button>
+              ) : (
+                <div className="hp-fit-feedback-form">
+                  <div className="hp-fit-feedback-field">
+                    <div className="hp-fit-feedback-label">What did you do?</div>
+                    <div className="hp-fit-feedback-options">
+                      {([
+                        ['TRIED', 'Tried it'],
+                        ['BOUGHT', 'Bought it'],
+                      ] as const).map(([value, label]) => (
+                        <button
+                          className={`hp-fit-feedback-option ${experience === value ? 'active' : ''}`}
+                          type="button"
+                          key={value}
+                          aria-pressed={experience === value}
+                          onClick={() => setExperience(value)}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="hp-fit-feedback-field">
+                    <div className="hp-fit-feedback-label">How did the recommended size fit?</div>
+                    <div className="hp-fit-feedback-options outcomes">
+                      {([
+                        ['TOO_SMALL', 'Too small'],
+                        ['PERFECT', 'Perfect'],
+                        ['TOO_LARGE', 'Too large'],
+                      ] as const).map(([value, label]) => (
+                        <button
+                          className={`hp-fit-feedback-option ${outcome === value ? 'active' : ''}`}
+                          type="button"
+                          key={value}
+                          aria-pressed={outcome === value}
+                          onClick={() => setOutcome(value)}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="hp-fit-feedback-field">
+                    <label className="hp-fit-feedback-label" htmlFor="hp-fit-feedback-note">Note (optional)</label>
+                    <textarea
+                      className="hp-fit-feedback-note"
+                      id="hp-fit-feedback-note"
+                      maxLength={1000}
+                      value={feedbackNote}
+                      onChange={event => setFeedbackNote(event.target.value)}
+                      placeholder="Tell us where it felt tight, loose, or especially comfortable."
+                    />
+                    <div className="hp-fit-feedback-count">{feedbackNote.length} / 1000</div>
+                  </div>
+                  {feedbackError && <div className="hp-fit-feedback-error" role="alert">{feedbackError}</div>}
+                  <div className="hp-fit-feedback-actions">
+                    <button
+                      className="hp-fit-feedback-cancel"
+                      type="button"
+                      disabled={feedbackSubmitting}
+                      onClick={() => {
+                        setFeedbackExpanded(false);
+                        setFeedbackError(null);
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="hp-fit-feedback-submit"
+                      type="button"
+                      disabled={!experience || !outcome || feedbackSubmitting}
+                      onClick={() => void handleFeedbackSubmit()}
+                    >
+                      {feedbackSubmitting ? 'Saving…' : 'Submit feedback'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
     </div>,
@@ -897,8 +1838,8 @@ export function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const {
-    profile, sellers, sections, categoryOptions,
-    normalizedGender, activeSectionKey, loading, error,
+    profile, sellers, sections, categoryOptions, measurementProfiles,
+    activeSectionKey, loading, error,
   } = useRecommendationData(user?.uid);
 
   const [search,       setSearch]       = useState('');
@@ -924,6 +1865,48 @@ export function HomePage() {
     [choiceFilter, preferredSection, sections]
   );
 
+  const selectedMeasurementProfile = measurementProfiles.find(
+    (entry) => entry.profileKey === selectedSection?.profileKey,
+  );
+  const savedMeasurementKeys = Object.entries(selectedMeasurementProfile?.measurements ?? {})
+    .filter(([, value]) => isEnteredMeasurement(value))
+    .map(([key]) => normalizeMeasurementKeyForPrompt(key));
+  const primaryMeasurementKeys = (selectedMeasurementProfile?.primaryMeasurementKeys ?? [])
+    .map(normalizeMeasurementKeyForPrompt)
+    .filter(Boolean);
+  const hasOnlyPrimaryMeasurements =
+    savedMeasurementKeys.length > 0 &&
+    primaryMeasurementKeys.length > 0 &&
+    savedMeasurementKeys.every((key) => primaryMeasurementKeys.includes(key));
+  const selectedClothingLabel = selectedMeasurementProfile?.preferredClothingLabel ?? selectedSection?.label ?? 'this item';
+  const selectedTemplate = getClothingTemplate(
+    normalizeGender(selectedMeasurementProfile?.gender),
+    selectedMeasurementProfile?.preferredClothing,
+  );
+  const additionalMeasurementLabels = selectedTemplate?.fields
+    .filter((field) => !field.isPrimary)
+    .map((field) => field.label)
+    .slice(0, 2) ?? [];
+  const additionalMeasurementText = additionalMeasurementLabels.length
+    ? `add ${formatMeasurementKeys(additionalMeasurementLabels)} measurements`
+    : 'add more measurements';
+  const compactMeasurementText = additionalMeasurementLabels.length
+    ? formatMeasurementKeys(additionalMeasurementLabels.map(label => label.replace(/\s+length$/i, '')))
+    : 'more measurements';
+  const measurementPromptText = `Add ${compactMeasurementText.toLowerCase()} for better ${selectedClothingLabel.toLowerCase()} fits.`;
+  const measurementCtaLabel =
+    selectedClothingLabel && selectedClothingLabel !== 'this item'
+      ? `Add ${selectedClothingLabel.toLowerCase()} measurements`
+      : 'Add measurements';
+  const editMeasurementParams = new URLSearchParams();
+  if (selectedMeasurementProfile?.preferredClothing) {
+    editMeasurementParams.set('choice', selectedMeasurementProfile.preferredClothing);
+  }
+  if (selectedMeasurementProfile?.profileKey) {
+    editMeasurementParams.set('profileKey', selectedMeasurementProfile.profileKey);
+  }
+  const editMeasurementsPath = `/app/add-preference${editMeasurementParams.size ? `?${editMeasurementParams.toString()}` : ''}`;
+
   const cards = useMemo<EnrichedRecommendation[]>(() => {
     const base = (selectedSection?.recommendations ?? []).map(r => {
       const seller = r.sellerUserId ? sellers[r.sellerUserId] ?? null : null;
@@ -933,9 +1916,8 @@ export function HomePage() {
       const matchesSearch = !search.trim()
         || `${entry.brandDisplay} ${entry.title} ${entry.subCategory}`.toLowerCase().includes(search.trim().toLowerCase());
       if (!matchesSearch) return false;
-      if (matchFilter === 'perfect') return entry.matchScore >= 75;
-      if (matchFilter === 'great')   return entry.matchScore >= 60 && entry.matchScore < 75;
-      if (matchFilter === 'fair')    return entry.matchScore < 60;
+      if (matchFilter === 'perfect') return isPerfectFit(entry);
+      if (matchFilter === 'great') return isGreatFit(entry);
       return true;
     });
   }, [matchFilter, search, selectedSection, sellers]);
@@ -953,9 +1935,16 @@ export function HomePage() {
   };
 
   // Derived stats
-  const totalCards    = selectedSection?.recommendations?.length ?? 0;
-  const perfectCount  = cards.filter(c => c.matchScore >= 75).length;
-  const avgScore      = cards.length ? Math.round(cards.reduce((a, c) => a + c.matchScore, 0) / cards.length) : 0;
+  const recommendedSectionCards = (selectedSection?.recommendations ?? []).filter(isRecommendationAvailable);
+  const availableCards = cards.filter(isRecommendationAvailable);
+  const unavailableCardCount = cards.length - availableCards.length;
+  const totalCards    = recommendedSectionCards.length;
+  const hasUnfilteredRecommendations = recommendedSectionCards.length > 0;
+  const emptyState = getRecommendationEmptyState(
+    selectedSection?.status,
+    !!profile,
+    `${additionalMeasurementText} for a more reliable ${selectedClothingLabel.toLowerCase()} fit.`,
+  );
 
   return (
     <div className="hp-root">
@@ -964,133 +1953,133 @@ export function HomePage() {
         {/* Page body */}
         <div className="hp-body">
 
-          {/* Stats row */}
-          <div className="hp-stats-row">
-            <div className="hp-stat-card accent">
-              <div className="hp-stat-label">Total matches</div>
-              <div className="hp-stat-num">{totalCards}<span>+</span></div>
-              <div className="hp-stat-sub">Across all categories</div>
-            </div>
-            <div className="hp-stat-card">
-              <div className="hp-stat-label">Perfect fits</div>
-              <div className="hp-stat-num">{perfectCount}</div>
-              <div className="hp-stat-sub">Score ≥ 75%</div>
-            </div>
-            <div className="hp-stat-card">
-              <div className="hp-stat-label">Avg fit score</div>
-              <div className="hp-stat-num">{avgScore || '—'}<span>{avgScore ? '%' : ''}</span></div>
-              <div className="hp-stat-sub">Current category</div>
-            </div>
-            <div className="hp-stat-card">
-              <div className="hp-stat-label">Brands</div>
-              <div className="hp-stat-num">500<span>+</span></div>
-              <div className="hp-stat-sub">In our database</div>
-            </div>
-          </div>
-
-          {/* Category + match filter bar */}
-          <div className="hp-filter-bar">
-            <span className="hp-filter-label">Category</span>
-            <div className="hp-pill-group">
-              {categoryItems.map(item => (
-                <button
-                  key={item.value}
-                  className={`hp-pill${choiceFilter === item.value ? ' is-active' : ''}`}
-                  onClick={() => handleChoiceChange(item.value)}>
-                  {item.label}
-                  {item.badge !== undefined && (
-                    <span className="hp-pill-count">{item.badge}</span>
-                  )}
-                </button>
-              ))}
-            </div>
-
-            <div className="hp-filter-divider" />
-            <span className="hp-filter-label">Fit</span>
-            <div className="hp-pill-group">
-              {MATCH_FILTERS.map(f => {
-                const count = f.value === 'all' ? cards.length
-                  : f.value === 'perfect' ? cards.filter(c => c.matchScore >= 75).length
-                  : f.value === 'great'   ? cards.filter(c => c.matchScore >= 60 && c.matchScore < 75).length
-                  : cards.filter(c => c.matchScore < 60).length;
-                return (
-                  <button
-                    key={f.value}
-                    className={`hp-pill${matchFilter === f.value ? ' is-active' : ''}`}
-                    onClick={() => setMatchFilter(f.value)}>
-                    {f.label}
-                    <span className="hp-pill-count">{count}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Section header */}
-          <div className="hp-section-header">
-            <div className="hp-section-heading">
-              <div className="hp-section-title-row">
-                <span className="hp-section-title">{selectedSection?.label ?? 'Recommended'}</span>
-                <span className="hp-section-count">{cards.length}</span>
-              </div>
-              <div className="hp-section-sub">
-                Weighted by key measurements first, then full average fit score.
-              </div>
-            </div>
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="hp-error">
-              <Ico.Alert /> {error}
-            </div>
-          )}
-
-          {/* Grid */}
-          {loading ? (
-            <div className="hp-grid">
-              {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
-            </div>
-          ) : cards.length ? (
-            <div className="hp-grid">
-              {cards.map(card => <ProductCard key={card.id} card={card} onOpen={() => setSelectedCard(card)} />)}
-            </div>
-          ) : (
-            <div className="hp-empty">
-              <div className="hp-empty-icon">📏</div>
-              <div className="hp-empty-title">No matches yet</div>
-              <div className="hp-empty-sub">
-                {profile
-                  ? 'Add more measurements or switch to another clothing category to unlock recommendations.'
-                  : 'Complete your profile first to unlock size recommendations.'}
-              </div>
-              <button className="hp-empty-btn" onClick={() => navigate('/app/add-preference')}>
-                Add measurements
-              </button>
-            </div>
-          )}
-
-          {/* Tip banner */}
-          {normalizedGender !== 'unknown' && (
-            <div className="hp-tip">
-              <div className="hp-tip-icon"><Ico.Bulb /></div>
-              <div>
-                <div className="hp-tip-title">Explore more clothing categories</div>
-                <div className="hp-tip-sub">
-                  Add measurements for another category to unlock recommendations across all your wardrobe types.
+          <div className="hp-mobile-summary">
+            {/* Category + match filter bar */}
+            <div className="hp-filter-bar">
+              <div className="hp-filter-section">
+                <span className="hp-filter-label">Category</span>
+                <div className="hp-pill-group hp-pill-scroll">
+                  {categoryItems.map(item => (
+                    <button
+                      key={item.value}
+                      className={`hp-pill${choiceFilter === item.value ? ' is-active' : ''}`}
+                      onClick={() => handleChoiceChange(item.value)}>
+                      {item.label}
+                      {item.badge !== undefined && (
+                        <span className="hp-pill-count">{item.badge}</span>
+                      )}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <button className="hp-tip-btn" onClick={() => navigate('/app/add-preference')}>
-                Add category
-              </button>
+
+              <div className="hp-filter-divider" />
+              <div className="hp-filter-section">
+                <span className="hp-filter-label">Fit</span>
+                <div className="hp-pill-group hp-pill-scroll">
+                  {MATCH_FILTERS.map(f => {
+                    const count = f.value === 'all' ? availableCards.length
+                      : f.value === 'perfect' ? cards.filter(isPerfectFit).length
+                      : cards.filter(isGreatFit).length;
+                    return (
+                      <button
+                        key={f.value}
+                        className={`hp-pill${matchFilter === f.value ? ' is-active' : ''}`}
+                        onClick={() => setMatchFilter(f.value)}>
+                        {f.label}
+                        <span className="hp-pill-count">{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          )}
+
+            {hasOnlyPrimaryMeasurements && (
+              <div className="hp-measurement-prompt">
+                <div className="hp-measurement-prompt-icon"><Ico.Bulb /></div>
+                <div className="hp-measurement-prompt-copy">
+                  <div className="hp-measurement-prompt-title">{measurementPromptText}</div>
+                </div>
+                <button
+                  type="button"
+                  className="hp-measurement-prompt-btn"
+                  aria-label={measurementCtaLabel}
+                  onClick={() => navigate(editMeasurementsPath)}>
+                  Add
+                </button>
+              </div>
+            )}
+
+            {/* Section header */}
+            <div className="hp-section-header">
+              <div className="hp-section-heading">
+                <div className="hp-section-title-row">
+                  <span className="hp-section-title">{selectedSection?.label ?? 'Recommended'}</span>
+                  <span className="hp-section-count">{totalCards}</span>
+                </div>
+                <div className="hp-section-sub">
+                  {unavailableCardCount
+                    ? `${unavailableCardCount} brand ${unavailableCardCount === 1 ? 'does' : 'do'} not provide your primary measurement for this clothing item. Open the card for details.`
+                    : 'Reliable results need a comparable key measurement and a score of at least 60%.'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="hp-results-scroll">
+            {/* Error */}
+            {error && (
+              <div className="hp-error">
+                <Ico.Alert /> {error}
+              </div>
+            )}
+
+            {/* Grid */}
+            {loading ? (
+              <div className="hp-grid">
+                {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+              </div>
+            ) : cards.length ? (
+              <div className="hp-grid">
+                {cards.map(card => <ProductCard key={card.id} card={card} onOpen={() => setSelectedCard(card)} />)}
+              </div>
+            ) : (
+              <div className="hp-empty">
+                <div className="hp-empty-icon">📏</div>
+                <div className="hp-empty-title">{hasUnfilteredRecommendations ? 'No matching results' : emptyState.title}</div>
+                <div className="hp-empty-sub">
+                  {hasUnfilteredRecommendations
+                    ? 'Try clearing the search or choosing a different fit filter.'
+                    : emptyState.description}
+                </div>
+                <button className="hp-empty-btn" onClick={() => {
+                  if (hasUnfilteredRecommendations) {
+                    setSearch('');
+                    setMatchFilter('all');
+                    return;
+                  }
+                  navigate('/app/add-preference');
+                }}>
+                  {hasUnfilteredRecommendations ? 'Clear filters' : measurementCtaLabel || emptyState.action}
+                </button>
+              </div>
+            )}
+          </div>
 
         </div>
       </div>
 
       {selectedCard && (
-        <RecommendationDetailsModal card={selectedCard} onClose={() => setSelectedCard(null)} />
+        <RecommendationDetailsModal
+          card={selectedCard}
+          measurementProfileKey={selectedMeasurementProfile?.profileKey ?? 'default'}
+          onClose={() => setSelectedCard(null)}
+          onAddMeasurements={() => {
+            setSelectedCard(null);
+            navigate(editMeasurementsPath);
+          }}
+        />
       )}
     </div>
   );

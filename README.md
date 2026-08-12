@@ -14,7 +14,7 @@ MatchMySize is organized as a modular-monolith system with one Spring Boot backe
 
 - **Clients:** the website and mobile app communicate only with the Spring API.
 - **Authentication:** Spring performs Supabase Auth registration, login, refresh, logout, and password operations. Clients never receive Supabase project credentials.
-- **Application API:** Spring modules cover identity, OTP, profiles, measurements, family members, and catalog data.
+- **Application API:** Spring modules cover identity, OTP, customer profiles, measurements, family members, seller workspaces, and catalog data.
 - **Database:** Supabase PostgreSQL, managed by Flyway migrations and accessed only by Spring.
 - **Catalog ownership:** every product/size record has a required PostgreSQL foreign key to its seller account; deleting a seller with catalog data is restricted.
 - **Images:** Cloudinary uploads remain unchanged.
@@ -22,9 +22,29 @@ MatchMySize is organized as a modular-monolith system with one Spring Boot backe
 
 Legacy customer accounts were intentionally reset. Seller and super-admin identities and profiles were retained in Supabase, but they require a password reset before their first Supabase login because the previous password hashes are not portable. New customer accounts must be created through the OTP registration API.
 
+## Seller portal
+
+- Existing sellers sign in at `/seller/login` with their linked email or phone number.
+- New sellers register at `/seller/register`; phone OTP verification is required before Supabase Auth and the seller profile are created.
+- `/seller/dashboard` shows the authenticated seller's business profile and live catalog totals.
+- `/seller/categories` creates and edits seller-owned clothing categories and size charts. Measurements may be entered in cm or inches and are persisted in cm.
+- Product inventory management is intentionally excluded. Seller data is scoped by the authenticated seller ID and flows into the existing customer recommendation catalog.
+
 ## Local development
 
-1. Copy `backend/.env.example` to `backend/.env` and fill in the server values.
+1. Start a database for the backend.
+
+   For local Postgres:
+
+```bash
+cd backend
+docker compose up -d postgres
+```
+
+   This exposes PostgreSQL at `jdbc:postgresql://localhost:54322/postgres` with username `postgres` and password `postgres`, matching the backend defaults.
+
+   For Supabase instead, copy `backend/.env.example` to `backend/.env` and fill in the database and Supabase values.
+
 2. Copy `frontend/.env.example` to `frontend/.env` and set the backend URL and Cloudinary values.
 3. Start the backend:
 
