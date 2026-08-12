@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/context/auth-context';
 import { useProfileSubject } from '@/context/profile-subject-context';
-import { createFamilyMember } from '@/lib/family-members';
+import { createFamilyMember, deleteFamilyMember } from '@/lib/family-members';
 import { signOutUser } from '@/lib/auth-api';
+import type { CustomerGender } from '@/lib/measurement';
 import { useRecommendationData } from '@/lib/use-recommendation-data';
 
 /* ─────────────────────────────────────────────
@@ -692,6 +693,48 @@ const CSS = `
     color: var(--red);
   }
 
+  .wp-family-member-row {
+    cursor: default;
+  }
+
+  .wp-family-member-main {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+    font-family: var(--fs);
+    cursor: pointer;
+  }
+
+  .wp-family-delete-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    border: 1px solid rgba(176,64,64,0.15);
+    background: rgba(176,64,64,0.06);
+    color: var(--red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .wp-family-delete-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .wp-family-delete-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+
   .wp-simple-chevron {
     color: var(--mist);
     flex-shrink: 0;
@@ -721,7 +764,45 @@ const CSS = `
     gap: 10px;
   }
 
-  .wp-family-mini-form input {
+  .wp-family-mini-field {
+    display: grid;
+    gap: 6px;
+  }
+
+  .wp-family-mini-label {
+    color: var(--ash);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+
+  .wp-family-gender-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .wp-family-gender-btn {
+    min-height: 44px;
+    border: 1.5px solid var(--cloud);
+    border-radius: 12px;
+    background: var(--paper);
+    color: var(--ash);
+    font-family: var(--fs);
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .wp-family-gender-btn.is-active {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--white);
+  }
+
+  .wp-family-mini-form input,
+  .wp-family-mini-form select {
     width: 100%;
     min-height: 44px;
     padding: 0 12px;
@@ -734,7 +815,16 @@ const CSS = `
     outline: none;
   }
 
-  .wp-family-mini-form input:focus {
+  .wp-family-mini-form select {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ash) 50%), linear-gradient(135deg, var(--ash) 50%, transparent 50%);
+    background-position: calc(100% - 17px) 19px, calc(100% - 12px) 19px;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+  }
+
+  .wp-family-mini-form input:focus,
+  .wp-family-mini-form select:focus {
     border-color: var(--ink);
     box-shadow: 0 0 0 3px rgba(13,13,13,0.06);
   }
@@ -783,6 +873,7 @@ const CSS = `
     .wp-simple-page {
       padding: 16px 18px calc(110px + env(safe-area-inset-bottom, 0px));
       gap: 12px;
+      overflow-x: hidden;
     }
 
     .wp-simple-hero {
@@ -800,6 +891,12 @@ const CSS = `
     .wp-simple-name {
       font-size: 27px;
       white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .wp-simple-contact {
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
 
     .wp-simple-edit {
@@ -816,6 +913,78 @@ const CSS = `
     .wp-simple-row {
       min-height: 56px;
       padding: 11px 14px;
+    }
+
+    .wp-simple-row-label,
+    .wp-simple-row-sub {
+      overflow-wrap: anywhere;
+    }
+
+    .wp-family-member-row {
+      gap: 9px;
+    }
+
+    .wp-family-member-main {
+      gap: 10px;
+    }
+
+    .wp-family-delete-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+    }
+
+    .wp-simple-chevron {
+      display: none;
+    }
+
+    .wp-family-gender-row {
+      grid-template-columns: 1fr;
+    }
+
+    .wp-family-mini-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+
+    .wp-family-mini-secondary {
+      min-height: 40px;
+    }
+  }
+
+  @media (max-width: 390px) {
+    .wp-simple-page {
+      padding-inline: 14px;
+    }
+
+    .wp-simple-hero {
+      gap: 11px;
+      padding: 14px;
+    }
+
+    .wp-simple-avatar {
+      width: 50px;
+      height: 50px;
+    }
+
+    .wp-simple-name {
+      font-size: 24px;
+    }
+
+    .wp-simple-row {
+      padding: 11px 12px;
+      gap: 10px;
+    }
+
+    .wp-simple-row-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+    }
+
+    .wp-simple-badge {
+      padding: 3px 7px;
+      font-size: 10px;
     }
   }
 `;
@@ -849,6 +1018,7 @@ const Ico = {
   Star:     () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M8 2l1.5 3.5L13 6l-2.5 2.5.6 3.5L8 10.5 4.9 12l.6-3.5L3 6l3.5-.5L8 2z"/></svg>,
   Bag:      () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M4 4h8l1 9H3L4 4z"/><path d="M6 4c0-1.1.9-2 2-2s2 .9 2 2"/></svg>,
   Camera:   () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="1" y="4" width="14" height="10" rx="2"/><circle cx="8" cy="9" r="2.5"/><path d="M5 4l1-2h4l1 2"/></svg>,
+  Trash:    () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M2 4h12M6 4V2h4v2M4 4l.6 10h6.8L12 4M7 7v4M9 7v4"/></svg>,
 };
 
 /* ─────────────────────────────────────────────
@@ -868,6 +1038,38 @@ function clothingEmoji(key: string | null) {
   return '📏';
 }
 
+const OTHER_RELATIONSHIP = '__other__';
+const FAMILY_RELATIONSHIP_OPTIONS = [
+  'Partner',
+  'Spouse',
+  'Son',
+  'Daughter',
+  'Child',
+  'Father',
+  'Mother',
+  'Parent',
+  'Brother',
+  'Sister',
+  'Sibling',
+  'Grandfather',
+  'Grandmother',
+  'Grandson',
+  'Granddaughter',
+  'Uncle',
+  'Aunt',
+  'Cousin',
+  'Nephew',
+  'Niece',
+  'Friend',
+  'Other',
+];
+
+const relationshipSelectValue = (relation: string) =>
+  relation === 'Other' ? OTHER_RELATIONSHIP : relation;
+
+const familyGenderLabel = (gender: unknown) =>
+  gender === 'men' ? "Men's sizing" : gender === 'women' ? "Women's sizing" : 'Sizing not set';
+
 /* ─────────────────────────────────────────────
    Main Component
 ───────────────────────────────────────────── */
@@ -880,7 +1082,10 @@ export function ProfilePage() {
   const [showFamilyForm, setShowFamilyForm] = useState(false);
   const [familyName, setFamilyName] = useState('');
   const [familyRelation, setFamilyRelation] = useState('');
+  const [familyOtherRelation, setFamilyOtherRelation] = useState('');
+  const [familyGender, setFamilyGender] = useState<CustomerGender | null>(null);
   const [familySaving, setFamilySaving] = useState(false);
+  const [familyDeletingId, setFamilyDeletingId] = useState<string | null>(null);
   const [familyError, setFamilyError] = useState<string | null>(null);
 
   const fullName = useMemo(() =>
@@ -901,7 +1106,7 @@ export function ProfilePage() {
   };
 
   const handleSignOut = async () => {
-    try { setSigningOut(true); await signOutUser(); navigate('/auth/login', { replace: true }); }
+    try { setSigningOut(true); selectSelf(); await signOutUser(); navigate('/auth/login', { replace: true }); }
     finally { setSigningOut(false); }
   };
 
@@ -909,9 +1114,10 @@ export function ProfilePage() {
     if (!user) return;
 
     const trimmedName = familyName.trim();
-    const trimmedRelation = familyRelation.trim();
-    if (!trimmedName || !trimmedRelation) {
-      setFamilyError('Name and relation are required.');
+    const trimmedRelation =
+      familyRelation === OTHER_RELATIONSHIP ? familyOtherRelation.trim() : familyRelation.trim();
+    if (!trimmedName || !familyGender || !trimmedRelation) {
+      setFamilyError('Name, gender, and relationship are required.');
       return;
     }
 
@@ -921,17 +1127,38 @@ export function ProfilePage() {
       const memberId = await createFamilyMember({
         ownerUid: user.uid,
         firstName: trimmedName,
+        gender: familyGender,
         relation: trimmedRelation,
       });
       selectFamilyMember(memberId);
       setFamilyName('');
       setFamilyRelation('');
+      setFamilyOtherRelation('');
+      setFamilyGender(null);
       setShowFamilyForm(false);
-      navigate('/app/add-preference');
     } catch (error) {
       setFamilyError(error instanceof Error ? error.message : 'Unable to add family member.');
     } finally {
       setFamilySaving(false);
+    }
+  };
+
+  const handleDeleteFamilyMember = async (memberId: string, memberName: string) => {
+    if (!user || familyDeletingId) return;
+    const ok = window.confirm(`Delete ${memberName}'s family profile?`);
+    if (!ok) return;
+
+    try {
+      setFamilyDeletingId(memberId);
+      setFamilyError(null);
+      await deleteFamilyMember({ ownerUid: user.uid, familyMemberId: memberId });
+      if (selectedSubject?.type === 'family' && selectedSubject.id === memberId) {
+        selectSelf();
+      }
+    } catch (error) {
+      setFamilyError(error instanceof Error ? error.message : 'Unable to delete family member.');
+    } finally {
+      setFamilyDeletingId(null);
     }
   };
 
@@ -1028,21 +1255,32 @@ export function ProfilePage() {
           {familyMembers.map((member) => {
             const isSelected = selectedSubject?.type === 'family' && selectedSubject.id === member.id;
             return (
-              <button
+              <div
                 key={member.id}
-                className="wp-simple-row"
-                type="button"
-                onClick={() => openFamilyMeasurements(member.id, '/app/measurements')}>
-                <div className="wp-simple-row-icon"><Ico.User /></div>
-                <div className="wp-simple-row-copy">
-                  <div className="wp-simple-row-label">{member.firstName}</div>
-                  <div className="wp-simple-row-sub">
-                    {member.relation}{isSelected ? ' · selected' : ''}
+                className="wp-simple-row wp-family-member-row">
+                <button
+                  className="wp-family-member-main"
+                  type="button"
+                  onClick={() => openFamilyMeasurements(member.id, '/app/measurements')}>
+                  <div className="wp-simple-row-icon"><Ico.User /></div>
+                  <div className="wp-simple-row-copy">
+                    <div className="wp-simple-row-label">{member.firstName}</div>
+                    <div className="wp-simple-row-sub">
+                      {member.relation} · {familyGenderLabel(member.gender)}{isSelected ? ' · selected' : ''}
+                    </div>
                   </div>
-                </div>
+                </button>
                 {isSelected && <span className="wp-simple-badge">On</span>}
+                <button
+                  className="wp-family-delete-btn"
+                  type="button"
+                  aria-label={`Delete ${member.firstName}`}
+                  disabled={familyDeletingId === member.id}
+                  onClick={() => handleDeleteFamilyMember(member.id, member.firstName)}>
+                  <Ico.Trash />
+                </button>
                 <div className="wp-simple-chevron"><Ico.Chevron /></div>
-              </button>
+              </div>
             );
           })}
           <button
@@ -1050,7 +1288,15 @@ export function ProfilePage() {
             type="button"
             onClick={() => {
               setFamilyError(null);
-              setShowFamilyForm((open) => !open);
+              setShowFamilyForm((open) => {
+                const nextOpen = !open;
+                if (nextOpen) return true;
+                setFamilyName('');
+                setFamilyRelation('');
+                setFamilyOtherRelation('');
+                setFamilyGender(null);
+                return false;
+              });
             }}>
             <div className="wp-simple-row-icon accent"><Ico.Plus /></div>
             <div className="wp-simple-row-copy">
@@ -1058,7 +1304,7 @@ export function ProfilePage() {
               <div className="wp-simple-row-sub">
                 {familyMembers.length
                   ? `${familyMembers.length} family profile${familyMembers.length === 1 ? '' : 's'} saved`
-                  : 'Create a profile for someone else'}
+                  : 'Create a profile now, add measurements later'}
               </div>
             </div>
             <div className="wp-simple-chevron"><Ico.Chevron /></div>
@@ -1066,16 +1312,59 @@ export function ProfilePage() {
 
           {showFamilyForm && (
             <div className="wp-family-mini-form">
-              <input
-                value={familyName}
-                onChange={(event) => setFamilyName(event.target.value)}
-                placeholder="Name"
-              />
-              <input
-                value={familyRelation}
-                onChange={(event) => setFamilyRelation(event.target.value)}
-                placeholder="Relation"
-              />
+              <div className="wp-family-mini-field">
+                <label className="wp-family-mini-label">Name</label>
+                <input
+                  value={familyName}
+                  onChange={(event) => setFamilyName(event.target.value)}
+                  placeholder="First name"
+                />
+              </div>
+              <div className="wp-family-mini-field">
+                <div className="wp-family-mini-label">Gender</div>
+                <div className="wp-family-gender-row">
+                  <button
+                    className={`wp-family-gender-btn${familyGender === 'men' ? ' is-active' : ''}`}
+                    type="button"
+                    onClick={() => setFamilyGender('men')}>
+                    Men's sizing
+                  </button>
+                  <button
+                    className={`wp-family-gender-btn${familyGender === 'women' ? ' is-active' : ''}`}
+                    type="button"
+                    onClick={() => setFamilyGender('women')}>
+                    Women's sizing
+                  </button>
+                </div>
+              </div>
+              <div className="wp-family-mini-field">
+                <label className="wp-family-mini-label">Relationship</label>
+                <select
+                  value={relationshipSelectValue(familyRelation)}
+                  onChange={(event) => {
+                    setFamilyRelation(event.target.value);
+                    if (event.target.value !== OTHER_RELATIONSHIP) setFamilyOtherRelation('');
+                  }}>
+                  <option value="">Choose relationship</option>
+                  {FAMILY_RELATIONSHIP_OPTIONS.map((relation) => (
+                    <option
+                      key={relation}
+                      value={relation === 'Other' ? OTHER_RELATIONSHIP : relation}>
+                      {relation}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {familyRelation === OTHER_RELATIONSHIP && (
+                <div className="wp-family-mini-field">
+                  <label className="wp-family-mini-label">Custom relationship</label>
+                  <input
+                    value={familyOtherRelation}
+                    onChange={(event) => setFamilyOtherRelation(event.target.value)}
+                    placeholder="Type relationship"
+                  />
+                </div>
+              )}
               {familyError && <div className="wp-family-mini-error">{familyError}</div>}
               <div className="wp-family-mini-actions">
                 <button
@@ -1093,6 +1382,8 @@ export function ProfilePage() {
                     setFamilyError(null);
                     setFamilyName('');
                     setFamilyRelation('');
+                    setFamilyOtherRelation('');
+                    setFamilyGender(null);
                   }}>
                   Cancel
                 </button>

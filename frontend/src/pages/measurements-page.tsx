@@ -1128,6 +1128,7 @@ const CSS = `
     .mw-page {
       padding: 12px 18px calc(108px + env(safe-area-inset-bottom, 0px));
       gap: 12px;
+      overflow-x: hidden;
     }
 
     .mw-category-grid {
@@ -1141,6 +1142,7 @@ const CSS = `
       min-height: 142px;
       padding: 14px;
       border-radius: 15px;
+      width: 100%;
     }
 
     .mw-category-name {
@@ -1166,12 +1168,46 @@ const CSS = `
       justify-content: center;
     }
 
+    .mw-body-part-grid {
+      gap: 5px;
+    }
+
+    .mw-body-part {
+      max-width: 100%;
+      min-height: 23px;
+      padding: 4px 7px;
+      font-size: 10.5px;
+    }
+
     .mw-simple-row {
       min-height: 52px;
+      gap: 10px;
     }
 
     .mw-simple-value {
-      font-size: 29px;
+      font-size: 28px;
+    }
+  }
+
+  @media (max-width: 390px) {
+    .mw-topbar {
+      padding-inline: 14px;
+    }
+
+    .mw-page {
+      padding-inline: 14px;
+    }
+
+    .mw-category-card {
+      min-height: 132px;
+    }
+
+    .mw-category-name {
+      font-size: 17px;
+    }
+
+    .mw-body-part {
+      font-size: 10px;
     }
   }
 `;

@@ -516,20 +516,35 @@ const CSS = `
     background: var(--ink); color: var(--white);
   }
 
-  /* Summary card */
+  /* Final account summary */
   .rp-summary-card {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
     background: var(--white); border: 1px solid var(--cloud);
-    border-radius: 14px; padding: 16px 20px;
-    margin-bottom: 28px;
+    border-radius: 14px; padding: 14px 16px;
+    margin-bottom: 22px;
   }
-  .rp-summary-label { font-size: 11px; font-weight: 600; color: var(--ash); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-  .rp-summary-value { font-size: 15px; font-weight: 700; color: var(--ink); }
-  .rp-summary-actions { display: flex; gap: 16px; }
+  .rp-summary-main {
+    display: flex; align-items: center; gap: 12px;
+    min-width: 0; flex: 1;
+  }
+  .rp-summary-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: var(--sage-light); border: 1px solid var(--sage-dark);
+    color: var(--sage-deep);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .rp-summary-icon svg { width: 22px; height: 22px; }
+  .rp-summary-copy { min-width: 0; }
+  .rp-summary-label { font-size: 11px; font-weight: 700; color: var(--sage-deep); text-transform: uppercase; letter-spacing: 0.55px; margin-bottom: 3px; }
+  .rp-summary-value { font-size: 15px; font-weight: 800; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rp-summary-meta { font-size: 12px; color: var(--ash); margin-top: 2px; }
+  .rp-summary-actions { display: flex; gap: 10px; flex-shrink: 0; }
   .rp-link-btn {
     font-family: var(--fs); font-size: 12px; font-weight: 600;
-    color: var(--sage-deep); background: none; border: none;
-    cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+    color: var(--sage-deep); background: rgba(122,158,120,0.12);
+    border: 1px solid rgba(122,158,120,0.18); border-radius: 999px;
+    cursor: pointer; padding: 8px 12px;
     transition: color 0.2s;
   }
   .rp-link-btn:hover { color: var(--ink); }
@@ -663,14 +678,11 @@ const CSS = `
     }
 
     .rp-summary-card {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 14px;
+      align-items: center;
     }
 
     .rp-summary-actions {
-      flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
     }
 
     .rp-unit-toggle {
@@ -804,15 +816,14 @@ const CSS = `
     }
 
     .rp-summary-card {
-      padding: 16px;
+      padding: 12px;
+      margin-bottom: 18px;
     }
 
-    .rp-summary-actions {
-      width: 100%;
-    }
-
-    .rp-summary-actions > * {
-      flex: 1 1 140px;
+    .rp-summary-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
     }
 
     .rp-unit-toggle {
@@ -825,7 +836,22 @@ const CSS = `
     }
 
     .rp-fields {
-      gap: 16px;
+      gap: 14px;
+    }
+
+    .rp-account-form {
+      padding-bottom: 92px;
+    }
+
+    .rp-account-actions {
+      position: sticky;
+      bottom: 0;
+      z-index: 12;
+      margin: 4px -16px -40px;
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      background: rgba(250,250,248,0.94);
+      backdrop-filter: blur(14px);
+      border-top: 1px solid var(--cloud);
     }
 
     .rp-actions {
@@ -849,6 +875,41 @@ const CSS = `
     .rp-btn-back svg {
       width: 12px;
       height: 12px;
+    }
+  }
+
+  @media (max-width: 390px) {
+    .rp-sidebar {
+      padding-inline: 12px;
+    }
+
+    .rp-main {
+      padding: 16px 14px 38px;
+      overflow-x: hidden;
+    }
+
+    .rp-phase-title {
+      font-size: 30px;
+    }
+
+    .rp-phase-sub {
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .rp-gender-visual {
+      width: 94px;
+      height: 116px;
+    }
+
+    .rp-choice-card,
+    .rp-summary-card {
+      border-radius: 14px;
+    }
+
+    .rp-account-actions {
+      margin-inline: -14px;
+      padding-inline: 14px;
     }
   }
 `;
@@ -1036,7 +1097,7 @@ export function RegisterPage() {
   const [stepIndex,   setStepIndex]   = useState(0);
   const [gender,      setGender]      = useState<CustomerGender | null>(null);
   const [clothing,    setClothing]    = useState<ClothingChoice | null>(null);
-  const [unit,        setUnit]        = useState<'cm' | 'in'>('cm');
+  const [unit]                         = useState<'cm' | 'in'>('cm');
   const [measurements, setMeasurements] = useState<Partial<Record<MeasurementFieldKey, string>>>({});
   const [firstName,   setFirstName]   = useState('');
   const [lastName,    setLastName]    = useState('');
@@ -1055,6 +1116,8 @@ export function RegisterPage() {
   const steps = template?.fields ?? [];
   const currentStep = steps[stepIndex] ?? null;
   const selectedOption = clothingOptions.find(o => o.key === clothing) ?? null;
+  const completedMeasurementCount = Object.values(measurements).filter(value => parsePositiveNumber(value) !== null).length;
+  const completedMeasurementLabel = `${completedMeasurementCount} measurement${completedMeasurementCount === 1 ? '' : 's'} saved`;
 
   const go = (next: Phase, direction: 'fwd' | 'back' = 'fwd') => {
     setError(null);
@@ -1093,7 +1156,12 @@ export function RegisterPage() {
       setOtpSession(session);
       navigate('/auth/otp');
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Unable to send verification code.');
+      const message = err instanceof Error ? err.message : '';
+      showError(
+        message.toLowerCase().includes('already registered') || message.toLowerCase().includes('already exists')
+          ? 'This phone number is already registered. Log in or use a different number.'
+          : message || 'Unable to send verification code.'
+      );
     } finally {
       setLoading(false);
     }
@@ -1345,22 +1413,27 @@ export function RegisterPage() {
               <PhaseHeader
                 phase="form"
                 title="Create your account"
-                sub="Almost done — just fill in your details to finish setting up."
+                sub={`Save your ${selectedOption?.label ?? 'fit'} profile.`}
               />
 
               {/* Summary card */}
               <div className="rp-summary-card">
-                <div>
-                  <div className="rp-summary-label">Your profile</div>
-                  <div className="rp-summary-value">{selectedOption?.label ?? 'Selected'}</div>
+                <div className="rp-summary-main">
+                  <div className="rp-summary-icon">
+                    <ClothingCategoryIcon categoryKey={clothing} />
+                  </div>
+                  <div className="rp-summary-copy">
+                    <div className="rp-summary-label">Profile ready</div>
+                    <div className="rp-summary-value">{selectedOption?.label ?? 'Selected'} fit profile</div>
+                    <div className="rp-summary-meta">{completedMeasurementLabel}</div>
+                  </div>
                 </div>
                 <div className="rp-summary-actions">
-                  <button className="rp-link-btn" onClick={() => go('guide', 'back')}>Edit measurements</button>
-                  <button className="rp-link-btn" onClick={() => go('preference', 'back')}>Change clothing</button>
+                  <button type="button" className="rp-link-btn" onClick={() => go('guide', 'back')}>Edit</button>
                 </div>
               </div>
 
-              <form onSubmit={handleSubmit}>
+              <form className="rp-account-form" onSubmit={handleSubmit}>
                 <div className="rp-fields">
 
                   {/* Name row */}
@@ -1377,14 +1450,6 @@ export function RegisterPage() {
                         <input className="rp-text-input" placeholder="Last name" value={lastName} onChange={e => setLastName(e.target.value)} />
                       </InputWrap>
                     </div>
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label className="rp-label">Email <span style={{color:'var(--ash)',fontWeight:400}}>(optional)</span></label>
-                    <InputWrap icon={<Ico.Mail />}>
-                      <input className="rp-text-input" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} />
-                    </InputWrap>
                   </div>
 
                   {/* Phone */}
@@ -1405,15 +1470,6 @@ export function RegisterPage() {
                     </InputWrap>
                   </div>
 
-                  {/* Unit toggle */}
-                  <div>
-                    <label className="rp-label">Measurement unit</label>
-                    <div className="rp-unit-toggle">
-                      <button type="button" className={`rp-unit-btn${unit === 'cm' ? ' is-active' : ''}`} onClick={() => setUnit('cm')}>Centimetres</button>
-                      <button type="button" className={`rp-unit-btn${unit === 'in' ? ' is-active' : ''}`} onClick={() => setUnit('in')}>Inches</button>
-                    </div>
-                  </div>
-
                   {/* Password */}
                   <div>
                     <label className="rp-label">Password</label>
@@ -1430,20 +1486,25 @@ export function RegisterPage() {
                     </InputWrap>
                   </div>
 
+                  {/* Email */}
+                  <div>
+                    <label className="rp-label">Email address <span style={{color:'var(--ash)',fontWeight:400}}>(optional)</span></label>
+                    <InputWrap icon={<Ico.Mail />}>
+                      <input className="rp-text-input" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} />
+                    </InputWrap>
+                  </div>
+
                   {error && (
                     <div className="rp-error-banner" key={errorKey}>
                       <Ico.Alert /> {error}
                     </div>
                   )}
 
-                  <div className="rp-actions" style={{ marginTop: 8 }}>
-                    <button type="button" className="rp-btn-back" onClick={() => go('guide', 'back')}>
-                      Back
-                    </button>
+                  <div className="rp-actions rp-account-actions" style={{ marginTop: 8 }}>
                     <button type="submit" className="rp-btn-next" disabled={loading}>
                       {loading
                         ? <><div className="rp-spinner" /> Sending code…</>
-                        : <>Send verification code <Ico.Arrow /></>
+                        : <>Create account <Ico.Arrow /></>
                       }
                     </button>
                   </div>

@@ -256,6 +256,109 @@ const CSS = `
     50%  { opacity: 1; }
     100% { opacity: 0; transform: scale(1.2); }
   }
+
+  @media (max-width: 640px) {
+    .pd-root {
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    .pd-topbar {
+      height: auto;
+      min-height: 58px;
+      padding: 10px 14px;
+      gap: 8px;
+    }
+
+    .pd-back-btn {
+      padding: 8px 0;
+      font-size: 12px;
+    }
+
+    .pd-topbar-divider {
+      display: none;
+    }
+
+    .pd-topbar-title {
+      font-size: 18px;
+    }
+
+    .pd-edit-btn {
+      height: 36px;
+      padding: 0 11px;
+      font-size: 12px;
+      margin-left: auto;
+    }
+
+    .pd-body {
+      width: 100%;
+      padding: 16px 14px calc(112px + env(safe-area-inset-bottom, 0px));
+      gap: 16px;
+    }
+
+    .pd-hero {
+      align-items: flex-start;
+      gap: 14px;
+      padding: 20px 16px;
+      border-radius: 16px;
+      flex-wrap: wrap;
+    }
+
+    .pd-avatar {
+      width: 64px;
+      height: 64px;
+    }
+
+    .pd-avatar-initials {
+      font-size: 24px;
+    }
+
+    .pd-hero-body {
+      min-width: 0;
+      flex: 1 1 calc(100% - 82px);
+    }
+
+    .pd-hero-name {
+      font-size: 25px;
+      overflow-wrap: anywhere;
+    }
+
+    .pd-hero-sub {
+      overflow-wrap: anywhere;
+    }
+
+    .pd-hero-edit-btn {
+      width: 100%;
+      justify-content: center;
+      min-height: 40px;
+    }
+
+    .pd-section-card {
+      border-radius: 15px;
+    }
+
+    .pd-section-header {
+      padding: 14px 16px 11px;
+    }
+
+    .pd-detail-row {
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 16px;
+    }
+
+    .pd-detail-value,
+    .pd-pref-badge,
+    .pd-gender-badge {
+      overflow-wrap: anywhere;
+    }
+
+    .pd-readonly-notice {
+      align-items: flex-start;
+      padding: 13px 14px;
+      border-radius: 12px;
+    }
+  }
 `;
 
 if (!document.getElementById('pd-styles')) {

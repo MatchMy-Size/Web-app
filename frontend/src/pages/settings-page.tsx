@@ -213,6 +213,101 @@ const CSS = `
     from { opacity: 0; transform: translateY(18px); }
     to   { opacity: 1; transform: none; }
   }
+
+  @media (max-width: 640px) {
+    .sp-root {
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    .sp-topbar {
+      height: auto;
+      min-height: 58px;
+      padding: 10px 14px;
+      gap: 8px;
+    }
+
+    .sp-back-btn {
+      padding: 8px 0;
+      font-size: 12px;
+    }
+
+    .sp-topbar-divider {
+      display: none;
+    }
+
+    .sp-topbar-title {
+      font-size: 18px;
+      margin-left: auto;
+    }
+
+    .sp-body {
+      width: 100%;
+      padding: 16px 14px calc(112px + env(safe-area-inset-bottom, 0px));
+      gap: 16px;
+    }
+
+    .sp-page-title {
+      font-size: 32px;
+      letter-spacing: 0;
+    }
+
+    .sp-page-sub {
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .sp-hero {
+      align-items: flex-start;
+      gap: 14px;
+      padding: 18px 16px;
+      border-radius: 16px;
+    }
+
+    .sp-hero-icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+    }
+
+    .sp-hero-title {
+      font-size: 20px;
+      line-height: 1.15;
+    }
+
+    .sp-section-card {
+      border-radius: 15px;
+    }
+
+    .sp-section-header {
+      padding: 13px 16px 10px;
+    }
+
+    .sp-action-row {
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 16px;
+    }
+
+    .sp-action-text {
+      min-width: 0;
+    }
+
+    .sp-action-label,
+    .sp-action-sub {
+      overflow-wrap: anywhere;
+    }
+
+    .sp-action-tag {
+      align-self: flex-start;
+    }
+
+    .sp-tip {
+      gap: 12px;
+      padding: 14px;
+      border-radius: 13px;
+    }
+  }
 `;
 
 if (!document.getElementById('sp-styles')) {

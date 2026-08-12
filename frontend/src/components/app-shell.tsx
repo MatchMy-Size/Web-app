@@ -25,6 +25,9 @@ const CSS = `
   /* ── Base reset for the shell ── */
   .as-root {
     min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    overflow-x: hidden;
     background: var(--paper);
     display: flex;
     flex-direction: column;
@@ -33,6 +36,9 @@ const CSS = `
   /* ── Page offset (below fixed TopNav) ── */
   .as-offset {
     flex: 1;
+    min-height: calc(100dvh - var(--nav-h));
+    width: 100%;
+    overflow-x: hidden;
     padding-top: var(--nav-h);
     padding-bottom: calc(var(--mobile-tab-h) + env(safe-area-inset-bottom, 0px));
     display: flex;
@@ -42,11 +48,15 @@ const CSS = `
   /* ── Route content area ── */
   .as-content {
     flex: 1;
+    width: 100%;
+    min-width: 0;
     /* Page transitions are driven by .as-page-enter on the inner wrapper */
   }
 
   /* ── Page transition wrapper ── */
   .as-page {
+    width: 100%;
+    min-width: 0;
     animation: as-pageIn 0.32s var(--ease) both;
   }
 
@@ -105,6 +115,8 @@ const CSS = `
      Pages using the shared narrow layout get this cap. ── */
   .as-inner {
     width: 100%;
+    min-width: 0;
+    overflow-x: clip;
   }
 
   @media (max-width: 960px) {
@@ -117,6 +129,14 @@ const CSS = `
   @media (max-width: 640px) {
     :root {
       --nav-h: 72px;
+    }
+
+    .as-offset {
+      padding-bottom: calc(var(--mobile-tab-h) + 12px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .as-scroll-top {
+      display: none;
     }
   }
 `;
