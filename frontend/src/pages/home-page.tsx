@@ -1954,20 +1954,6 @@ export function HomePage() {
         <div className="hp-body">
 
           <div className="hp-mobile-summary">
-            {/* Stats row */}
-            <div className="hp-stats-row">
-              <div className="hp-stat-card hp-stat-card-total accent">
-                <div className="hp-stat-label">Total matches</div>
-                <div className="hp-stat-num">{totalCards}{totalCards > 0 && <span>+</span>}</div>
-                <div className="hp-stat-sub">Across all categories</div>
-              </div>
-              <div className="hp-stat-card hp-stat-card-brands">
-                <div className="hp-stat-label">Brands</div>
-                <div className="hp-stat-num">500<span>+</span></div>
-                <div className="hp-stat-sub">In our database</div>
-              </div>
-            </div>
-
             {/* Category + match filter bar */}
             <div className="hp-filter-bar">
               <div className="hp-filter-section">
