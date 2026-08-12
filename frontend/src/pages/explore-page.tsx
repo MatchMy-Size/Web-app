@@ -591,7 +591,7 @@ export function ExplorePage() {
       {/* ── Topbar ── */}
       <div className="ep-topbar">
         <button className="ep-topbar-back" onClick={() => navigate('/app/home')}>
-          <Ico.Back /> Home
+          Home
         </button>
         <div className="ep-topbar-divider" />
         <span className="ep-topbar-title">Explore</span>

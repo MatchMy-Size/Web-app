@@ -243,6 +243,31 @@ const CSS = `
   }
   .hp-stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
   .hp-stat-card.accent { background: var(--ink); border-color: var(--ink); }
+  .hp-stat-card-perfect {
+    position: relative;
+    border-color: rgba(122,158,120,0.46);
+    box-shadow:
+      0 0 0 1px rgba(122,158,120,0.18),
+      0 0 26px rgba(122,158,120,0.24),
+      0 14px 34px rgba(122,158,120,0.12);
+  }
+  .hp-stat-card-perfect::before {
+    content: '';
+    position: absolute;
+    inset: -10px;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 18% 28%, rgba(195,216,193,0.52), transparent 38%),
+      radial-gradient(circle at 86% 18%, rgba(122,158,120,0.24), transparent 42%),
+      radial-gradient(circle at 72% 92%, rgba(195,216,193,0.38), transparent 44%);
+    filter: blur(12px);
+    opacity: 0.72;
+  }
+  .hp-stat-card-perfect > * {
+    position: relative;
+    z-index: 1;
+  }
   .hp-stat-label { font-size: 11px; font-weight: 600; color: var(--ash); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
   .hp-stat-card.accent .hp-stat-label { color: rgba(255,255,255,0.45); }
   .hp-stat-num { font-family: var(--fd); font-size: 32px; font-weight: 700; color: var(--ink); letter-spacing: -0.8px; line-height: 1; }
@@ -386,6 +411,19 @@ const CSS = `
   .hp-product-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 16px 48px rgba(0,0,0,0.09);
+  }
+  .hp-product-card.perfect {
+    border-color: rgba(122,158,120,0.5);
+    box-shadow:
+      0 0 0 1px rgba(122,158,120,0.16),
+      0 0 24px rgba(122,158,120,0.22),
+      0 12px 30px rgba(122,158,120,0.12);
+  }
+  .hp-product-card.perfect:hover {
+    box-shadow:
+      0 0 0 1px rgba(122,158,120,0.22),
+      0 0 30px rgba(122,158,120,0.26),
+      0 16px 42px rgba(122,158,120,0.16);
   }
   .hp-product-card:focus-visible {
     outline: 3px solid rgba(122,158,120,0.34);
@@ -787,6 +825,14 @@ const CSS = `
       box-shadow: 0 6px 16px rgba(13,13,13,0.04);
     }
 
+    .hp-stat-card-perfect,
+    .hp-stat-card-perfect:hover {
+      box-shadow:
+        0 0 0 1px rgba(122,158,120,0.18),
+        0 0 20px rgba(122,158,120,0.24),
+        0 8px 20px rgba(122,158,120,0.12);
+    }
+
     .hp-stat-label {
       margin-bottom: 5px;
       font-size: 9px;
@@ -941,6 +987,14 @@ const CSS = `
     .hp-product-card:hover {
       transform: none;
       box-shadow: none;
+    }
+
+    .hp-product-card.perfect,
+    .hp-product-card.perfect:hover {
+      box-shadow:
+        0 0 0 1px rgba(122,158,120,0.16),
+        0 0 18px rgba(122,158,120,0.2),
+        0 8px 22px rgba(122,158,120,0.1);
     }
 
     .hp-card-image {
@@ -1227,7 +1281,7 @@ function ProductCard({ card, onOpen }: { card: EnrichedRecommendation; onOpen: (
   return (
     <button
       type="button"
-      className="hp-product-card"
+      className={`hp-product-card ${cls}`}
       aria-label={measurementUnavailable
         ? `View ${primaryLabel} measurement availability details`
         : `View ${primaryLabel} recommendation details`}

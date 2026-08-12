@@ -647,7 +647,7 @@ export function OtpPage() {
           <button
             className="otp-back-link"
             onClick={() => navigate('/auth/register')}>
-            <Ico.Back /> Back to registration
+            Back to registration
           </button>
 
         </div>
