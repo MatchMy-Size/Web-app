@@ -2838,3 +2838,52 @@ body .ap-progress-bar {
     flex: 1 1 100%;
   }
 }
+/* Shared active-measurement figure guide */
+.measurement-figure-guide {
+  position: relative;
+  height: 300px;
+  overflow: hidden;
+  background: #101512;
+  border-bottom: 1px solid #efefef;
+}
+
+.measurement-guide-stage {
+  position: absolute;
+  inset: 0;
+  transform: scale(var(--measurement-scale, 1.8));
+  transform-origin: var(--measurement-origin, 50% 35%);
+  transition: transform 340ms cubic-bezier(.22,1,.36,1), transform-origin 340ms cubic-bezier(.22,1,.36,1);
+}
+
+.measurement-guide-stage img,
+.measurement-guide-stage svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.measurement-guide-stage svg {
+  z-index: 1;
+  pointer-events: none;
+}
+
+.measurement-guide-label {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  z-index: 2;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(250,250,248,.94);
+  color: #496657;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+@media (max-width: 760px) {
+  .measurement-figure-guide { height: 220px; }
+}
