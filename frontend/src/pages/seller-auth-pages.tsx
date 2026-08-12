@@ -1,8 +1,9 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
-import { FiArrowRight, FiCheck, FiEye, FiEyeOff, FiImage, FiLock, FiMail, FiPhone, FiShield } from 'react-icons/fi';
+import { FiArrowRight, FiEye, FiEyeOff, FiImage, FiLock, FiMail, FiPhone, FiShield } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { AppLogo } from '@/components/app-logo';
+import sellerAuthImage from '@/assets/images/sellerloginand regis.png';
 import { registerSeller, signInSeller } from '@/lib/auth-api';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { requestOtpViaTextLk, verifyOtpSession } from '@/lib/otp-client';
@@ -10,20 +11,13 @@ import { isValidE164Phone, normalizePhoneForAuth } from '@/lib/phone-auth';
 import type { OtpSession } from '@/lib/auth-flow';
 import '@/seller-portal.css';
 
-function SellerAuthFrame({ children, mode }: { children: ReactNode; mode: 'login' | 'register' }) {
+function SellerAuthFrame({ children }: { children: ReactNode; mode: 'login' | 'register' }) {
   return (
     <main className="seller-auth">
       <section className="seller-auth-story">
         <Link to="/" className="seller-auth-brand"><span><AppLogo size={42} decorative /></span><div><strong>MatchMySize</strong><small>Seller Studio</small></div></Link>
-        <div className="seller-auth-story-copy">
-          <p className="seller-kicker">Built for better-fitting brands</p>
-          <h1>{mode === 'login' ? <>Your size data,<br/><em>working smarter.</em></> : <>Bring your brand<br/><em>into the perfect fit.</em></>}</h1>
-          <p>Manage accurate size charts in one focused workspace. Your measurements connect directly to customer recommendations.</p>
-          <div className="seller-auth-points">
-            <span><FiCheck /> One account for your brand</span>
-            <span><FiCheck /> Measurements stored consistently in centimetres</span>
-            <span><FiCheck /> Existing seller data stays connected</span>
-          </div>
+        <div className="seller-auth-visual" aria-hidden="true">
+          <img src={sellerAuthImage} alt="" />
         </div>
         <div className="seller-auth-foot">MatchMySize · Seller portal</div>
       </section>

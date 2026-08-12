@@ -1256,6 +1256,7 @@ import clothesIcon from '@/assets/images/clothes.png';
 import fashionFigure from '@/assets/images/figure.png';
 import lockIcon from '@/assets/images/lock.png';
 import playStoreIcon from '@/assets/images/playstore.png';
+import partnerImage from '@/assets/images/partner.png';
 import qrCodeIcon from '@/assets/images/qr-code.png';
 import rulerIcon from '@/assets/images/ruler.png';
 import scaleIcon from '@/assets/images/scale.png';
@@ -1390,7 +1391,7 @@ const CSS = `
 
   /* Stats */
   .lp-stats { background: var(--ink); padding: 32px 56px; }
-  .lp-stats-inner { max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+  .lp-stats-inner { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: repeat(2, 1fr); }
   .lp-stat { text-align: center; padding: 16px; border-right: 1px solid rgba(255,255,255,0.08); }
   .lp-stat:last-child { border-right: none; }
   .lp-stat-num { font-family: var(--fd); font-size: 44px; font-weight: 700; color: var(--white); letter-spacing: -1px; line-height: 1; margin-bottom: 6px; }
@@ -1728,6 +1729,19 @@ const CSS = `
   .lp-brand-pill { background: var(--paper); border: 1px solid var(--cloud); border-radius: 12px; padding: 14px 10px; text-align: center; font-size: 13px; font-weight: 600; color: var(--ash); transition: all 0.2s; cursor: default; }
   .lp-brand-pill:hover { background: var(--white); border-color: var(--ink); color: var(--ink); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.07); }
 
+  /* Seller partnership */
+  .lp-partner { padding: 100px 56px; background: var(--paper); }
+  .lp-partner-inner { max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr); align-items: stretch; border: 1px solid var(--cloud); background: var(--white); overflow: hidden; }
+  .lp-partner-media { min-height: 480px; background: var(--cloud); }
+  .lp-partner-media img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; }
+  .lp-partner-copy { display: flex; flex-direction: column; justify-content: center; padding: 64px; }
+  .lp-partner-title { margin: 0 0 18px; font-family: var(--fd); font-size: clamp(40px, 4vw, 58px); font-weight: 700; line-height: 1.06; letter-spacing: 0; color: var(--ink); }
+  .lp-partner-lead { margin: 0 0 14px; font-size: 18px; font-weight: 600; line-height: 1.55; color: var(--ink); }
+  .lp-partner-description { margin: 0 0 34px; max-width: 480px; font-size: 15px; line-height: 1.75; color: var(--ash); }
+  .lp-partner-button { align-self: flex-start; min-height: 48px; padding: 0 24px; border: 0; border-radius: 8px; background: var(--ink); color: var(--white); font: 600 14px var(--fs); cursor: pointer; transition: transform 0.15s, opacity 0.2s; }
+  .lp-partner-button:hover { opacity: 0.86; transform: translateY(-2px); }
+  .lp-partner-button:active { transform: scale(0.98); }
+
   /* Customer stories */
   .lp-testimonials { background: var(--paper); }
   .lp-testimonials-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 50px; }
@@ -1878,6 +1892,8 @@ const CSS = `
 
   @media (max-width: 1100px) {
     .lp-testimonials-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .lp-partner-inner { grid-template-columns: 1fr 1fr; }
+    .lp-partner-copy { padding: 44px; }
     body .lp-how-grid {
       grid-template-columns: 1fr;
       gap: 40px;
@@ -1904,6 +1920,13 @@ const CSS = `
     .fb-track, .fb-group { gap: 16px; }
     .fb-logo { width: 190px; height: 124px; }
     .lp-testimonials-grid { grid-template-columns: 1fr; }
+    .lp-partner { padding: 56px 20px; }
+    .lp-partner-inner { grid-template-columns: 1fr; }
+    .lp-partner-media { min-height: 0; aspect-ratio: 4 / 3; }
+    .lp-partner-copy { padding: 32px 24px; }
+    .lp-partner-title { font-size: 38px; }
+    .lp-partner-lead { font-size: 16px; }
+    .lp-partner-button { width: 100%; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -2224,8 +2247,6 @@ const getFeatures = (brandCount: number) => [
 const getStats = (brandCount: number) => [
   {num:String(brandCount),suffix:'',label:'Active brands'},
   {num:'98',suffix:'%',label:'Size accuracy'},
-  {num:'2',suffix:'M+',label:'Sizes matched'},
-  {num:'0',suffix:'',label:'Returns from bad fit'},
 ];
 const APP_BULLETS=[
   {icon:<img src={cameraIcon} alt="" aria-hidden="true"/>,text:'Scan QR codes in-store for instant size recommendations'},
@@ -2434,6 +2455,21 @@ export function LandingPage() {
           <p className="lp-section-sub lp-reveal lp-d2">From fast fashion to luxury — if they make clothes, we have their sizing.</p>
           <div className="lp-brands-grid">{brands.map((brand,i)=><div key={brand} className={`lp-brand-pill lp-reveal lp-d${i%6}`}>{brand}</div>)}</div>
           <p className="lp-reveal" style={{marginTop:32,fontSize:13,color:'var(--ash)',textAlign:'center'}}>{brandCount} active brands with live sizing data.</p>
+        </div>
+      </section>
+
+      <section className="lp-partner" id="partners">
+        <div className="lp-partner-inner lp-reveal">
+          <div className="lp-partner-media">
+            <img src={partnerImage} alt="MatchMySize seller partnership" />
+          </div>
+          <div className="lp-partner-copy">
+            <div className="lp-eyebrow"><div className="lp-eyebrow-line"/><span>For sellers</span></div>
+            <h2 className="lp-partner-title">Partner with MatchMySize</h2>
+            <p className="lp-partner-lead">Help shoppers find the right size with confidence.</p>
+            <p className="lp-partner-description">Add your brand’s size information, showcase your products, and connect with customers looking for a better fit.</p>
+            <button className="lp-partner-button" onClick={()=>window.location.href='/seller/register'}>Become a Partner →</button>
+          </div>
         </div>
       </section>
 
