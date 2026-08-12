@@ -8,7 +8,7 @@ import { StartupSplash } from '@/components/startup-splash';
 import { AddPreferencePage } from '@/pages/add-preference-page';
 import { ChangePasswordPage, ForgotPasswordPage } from '@/pages/change-password-page';
 import { ExplorePage } from '@/pages/explore-page';
-import { HomePage } from '@/pages/home-page';
+import { EmptyHomePage } from '@/pages/empty-home-page';
 import { LoginPage } from '@/pages/login-page';
 import { MeasurementsPage } from '@/pages/measurements-page';
 import { OtpPage } from '@/pages/otp-page';
@@ -54,7 +54,7 @@ export default function App() {
         <Route element={<CustomerRoute />}>
           <Route path="/app" element={<AppShell />}>
             <Route index element={<Navigate to="home" replace />} />
-            <Route path="home" element={<HomePage />} />
+            <Route path="home" element={<EmptyHomePage />} />
             <Route path="explore" element={<ExplorePage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="profile/details" element={<ProfileDetailsPage />} />
