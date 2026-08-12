@@ -98,12 +98,11 @@ const CSS = `
 
   /* ── Nav links ── */
   .tn-links {
-    position: fixed !important;
-    top: auto !important;
+    position: fixed;
+    top: auto;
     left: 50%;
     right: auto;
-    bottom: 10px !important;
-    bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 4px;

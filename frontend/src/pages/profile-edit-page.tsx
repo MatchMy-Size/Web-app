@@ -40,8 +40,10 @@ const CSS = `
   }
 
   /* ── Topbar ── */
-  .pe-topbar {
-    position: sticky; top: 0; z-index: 50;
+  .pe-root .pe-topbar {
+    position: relative;
+    top: 0;
+    z-index: 1;
     height: 48px;
     min-height: 48px;
     background: rgba(250,250,248,0.92);
@@ -82,7 +84,7 @@ const CSS = `
   /* ── Body ── */
   .pe-body {
     max-width: 1240px; margin: 0 auto;
-    padding: 24px 32px 80px;
+    padding: 30px 32px 96px;
     display: flex; flex-direction: column; gap: 16px;
   }
 
@@ -272,6 +274,11 @@ const CSS = `
   /* ── Save CTA ── */
   .pe-cta-row {
     display: flex; align-items: center; gap: 12px;
+    position: sticky;
+    bottom: calc(var(--mobile-tab-h, 80px) + 16px + env(safe-area-inset-bottom, 0px));
+    z-index: 20;
+    padding: 12px 0;
+    background: linear-gradient(90deg, var(--paper) 0%, rgba(250,250,248,0.96) 82%, var(--paper) 100%);
     animation: pe-fadeUp 0.5s 0.22s var(--ease) both;
   }
   .pe-cancel-btn {
