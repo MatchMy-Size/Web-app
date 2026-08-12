@@ -1451,44 +1451,6 @@ function isEnteredMeasurement(value: unknown) {
   return Number.isFinite(numeric) && numeric > 0;
 }
 
-function prefersReducedMotion() {
-  return (
-    typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  );
-}
-
-function useAnimatedNumber(target: number, durationMs: number) {
-  const safeTarget = Number.isFinite(target) ? Math.max(0, target) : 0;
-  const [value, setValue] = useState(0);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || safeTarget === 0 || prefersReducedMotion()) {
-      setValue(safeTarget);
-      return;
-    }
-
-    let frame = 0;
-    const startedAt = window.performance.now();
-    setValue(0);
-
-    const tick = (now: number) => {
-      const progress = Math.min(1, (now - startedAt) / durationMs);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(Math.round(safeTarget * eased));
-      if (progress < 1) {
-        frame = window.requestAnimationFrame(tick);
-      }
-    };
-
-    frame = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(frame);
-  }, [durationMs, safeTarget]);
-
-  return value;
-}
-
 function getRecommendationEmptyState(
   status: string | undefined,
   hasProfile: boolean,
@@ -1950,11 +1912,6 @@ export function HomePage() {
   const availableCards = cards.filter(isRecommendationAvailable);
   const unavailableCardCount = cards.length - availableCards.length;
   const totalCards    = recommendedSectionCards.length;
-  const perfectCount  = availableCards.filter(isPerfectFit).length;
-  const avgScore      = availableCards.length ? Math.round(availableCards.reduce((a, c) => a + c.matchScore, 0) / availableCards.length) : 0;
-  const animatedPerfectCount = useAnimatedNumber(perfectCount, 600);
-  const animatedAvgScore = useAnimatedNumber(avgScore, 800);
-  const animatedAvgRingScore = Math.min(100, animatedAvgScore);
   const hasUnfilteredRecommendations = recommendedSectionCards.length > 0;
   const emptyState = getRecommendationEmptyState(
     selectedSection?.status,
@@ -1976,45 +1933,6 @@ export function HomePage() {
                 <div className="hp-stat-label">Total matches</div>
                 <div className="hp-stat-num">{totalCards}{totalCards > 0 && <span>+</span>}</div>
                 <div className="hp-stat-sub">Across all categories</div>
-              </div>
-              <div className="hp-stat-card hp-stat-card-perfect">
-                <div className="hp-stat-label">Perfect fits</div>
-                <div className="hp-stat-num hp-stat-num-perfect">
-                  <span className="hp-stat-value">{animatedPerfectCount}</span>
-                  {perfectCount > 0 && (
-                    <span key={`perfect-finish-${perfectCount}`} className="hp-perfect-finish" aria-hidden="true">
-                      <span className="hp-stat-check"><Ico.Check /></span>
-                      <span className="hp-stat-sparkle one" />
-                      <span className="hp-stat-sparkle two" />
-                      <span className="hp-stat-sparkle three" />
-                    </span>
-                  )}
-                </div>
-                <div className="hp-stat-sub">Perfect matches</div>
-              </div>
-              <div className="hp-stat-card hp-stat-card-average">
-                <div className="hp-stat-layout">
-                  <div className="hp-stat-copy">
-                    <div className="hp-stat-label">Avg fit score</div>
-                    <div className="hp-stat-num">{avgScore ? animatedAvgScore : '—'}<span>{avgScore ? '%' : ''}</span></div>
-                    <div className="hp-stat-sub">Current category</div>
-                  </div>
-                  {avgScore > 0 && (
-                    <div className="hp-fit-ring" aria-hidden="true">
-                      <svg viewBox="0 0 44 44">
-                        <circle className="hp-fit-ring-track" cx="22" cy="22" r="17" />
-                        <circle
-                          className="hp-fit-ring-progress"
-                          cx="22"
-                          cy="22"
-                          r="17"
-                          pathLength="100"
-                          style={{ strokeDashoffset: 100 - animatedAvgRingScore }}
-                        />
-                      </svg>
-                    </div>
-                  )}
-                </div>
               </div>
               <div className="hp-stat-card hp-stat-card-brands">
                 <div className="hp-stat-label">Brands</div>
