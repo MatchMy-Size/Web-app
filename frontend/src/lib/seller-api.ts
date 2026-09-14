@@ -7,6 +7,10 @@ export type SellerProfile = {
   phoneNumber: string;
   address: string;
   photoUrl: string;
+  websiteUrl: string;
+  instagramUrl: string;
+  facebookUrl: string;
+  tiktokUrl: string;
   role: string;
   status: string;
 };

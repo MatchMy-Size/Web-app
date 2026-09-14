@@ -735,7 +735,7 @@ const CSS = `
   }
 
   .mw-page {
-    max-width: 760px;
+    max-width: 1240px;
     padding: 22px 24px calc(104px + env(safe-area-inset-bottom, 0px));
     gap: 14px;
   }
@@ -764,7 +764,7 @@ const CSS = `
 
   .mw-category-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
     overflow: visible;
     padding: 0;
@@ -1098,6 +1098,17 @@ const CSS = `
     border-radius: 12px;
     font-size: 13px;
     white-space: nowrap;
+  }
+
+  /* Keep the current single-card layout when there is not enough room for two readable cards. */
+  @media (max-width: 860px) {
+    .mw-page {
+      max-width: 760px;
+    }
+
+    .mw-category-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   @media (max-width: 620px) {

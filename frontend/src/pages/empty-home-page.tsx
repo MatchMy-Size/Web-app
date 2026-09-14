@@ -19,14 +19,14 @@ import { useRecommendationData } from '@/lib/use-recommendation-data';
 
 const CSS = `
   .dh-root { min-height:100dvh; background:#fafaf8; color:#0d0d0d; font-family:var(--font-sans,'DM Sans',sans-serif); }
-  .dh-page { width:min(960px,100%); margin:0 auto; padding:30px 32px 124px; }
-  .dh-greeting { min-height:198px; display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,42%); align-items:center; gap:18px; padding:0 0 14px; overflow:hidden; }
+  .dh-page { width:min(1320px,100%); margin:0 auto; padding:42px clamp(32px,4vw,64px) 132px; }
+  .dh-greeting { min-height:268px; display:grid; grid-template-columns:minmax(0,1.05fr) minmax(400px,.95fr); align-items:center; gap:clamp(30px,5vw,76px); padding:0 0 26px; overflow:hidden; }
   .dh-greeting-copy { position:relative; z-index:1; }
-  .dh-greeting-figure { position:relative; align-self:stretch; min-height:184px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#eef5eb; border-radius:8px; }
+  .dh-greeting-figure { position:relative; align-self:stretch; min-height:242px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#eef5eb; border-radius:16px; }
   .dh-greeting-figure::after { content:''; position:absolute; left:12%; right:12%; bottom:8px; height:18px; border-radius:50%; background:rgba(73,102,87,.12); filter:blur(10px); }
   .dh-greeting-figure img { position:relative; z-index:1; width:100%; height:100%; display:block; object-fit:cover; object-position:center 38%; }
-  .dh-greeting h1 { max-width:520px; margin:0; font-family:var(--font-display,'Cormorant Garamond',serif); font-size:clamp(34px,3.4vw,42px); line-height:1.04; letter-spacing:0; }
-  .dh-greeting-sub { margin:7px 0 0; color:#777975; font-size:13px; }
+  .dh-greeting h1 { max-width:620px; margin:0; font-family:var(--font-display,'Cormorant Garamond',serif); font-size:clamp(38px,3.6vw,54px); line-height:1.04; letter-spacing:-.02em; }
+  .dh-greeting-sub { margin:10px 0 0; color:#777975; font-size:14px; }
   .dh-section { padding:21px 0; border-bottom:1px solid #e8e8e3; }
   .dh-section-head { display:flex; align-items:center; justify-content:space-between; gap:18px; margin-bottom:15px; }
   .dh-section-head h2 { margin:0; font-size:15px; letter-spacing:0; }
@@ -44,6 +44,12 @@ const CSS = `
   .dh-summary-row strong { color:#111; font-size:12px; }
   .dh-progress { height:5px; overflow:hidden; border-radius:999px; background:#e8ece8; }
   .dh-progress span { display:block; height:100%; border-radius:inherit; background:#496657; transition:width .5s ease; }
+  .dh-dashboard-grid { display:grid; grid-template-columns:minmax(0,1.12fr) minmax(360px,.88fr); gap:24px; align-items:stretch; }
+  .dh-dashboard-grid.is-single { grid-template-columns:minmax(0,1fr); }
+  .dh-dashboard-grid .dh-section { min-width:0; margin:0; padding:24px; border:1px solid #e2e3de; border-radius:18px; background:rgba(255,255,255,.72); }
+  .dh-dashboard-grid .dh-section-head { margin-bottom:18px; }
+  .dh-dashboard-grid .dh-action-section { display:flex; flex-direction:column; }
+  .dh-dashboard-grid .dh-action { flex:1; }
   .dh-action { position:relative; overflow:hidden; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:14px; min-height:142px; padding:20px 132px 20px 20px; border:1px solid #c8dac5; border-radius:8px; background:#eef5eb; }
   .dh-action-icon { width:42px; height:42px; display:grid; place-items:center; border-radius:8px; background:#fff; color:#668469; font-size:20px; }
   .dh-action strong,.dh-action span { display:block; }
@@ -85,6 +91,12 @@ const CSS = `
   .dh-rec-link { align-self:flex-start; min-height:28px; display:inline-flex; align-items:center; gap:5px; margin-top:9px; padding:0 10px; border-radius:999px; background:#111; color:#fff; font-size:9px; font-weight:800; }
   .dh-empty { padding:26px 0; color:#777a75; font-size:12px; }
   .dh-section-footer { display:flex; justify-content:flex-end; margin-top:16px; }
+  @media(max-width:980px) {
+    .dh-page { width:min(1080px,100%); padding-left:32px; padding-right:32px; }
+    .dh-greeting { min-height:224px; grid-template-columns:minmax(0,1fr) minmax(300px,42%); gap:28px; }
+    .dh-greeting-figure { min-height:210px; }
+    .dh-dashboard-grid { grid-template-columns:1fr; }
+  }
   @media(max-width:700px) {
     .dh-page { padding:20px 18px 118px; }
     .dh-greeting { min-height:154px; grid-template-columns:minmax(0,1fr) minmax(142px,42%); gap:8px; padding:0 0 12px; }
@@ -210,32 +222,34 @@ export function EmptyHomePage() {
           <div className="dh-progress"><span style={{ width: `${measurementProgress.percent}%` }} /></div>
         </div>
 
-        {nextAction && <section className="dh-section" aria-labelledby="dh-action-title">
-          <div className="dh-section-head"><h2 id="dh-action-title">Next step</h2></div>
-          <div className="dh-action">
-            <span className="dh-action-icon"><PiRuler /></span>
-            <div><strong>{nextAction.title}</strong><span>{nextAction.detail}</span></div>
-            <button onClick={() => navigate(nextAction.path)}>{nextAction.label}<FiArrowRight /></button>
-            <img className="dh-action-art" src={nextStepImage} alt="" aria-hidden="true" />
-          </div>
-        </section>}
+        <div className={`dh-dashboard-grid${nextAction ? '' : ' is-single'}`}>
+          {nextAction && <section className="dh-section dh-action-section" aria-labelledby="dh-action-title">
+            <div className="dh-section-head"><h2 id="dh-action-title">Next step</h2></div>
+            <div className="dh-action">
+              <span className="dh-action-icon"><PiRuler /></span>
+              <div><strong>{nextAction.title}</strong><span>{nextAction.detail}</span></div>
+              <button onClick={() => navigate(nextAction.path)}>{nextAction.label}<FiArrowRight /></button>
+              <img className="dh-action-art" src={nextStepImage} alt="" aria-hidden="true" />
+            </div>
+          </section>}
 
-        <section className="dh-section" aria-labelledby="dh-coverage-title">
-          <div className="dh-section-head"><h2 id="dh-coverage-title">Measurement coverage</h2><span>Tap a category to update it</span></div>
-          <div className="dh-coverage-summary">
-            <div className="dh-coverage-summary-row"><strong>{measurementProgress.added} of {measurementProgress.total} measurements added</strong><span>{measurementProgress.percent}%</span></div>
-            <div className="dh-progress"><span style={{ width: `${measurementProgress.percent}%` }} /></div>
-          </div>
-          <div className="dh-coverage">
-            {coverage.map(({ option, saved, missing, complete }) => (
-              <button key={option.key} className={`dh-coverage-row${complete ? ' complete' : !saved ? ' not-added' : ''}`} onClick={() => navigate(saved ? `/app/add-preference?profileKey=${saved.profileKey}` : `/app/add-preference?choice=${option.key}`)}>
-                <span className="dh-coverage-name"><span className="dh-coverage-icon">{complete ? <FiCheck /> : <PiRuler />}</span>{option.label}</span>
-                <span className={`dh-coverage-state${complete ? ' complete' : ''}`}>{!saved ? 'Not added' : complete ? 'Complete' : `${missing.length} measurement${missing.length === 1 ? '' : 's'} missing`}</span>
-                <FiChevronRight />
-              </button>
-            ))}
-          </div>
-        </section>
+          <section className="dh-section" aria-labelledby="dh-coverage-title">
+            <div className="dh-section-head"><h2 id="dh-coverage-title">Measurement coverage</h2><span>Tap a category to update it</span></div>
+            <div className="dh-coverage-summary">
+              <div className="dh-coverage-summary-row"><strong>{measurementProgress.added} of {measurementProgress.total} measurements added</strong><span>{measurementProgress.percent}%</span></div>
+              <div className="dh-progress"><span style={{ width: `${measurementProgress.percent}%` }} /></div>
+            </div>
+            <div className="dh-coverage">
+              {coverage.map(({ option, saved, missing, complete }) => (
+                <button key={option.key} className={`dh-coverage-row${complete ? ' complete' : !saved ? ' not-added' : ''}`} onClick={() => navigate(saved ? `/app/add-preference?profileKey=${saved.profileKey}` : `/app/add-preference?choice=${option.key}`)}>
+                  <span className="dh-coverage-name"><span className="dh-coverage-icon">{complete ? <FiCheck /> : <PiRuler />}</span>{option.label}</span>
+                  <span className={`dh-coverage-state${complete ? ' complete' : ''}`}>{!saved ? 'Not added' : complete ? 'Complete' : `${missing.length} measurement${missing.length === 1 ? '' : 's'} missing`}</span>
+                  <FiChevronRight />
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
 
         <section className="dh-section" aria-labelledby="dh-recent-title">
           <div className="dh-section-head"><h2 id="dh-recent-title">Recent recommendations</h2><span>Your strongest matches</span></div>

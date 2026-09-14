@@ -68,3 +68,9 @@ The browser opens at `http://localhost:5173`; the Spring API listens at `http://
 - Render reads `render.yaml` and builds `backend/Dockerfile`.
 - Netlify reads `netlify.toml`, builds `frontend/`, and applies the SPA fallback.
 - Add the values documented in each `.env.example` to the relevant provider dashboard. Never commit real credentials.
+
+### Search engine setup
+
+The public landing page is prepared for indexing. Before the first production deploy, set `VITE_SITE_URL` in Netlify to the final canonical HTTPS URL, for example `https://www.matchmysize.com` (without a trailing slash). The frontend build generates `/robots.txt` and `/sitemap.xml` using that URL.
+
+After deployment, verify the domain in Google Search Console, submit `https://www.your-domain.com/sitemap.xml`, and request indexing for the home page. Account, customer app, authentication, and seller portal routes intentionally send `noindex` headers.

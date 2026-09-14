@@ -35,7 +35,11 @@ public class SellerController {
         @Size(max = 320) String email,
         @Size(max = 32) String phoneNumber,
         @Size(max = 500) String address,
-        @Size(max = 1000) String photoUrl
+        @Size(max = 1000) String photoUrl,
+        @Size(max = 1000) String websiteUrl,
+        @Size(max = 1000) String instagramUrl,
+        @Size(max = 1000) String facebookUrl,
+        @Size(max = 1000) String tiktokUrl
     ) {}
 
     record SizeRowRequest(
@@ -80,7 +84,11 @@ public class SellerController {
                 "email", request.email() == null ? "" : request.email(),
                 "phoneNumber", request.phoneNumber() == null ? "" : request.phoneNumber(),
                 "address", request.address() == null ? "" : request.address(),
-                "photoUrl", request.photoUrl() == null ? "" : request.photoUrl()
+                "photoUrl", request.photoUrl() == null ? "" : request.photoUrl(),
+                "websiteUrl", request.websiteUrl() == null ? "" : request.websiteUrl(),
+                "instagramUrl", request.instagramUrl() == null ? "" : request.instagramUrl(),
+                "facebookUrl", request.facebookUrl() == null ? "" : request.facebookUrl(),
+                "tiktokUrl", request.tiktokUrl() == null ? "" : request.tiktokUrl()
             )
         ));
     }

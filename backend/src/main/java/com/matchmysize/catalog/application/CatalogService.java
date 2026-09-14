@@ -1,5 +1,7 @@
 package com.matchmysize.catalog.application;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -165,7 +167,27 @@ public class CatalogService {
             "photoURL", "photoUrl", "imageUrl", "imageURL", "profilePhoto",
             "profileImage", "bannerImage", "bannerURL", "bannerUrl", "logoUrl", "logoURL"
         ));
+        result.put("websiteUrl", safePublicUrl(profile, "websiteUrl", "website"));
+        result.put("instagramUrl", safePublicUrl(profile, "instagramUrl", "instagram"));
+        result.put("facebookUrl", safePublicUrl(profile, "facebookUrl", "facebook"));
+        result.put("tiktokUrl", safePublicUrl(profile, "tiktokUrl", "tiktok"));
         return result;
+    }
+
+    private String safePublicUrl(Map<String, Object> profile, String... keys) {
+        var value = firstText(profile, keys);
+        if (value == null) return null;
+        if (value.matches("(?i)^[a-z][a-z0-9+.-]*:.*") && !value.matches("(?i)^https?://.*")) return null;
+        var candidate = value.matches("(?i)^https?://.*") ? value : "https://" + value;
+        try {
+            var uri = new URI(candidate);
+            var scheme = uri.getScheme();
+            return ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) && uri.getHost() != null
+                ? uri.toString()
+                : null;
+        } catch (URISyntaxException ignored) {
+            return null;
+        }
     }
 
     private String firstText(Map<String, Object> map, String... keys) {

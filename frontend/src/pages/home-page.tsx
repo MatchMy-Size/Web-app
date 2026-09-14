@@ -740,6 +740,13 @@ const CSS = `
   .hp-modal-add-measurements { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; margin-top: 10px; padding: 0 12px; border: 1px solid var(--sage-deep); border-radius: 8px; background: var(--white); color: var(--sage-deep); font-family: var(--fs); font-size: 11px; font-weight: 800; cursor: pointer; }
   .hp-modal-add-measurements:hover { background: var(--paper); }
   .hp-modal-note { margin-top: 14px; color: var(--ash); font-size: 11px; line-height: 1.55; }
+  .hp-modal-brand-links { margin: 14px 0 2px; padding: 13px 14px; border: 1px solid var(--cloud); border-radius: 13px; background: var(--white); }
+  .hp-modal-brand-links-title { color: var(--ink); font-size: 11px; font-weight: 800; letter-spacing: .55px; text-transform: uppercase; }
+  .hp-modal-brand-links-copy { margin-top: 3px; color: var(--ash); font-size: 11.5px; }
+  .hp-modal-brand-links-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 11px; }
+  .hp-modal-brand-link { display: inline-flex; align-items: center; min-height: 35px; padding: 0 12px; border: 1px solid #dedfd9; border-radius: 9px; background: var(--paper); color: var(--ink); font-family: var(--fs); font-size: 11px; font-weight: 800; text-decoration: none; transition: .18s ease; }
+  .hp-modal-brand-link:hover { border-color: var(--sage-dark); background: var(--sage-light); color: var(--sage-deep); transform: translateY(-1px); }
+  .hp-modal-brand-links-empty { margin-top: 5px; color: var(--ash); font-size: 11.5px; line-height: 1.45; }
   .hp-fit-feedback { margin-top: 18px; padding: 17px; border: 1px solid var(--cloud); border-radius: 15px; background: var(--paper); }
   .hp-fit-feedback-heading { color: var(--ink); font-size: 14px; font-weight: 800; }
   .hp-fit-feedback-copy { margin-top: 4px; color: var(--ash); font-size: 12px; line-height: 1.5; }
@@ -1556,6 +1563,12 @@ function RecommendationDetailsModal({
   const unavailableMeasurements = formatMeasurementKeys(card.unavailablePrimaryMeasurementKeys);
   const missingMeasurements = formatMeasurementKeys(card.missingMeasurements);
   const image = card.imageUrl || card.seller?.photoURL || null;
+  const brandLinks = [
+    ['Website', card.seller?.websiteUrl],
+    ['Instagram', card.seller?.instagramUrl],
+    ['Facebook', card.seller?.facebookUrl],
+    ['TikTok', card.seller?.tiktokUrl],
+  ].filter((entry): entry is [string, string] => Boolean(entry[1]));
   const [feedbackExpanded, setFeedbackExpanded] = useState(false);
   const [experience, setExperience] = useState<FitExperience | null>(null);
   const [outcome, setOutcome] = useState<FitOutcome | null>(null);
@@ -1621,6 +1634,20 @@ function RecommendationDetailsModal({
           {(card.subCategory || card.category) && (
             <div className="hp-modal-subcategory">{[card.subCategory, card.category].filter(Boolean).join(' · ')}</div>
           )}
+          <div className="hp-modal-brand-links">
+            <div className="hp-modal-brand-links-title">{card.brandDisplay} links</div>
+            {brandLinks.length > 0 ? (
+              <div className="hp-modal-brand-links-list">
+                {brandLinks.map(([label, url]) => (
+                  <a className="hp-modal-brand-link" href={url} target="_blank" rel="noopener noreferrer" key={label}>
+                    {label} ↗
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="hp-modal-brand-links-empty">This brand has not added an official website or social link yet.</div>
+            )}
+          </div>
           <p className="hp-modal-copy">{card.explanation}</p>
           {measurementUnavailable ? (
             <div className="hp-modal-unavailable">

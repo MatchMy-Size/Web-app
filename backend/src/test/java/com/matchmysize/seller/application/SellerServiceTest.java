@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -75,6 +76,46 @@ class SellerServiceTest {
             .hasMessage("Seller access is required.");
     }
 
+    @Test
+    void normalizesSellerPublicLinksBeforeSavingProfile() {
+        var seller = seller();
+        when(jsonMaps.copy(seller.profileData())).thenReturn(new LinkedHashMap<>(seller.profileData()));
+        when(users.updateSellerProfile(eq(seller.id()), any())).thenAnswer(invocation -> new AppUser(
+            seller.id(), seller.authUserId(), seller.sourceAccountId(), seller.authEmail(), seller.phoneNumber(),
+            seller.role(), seller.status(), invocation.getArgument(1)
+        ));
+
+        var updated = service.updateProfile(seller, Map.of(
+            "businessName", "Test Brand",
+            "contactName", "Seller",
+            "email", "seller@example.com",
+            "phoneNumber", "+94771234567",
+            "address", "Colombo",
+            "photoUrl", "",
+            "websiteUrl", "testbrand.example/shop",
+            "instagramUrl", "https://instagram.com/testbrand",
+            "facebookUrl", "",
+            "tiktokUrl", ""
+        ));
+
+        assertThat(updated.websiteUrl()).isEqualTo("https://testbrand.example/shop");
+        assertThat(updated.instagramUrl()).isEqualTo("https://instagram.com/testbrand");
+    }
+
+    @Test
+    void rejectsNonHttpSellerPublicLinks() {
+        var seller = seller();
+        when(jsonMaps.copy(seller.profileData())).thenReturn(new LinkedHashMap<>(seller.profileData()));
+
+        assertThatThrownBy(() -> service.updateProfile(seller, Map.of(
+            "businessName", "Test Brand",
+            "contactName", "Seller",
+            "websiteUrl", "javascript:alert(1)"
+        )))
+            .isInstanceOf(ApiException.class)
+            .hasMessage("Website must be a valid website link.");
+    }
+
     private AppUser seller() {
         return new AppUser(
             7L,
@@ -88,4 +129,3 @@ class SellerServiceTest {
         );
     }
 }
-

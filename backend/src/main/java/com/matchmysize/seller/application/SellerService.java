@@ -1,6 +1,8 @@
 package com.matchmysize.seller.application;
 
 import java.math.BigDecimal;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -31,6 +33,10 @@ public class SellerService {
         String phoneNumber,
         String address,
         String photoUrl,
+        String websiteUrl,
+        String instagramUrl,
+        String facebookUrl,
+        String tiktokUrl,
         String role,
         String status
     ) {}
@@ -117,6 +123,10 @@ public class SellerService {
         putOptional(current, "phoneNumber", payload.get("phoneNumber"));
         putOptional(current, "address", payload.get("address"));
         putOptional(current, "photoURL", payload.get("photoUrl"));
+        putOptional(current, "websiteUrl", normalizePublicUrl(payload.get("websiteUrl"), "Website"));
+        putOptional(current, "instagramUrl", normalizePublicUrl(payload.get("instagramUrl"), "Instagram"));
+        putOptional(current, "facebookUrl", normalizePublicUrl(payload.get("facebookUrl"), "Facebook"));
+        putOptional(current, "tiktokUrl", normalizePublicUrl(payload.get("tiktokUrl"), "TikTok"));
         current.put("role", "seller");
         current.put("updatedAt", Instant.now().toString());
         var updated = users.updateSellerProfile(appUser.id(), current);
@@ -306,6 +316,10 @@ public class SellerService {
             firstText(text(data.get("phoneNumber")), appUser.phoneNumber(), ""),
             firstText(text(data.get("address")), ""),
             firstText(text(data.get("photoURL")), text(data.get("logoUrl")), ""),
+            firstText(text(data.get("websiteUrl")), text(data.get("website")), ""),
+            firstText(text(data.get("instagramUrl")), text(data.get("instagram")), ""),
+            firstText(text(data.get("facebookUrl")), text(data.get("facebook")), ""),
+            firstText(text(data.get("tiktokUrl")), text(data.get("tiktok")), ""),
             appUser.role(),
             appUser.status()
         );
@@ -365,6 +379,29 @@ public class SellerService {
     private void putOptional(Map<String, Object> target, String key, Object value) {
         var text = text(value);
         if (text == null) target.remove(key); else target.put(key, text);
+    }
+
+    private String normalizePublicUrl(Object value, String label) {
+        var candidate = text(value);
+        if (candidate == null) return null;
+        if (candidate.matches("(?i)^[a-z][a-z0-9+.-]*:.*") && !candidate.matches("(?i)^https?://.*")) {
+            throw invalidPublicLink(label);
+        }
+        if (!candidate.matches("(?i)^https?://.*")) candidate = "https://" + candidate;
+        try {
+            var uri = new URI(candidate);
+            var scheme = uri.getScheme();
+            if (("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) && uri.getHost() != null) {
+                return uri.toString();
+            }
+        } catch (URISyntaxException ignored) {
+            // Converted to a field-specific validation error below.
+        }
+        throw invalidPublicLink(label);
+    }
+
+    private ApiException invalidPublicLink(String label) {
+        return new ApiException(HttpStatus.BAD_REQUEST, "invalid_public_link", label + " must be a valid website link.");
     }
 
     private String firstText(String... values) {
