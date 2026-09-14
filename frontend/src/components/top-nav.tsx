@@ -865,7 +865,7 @@ export function TopNav({
   const [subjectMenuOpen, setSubjectMenuOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [subjectToast, setSubjectToast] = useState<string | null>(null);
-  const toastTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
 
   const { linksRef, indicatorStyle } = useSlidingIndicator(location.pathname);
   const scrollPct = useScrollProgress();
