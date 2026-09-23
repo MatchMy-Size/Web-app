@@ -28,7 +28,7 @@ services:
       - key: SUPABASE_JWKS_URI
         sync: false
       - key: APP_CORS_ALLOWED_ORIGINS
-        sync: false
+        value: https://www.matchmysize.com,https://matchmysize.com,https://matchmysize.netlify.app
       - key: PHONE_PASSWORD_DOMAIN
         value: phone.whatmysize.app
       - key: TEXTLK_API_TOKEN
