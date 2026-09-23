@@ -15,8 +15,13 @@ spring:
       maximum-pool-size: ${DB_POOL_SIZE:5}
       minimum-idle: 1
       connection-timeout: 20000
+      # Do not crash the process on the first transient TLS/network failure.
+      # Flyway performs the bounded startup retries configured below.
+      initialization-fail-timeout: -1
   flyway:
     enabled: true
+    connect-retries: ${FLYWAY_CONNECT_RETRIES:10}
+    connect-retries-interval: ${FLYWAY_CONNECT_RETRIES_INTERVAL:5s}
   jackson:
     default-property-inclusion: non_null
 

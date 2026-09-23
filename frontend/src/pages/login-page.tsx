@@ -1,8 +1,9 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import loginFigures from '@/assets/images/loginfigures.png';
 import { AppLogo } from '@/components/app-logo';
+import { apiRequest } from '@/lib/api-client';
 import { signInWithPhonePassword } from '@/lib/auth-api';
 import {
   DEFAULT_PHONE_COUNTRY_CODE,
@@ -642,6 +643,15 @@ export function LoginPage() {
   );
 
   const canSubmit = useMemo(() => phoneNumber.trim() && password.trim(), [phoneNumber, password]);
+
+  useEffect(() => {
+    // Render's free instances sleep when idle. Start waking the API as soon as
+    // the sign-in screen opens instead of waiting for the user to submit.
+    void apiRequest('/api/health', {
+      authenticated: false,
+      timeoutMs: 90_000,
+    }).catch(() => undefined);
+  }, []);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
