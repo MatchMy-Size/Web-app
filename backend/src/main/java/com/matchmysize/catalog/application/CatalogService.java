@@ -41,13 +41,14 @@ public class CatalogService {
     @Transactional(readOnly = true)
     public CatalogBootstrap bootstrap() {
         var brandRows = jdbc.sql("""
-                select catalog_id, raw_data::text as raw_json
+                select catalog_id, size_chart_id, raw_data::text as raw_json
                   from brand_size_measurements
                  order by brand_name nulls last, size_key nulls last, catalog_id
                 """)
             .query((rs, rowNum) -> {
                 var row = jsonMaps.read(rs.getString("raw_json"));
                 row.put("id", rs.getString("catalog_id"));
+                row.put("sizeChartId", rs.getString("size_chart_id"));
                 MeasurementUnits.normalizeCatalogRecord(row);
                 return row;
             })

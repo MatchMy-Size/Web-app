@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build && node ./scripts/generate-seo-files.mjs",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:sizes": "node --test scripts/size-labels.test.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.23.24",

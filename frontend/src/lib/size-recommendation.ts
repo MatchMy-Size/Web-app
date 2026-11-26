@@ -24,6 +24,7 @@ export type BrandRecommendation = {
   title: string;
   recommendedSize: string | null;
   sizeLabel: string;
+  availableSizes: string[];
   sizeKey: number | null;
   category: string;
   subCategory: string;
@@ -641,6 +642,14 @@ export const buildBrandRecommendationResult = ({
     return right.matchScore - left.matchScore;
   };
 
+  const chartSizes = new Map<string, Set<string>>();
+  for (const entry of brandRows) {
+    if (entry.isActive === false || !entry.sizeChartId) continue;
+    const sizes = chartSizes.get(entry.sizeChartId) ?? new Set<string>();
+    sizes.add(getSizeLabel(entry));
+    chartSizes.set(entry.sizeChartId, sizes);
+  }
+
   const candidates = brandRows
     .filter((entry) => entry.isActive !== false)
     .filter((entry) => {
@@ -783,6 +792,7 @@ export const buildBrandRecommendationResult = ({
         title: getTitle(entry),
         recommendedSize: primaryMeasurementUnavailable ? null : sizeLabel,
         sizeLabel,
+        availableSizes: entry.sizeChartId ? [...(chartSizes.get(entry.sizeChartId) ?? [])] : [sizeLabel],
         sizeKey,
         category: getCategoryLabel(entry),
         subCategory: getSubCategoryLabel(entry),

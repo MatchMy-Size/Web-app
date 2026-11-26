@@ -45,6 +45,7 @@ public class SellerController {
     record SizeRowRequest(
         @Size(max = 256) String catalogId,
         @NotBlank @Size(max = 80) String sizeLabel,
+        @Size(max = 20) String sizeSystem,
         BigDecimal sizeKey,
         Map<String, Object> measurements
     ) {}
@@ -141,6 +142,7 @@ public class SellerController {
             request.sizes().stream().map(size -> new SizeInput(
                 size.catalogId(),
                 size.sizeLabel(),
+                size.sizeSystem(),
                 size.sizeKey(),
                 size.measurements()
             )).toList()

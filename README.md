@@ -27,7 +27,7 @@ Legacy customer accounts were intentionally reset. Seller and super-admin identi
 - Existing sellers sign in at `/seller/login` with their linked email or phone number.
 - New sellers register at `/seller/register`; phone OTP verification is required before Supabase Auth and the seller profile are created.
 - `/seller/dashboard` shows the authenticated seller's business profile and live catalog totals.
-- `/seller/categories` creates and edits seller-owned clothing categories and size charts. Measurements may be entered in cm or inches and are persisted in cm.
+- `/seller/categories` creates and edits seller-owned clothing categories and size charts. Each size accepts an optional system such as UK, US, or EU (including custom labels) alongside its size value. Customers see the full label, e.g. UK 10, in recommendations and can view the chart's available sizes in recommendation details. Measurements may be entered in cm or inches and are persisted in cm.
 - Product inventory management is intentionally excluded. Seller data is scoped by the authenticated seller ID and flows into the existing customer recommendation catalog.
 
 ## Local development

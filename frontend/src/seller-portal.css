@@ -171,11 +171,13 @@
 .seller-segmented button.active { background:#e6f0e2; border-color:#9fbb9d; }
 .seller-segmented strong,.seller-segmented small { display:block; }.seller-segmented strong { font-size:10.5px; }.seller-segmented small { color:#858783; font-size:8.5px; margin-top:3px; }
 .seller-size-table-wrap { overflow-x:auto; border:1px solid #e3e4df; border-radius:13px; }
-.seller-size-table { width:100%; border-collapse:collapse; min-width:690px; }
-.seller-size-table th { background:#f4f5f1; color:#696b67; font-size:8.5px; letter-spacing:.04em; text-align:left; padding:10px 8px; white-space:nowrap; }
-.seller-size-table th b,.seller-table-note b { color:#a85448; }.seller-size-table th small { display:block; color:#a0a29e; font-size:7.5px; margin-top:2px; }
+.seller-size-system-help { color:#696b67; font-size:.875rem; line-height:1.5; margin:0 0 14px; }
+.seller-size-table { width:100%; border-collapse:collapse; min-width:800px; }
+.seller-size-table th { background:#f4f5f1; color:#696b67; font-size:.875rem; letter-spacing:.04em; text-align:left; padding:10px 8px; white-space:nowrap; }
+.seller-size-table th b,.seller-table-note b { color:#a85448; }.seller-size-table th small { display:block; color:#696b67; font-size:.8125rem; margin-top:2px; }
 .seller-size-table td { border-top:1px solid #e7e8e3; padding:7px; background:#fff; }
-.seller-size-table input { width:100%; min-width:72px; height:39px; border:1px solid #e1e2dd; border-radius:9px; padding:0 9px; outline:0; font-size:10.5px; }
+.seller-size-table input { width:100%; min-width:90px; height:39px; border:1px solid #e1e2dd; border-radius:9px; padding:0 9px; outline:0; font-size:.875rem; }
+.seller-size-table td:first-child input { min-width:130px; }
 .seller-size-table input:focus { border-color:#84a184; box-shadow:0 0 0 2px rgba(132,161,132,.1); }
 .seller-remove-row { border:0; background:#fff0ee; color:#a34a40; width:34px; height:34px; border-radius:9px; cursor:pointer; }.seller-remove-row:disabled { opacity:.3; cursor:not-allowed; }
 .seller-table-note { color:#858783; font-size:8.5px; margin-top:9px; }

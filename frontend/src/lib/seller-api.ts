@@ -24,6 +24,7 @@ export type SellerDashboard = {
 export type SellerSizeRow = {
   catalogId?: string;
   sizeLabel: string;
+  sizeSystem?: string | null;
   sizeKey?: number;
   averagePoint?: number;
   measurements: Record<string, number>;
