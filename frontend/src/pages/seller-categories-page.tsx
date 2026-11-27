@@ -13,7 +13,11 @@ import '@/seller-portal.css';
 
 type Department = 'MEN' | 'WOMEN' | 'CHILDREN' | 'UNISEX';
 type Unit = 'cm' | 'in';
-type FormRow = { catalogId?: string; sizeLabel: string; measurements: Record<string, string> };
+type FormRow = { catalogId?: string; sizeLabel: string; sizeSystem: string; measurements: Record<string, string> };
+
+const sizeSystems = ['UK', 'US', 'EU', 'AU', 'JP', 'CN', 'IT', 'FR', 'DE'];
+const displaySize = (size: { sizeLabel: string; sizeSystem?: string | null }) =>
+  [size.sizeSystem, size.sizeLabel].filter(Boolean).join(' ');
 
 const departmentLabels: Record<Department, string> = { MEN: 'Men', WOMEN: 'Women', CHILDREN: 'Children', UNISEX: 'Unisex' };
 const categoryOptions: Record<Department, { value: string; label: string }[]> = {
@@ -43,7 +47,7 @@ const specs: Record<string, { keys: string[]; primary: string[] }> = {
 };
 
 const titleCase = (value: string) => value.replace(/([A-Z])/g, ' $1').replace(/^./, letter => letter.toUpperCase());
-const newRows = (): FormRow[] => ['S', 'M', 'L', 'XL'].map(sizeLabel => ({ sizeLabel, measurements: {} }));
+const newRows = (): FormRow[] => ['S', 'M', 'L', 'XL'].map(sizeLabel => ({ sizeLabel, sizeSystem: '', measurements: {} }));
 
 export function SellerCategoriesPage() {
   const [charts, setCharts] = useState<SellerSizeChart[]>([]);
@@ -93,7 +97,7 @@ export function SellerCategoriesPage() {
             <article className="seller-chart-card" key={chart.id}>
               <div className="seller-chart-card-top"><span className="seller-chart-icon"><FiSliders /></span><span className="seller-chart-department">{departmentLabels[chart.department]}</span></div>
               <div><p className="seller-kicker">{chart.brandName}</p><h2>{titleCase(chart.mainCategory)}</h2><p>{chart.subcategory || 'Standard fit'} · {chart.measurementBasis === 'GARMENT' ? 'Garment measurements' : 'Body measurements'}</p></div>
-              <div className="seller-size-pills">{chart.sizes.map(size => <span key={size.catalogId || size.sizeLabel}>{size.sizeLabel}</span>)}</div>
+              <div className="seller-size-pills">{chart.sizes.map(size => <span key={size.catalogId || displaySize(size)}>{displaySize(size)}</span>)}</div>
               <div className="seller-chart-measures">{chart.measurementKeys.map(key => <span key={key}>{titleCase(key)}</span>)}</div>
               <footer><span>{chart.sizes.length} size{chart.sizes.length === 1 ? '' : 's'} · Stored in cm</span><div><button type="button" onClick={() => setEditing(chart)} title="Edit chart"><FiEdit3 /></button><button className="danger" type="button" onClick={() => void archive(chart)} title="Archive chart"><FiArchive /></button></div></footer>
             </article>
@@ -116,7 +120,7 @@ function SizeChartModal({ chart, onClose, onSaved }: { chart?: SellerSizeChart; 
   const [subcategory, setSubcategory] = useState(chart?.subcategory || '');
   const [unit, setUnit] = useState<Unit>('cm');
   const [basis, setBasis] = useState<'BODY' | 'GARMENT'>(chart?.measurementBasis || 'BODY');
-  const [rows, setRows] = useState<FormRow[]>(chart?.sizes.map(size => ({ catalogId: size.catalogId, sizeLabel: size.sizeLabel, measurements: Object.fromEntries(Object.entries(size.measurements).map(([key, value]) => [key, String(value)])) })) || newRows());
+  const [rows, setRows] = useState<FormRow[]>(chart?.sizes.map(size => ({ catalogId: size.catalogId, sizeLabel: size.sizeLabel, sizeSystem: size.sizeSystem || '', measurements: Object.fromEntries(Object.entries(size.measurements).map(([key, value]) => [key, String(value)])) })) || newRows());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const spec = specs[`${department}:${category}`] || { keys: chart?.measurementKeys || [], primary: chart?.primaryMeasurementKeys || [] };
@@ -141,12 +145,12 @@ function SizeChartModal({ chart, onClose, onSaved }: { chart?: SellerSizeChart; 
     event.preventDefault(); setError('');
     if (!rows.length) return setError('Add at least one size row.');
     for (const row of rows) {
-      if (!row.sizeLabel.trim()) return setError('Every row needs a size label.');
-      if (!spec.primary.some(key => Number(row.measurements[key]) > 0)) return setError(`Size ${row.sizeLabel} needs a ${spec.primary.map(titleCase).join(' or ')} measurement.`);
+      if (!row.sizeLabel.trim()) return setError('Every row needs a size value.');
+      if (!spec.primary.some(key => Number(row.measurements[key]) > 0)) return setError(`Size ${displaySize(row)} needs a ${spec.primary.map(titleCase).join(' or ')} measurement.`);
     }
     const payload: SaveSellerSizeChart = {
       department, mainCategory: category, subcategory: subcategory.trim(), unit, measurementBasis: basis,
-      sizes: rows.map((row, index) => ({ catalogId: row.catalogId, sizeLabel: row.sizeLabel.trim(), sizeKey: index + 1, measurements: Object.fromEntries(Object.entries(row.measurements).filter(([, value]) => value !== '' && Number(value) > 0).map(([key, value]) => [key, Number(value)])) })),
+      sizes: rows.map((row, index) => ({ catalogId: row.catalogId, sizeLabel: row.sizeLabel.trim(), sizeSystem: row.sizeSystem.trim().toUpperCase(), sizeKey: index + 1, measurements: Object.fromEntries(Object.entries(row.measurements).filter(([, value]) => value !== '' && Number(value) > 0).map(([key, value]) => [key, Number(value)])) })),
     };
     try {
       setSaving(true);
@@ -169,8 +173,22 @@ function SizeChartModal({ chart, onClose, onSaved }: { chart?: SellerSizeChart; 
               <label className="seller-grid-wide"><span>Measurement basis</span><div className="seller-segmented"><button type="button" className={basis === 'BODY' ? 'active' : ''} onClick={() => setBasis('BODY')}><strong>Body measurements</strong><small>Chart describes the wearer</small></button><button type="button" className={basis === 'GARMENT' ? 'active' : ''} onClick={() => setBasis('GARMENT')}><strong>Garment measurements</strong><small>Chart includes clothing ease</small></button></div></label>
             </div></section>
 
-            <section className="seller-form-section"><div className="seller-section-heading chart"><div><h3>Size measurements</h3><p>Enter values in {unit === 'cm' ? 'centimetres' : 'inches'}. They will be stored in centimetres.</p></div><button type="button" className="seller-secondary-button small" onClick={() => setRows(current => [...current, { sizeLabel: '', measurements: {} }])}><FiPlus /> Add size</button></div>
-              <div className="seller-size-table-wrap"><table className="seller-size-table"><thead><tr><th>Size</th>{spec.keys.map(key => <th key={key}>{titleCase(key)} {spec.primary.includes(key) && <b>*</b>}<small>{unit}</small></th>)}<th aria-label="Actions" /></tr></thead><tbody>{rows.map((row, rowIndex) => <tr key={`${row.catalogId || 'new'}-${rowIndex}`}><td><input value={row.sizeLabel} onChange={event => updateRow(rowIndex, { sizeLabel: event.target.value })} placeholder="e.g. M" /></td>{spec.keys.map(key => <td key={key}><input type="number" min="0" step="0.01" value={row.measurements[key] || ''} onChange={event => updateMeasurement(rowIndex, key, event.target.value)} placeholder="—" /></td>)}<td><button type="button" className="seller-remove-row" onClick={() => setRows(current => current.filter((_, index) => index !== rowIndex))} disabled={rows.length === 1} title="Remove size"><FiTrash2 /></button></td></tr>)}</tbody></table></div>
+            <section className="seller-form-section"><div className="seller-section-heading chart"><div><h3>Size measurements</h3><p>Enter values in {unit === 'cm' ? 'centimetres' : 'inches'}. They will be stored in centimetres.</p></div><button type="button" className="seller-secondary-button small" onClick={() => setRows(current => [...current, { sizeLabel: '', sizeSystem: current[current.length - 1]?.sizeSystem || '', measurements: {} }])}><FiPlus /> Add size</button></div>
+              <p className="seller-size-system-help" id="size-system-help">Choose or type a size system, then enter the size value, e.g. UK + 10 or EU + 38. Leave the system blank for S, M, L. Customers will see the full label.</p>
+              <datalist id="seller-size-systems">{sizeSystems.map(system => <option value={system} key={system} />)}</datalist>
+              <div className="seller-size-table-wrap">
+                <table className="seller-size-table">
+                  <thead><tr><th scope="col">Size system<small>Optional</small></th><th scope="col">Size value</th>{spec.keys.map(key => <th scope="col" key={key}>{titleCase(key)} {spec.primary.includes(key) && <b>*</b>}<small>{unit}</small></th>)}<th aria-label="Actions" /></tr></thead>
+                  <tbody>{rows.map((row, rowIndex) => (
+                    <tr key={`${row.catalogId || 'new'}-${rowIndex}`}>
+                      <td><input list="seller-size-systems" value={row.sizeSystem} maxLength={20} onChange={event => updateRow(rowIndex, { sizeSystem: event.target.value.toUpperCase() })} placeholder="UK, US, EU…" aria-label={`Size system for row ${rowIndex + 1}`} aria-describedby="size-system-help" /></td>
+                      <td><input value={row.sizeLabel} maxLength={80} onChange={event => updateRow(rowIndex, { sizeLabel: event.target.value })} placeholder="e.g. 10 or M" aria-label={`Size value for row ${rowIndex + 1}`} required /></td>
+                      {spec.keys.map(key => <td key={key}><input type="number" min="0" step="0.01" value={row.measurements[key] || ''} onChange={event => updateMeasurement(rowIndex, key, event.target.value)} placeholder="—" aria-label={`${titleCase(key)} in ${unit} for row ${rowIndex + 1}`} /></td>)}
+                      <td><button type="button" className="seller-remove-row" onClick={() => setRows(current => current.filter((_, index) => index !== rowIndex))} disabled={rows.length === 1} aria-label={`Remove size row ${rowIndex + 1}`} title="Remove size"><FiTrash2 /></button></td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
               <p className="seller-table-note"><b>*</b> Primary measurement required for every size. Empty optional fields are allowed.</p>
             </section>
             {error && <div className="seller-form-error">{error}</div>}

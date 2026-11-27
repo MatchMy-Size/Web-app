@@ -723,6 +723,11 @@ const CSS = `
   .hp-modal-unavailable { display: flex; align-items: flex-start; gap: 9px; margin-top: 18px; padding: 14px; border: 1px solid var(--cloud); border-radius: 12px; background: var(--paper); color: var(--ash); font-size: 13px; line-height: 1.5; }
   .hp-modal-unavailable svg { width: 17px; height: 17px; flex: 0 0 auto; margin-top: 1px; color: var(--sage-deep); }
   .hp-modal-unavailable strong { display: block; margin-bottom: 3px; color: var(--ink); }
+  .hp-modal-available-sizes { margin-top: 20px; }
+  .hp-modal-available-sizes h3 { color: var(--ink); font-size: .875rem; margin: 0; }
+  .hp-modal-available-sizes p { color: var(--ash); font-size: .8125rem; margin: 6px 0 10px; }
+  .hp-modal-available-sizes ul { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 0; }
+  .hp-modal-available-sizes li { background: var(--paper); border: 1px solid var(--cloud); border-radius: 8px; color: var(--ink); font-size: .875rem; font-weight: 700; padding: 7px 11px; }
   .hp-modal-metrics { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-top: 16px; }
   .hp-modal-metric { padding: 13px 14px; border: 1px solid var(--cloud); border-radius: 12px; background: var(--paper); }
   .hp-modal-metric-label { color: var(--ash); font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
@@ -1666,6 +1671,11 @@ function RecommendationDetailsModal({
               <span className={`hp-modal-fit ${cls}`}>{getFitLabel(card)}</span>
             </div>
           )}
+          <div className="hp-modal-available-sizes">
+            <h3>Available sizes</h3>
+            <p>Sizes published by this seller for this chart.</p>
+            <ul>{card.availableSizes.map(size => <li key={size}>{size}</li>)}</ul>
+          </div>
           <div className="hp-modal-metrics">
             <div className="hp-modal-metric">
               <div className="hp-modal-metric-label">Fit score</div>

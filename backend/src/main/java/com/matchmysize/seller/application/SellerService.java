@@ -42,7 +42,7 @@ public class SellerService {
     ) {}
 
     public record DashboardResponse(SellerProfile profile, long categoryCount, long sizeCount) {}
-    public record SizeInput(String catalogId, String sizeLabel, BigDecimal sizeKey, Map<String, Object> measurements) {}
+    public record SizeInput(String catalogId, String sizeLabel, String sizeSystem, BigDecimal sizeKey, Map<String, Object> measurements) {}
     public record SaveChartCommand(
         String department,
         String mainCategory,
@@ -54,6 +54,7 @@ public class SellerService {
     public record SizeResponse(
         String catalogId,
         String sizeLabel,
+        String sizeSystem,
         BigDecimal sizeKey,
         BigDecimal averagePoint,
         Map<String, Object> measurements
@@ -198,7 +199,10 @@ public class SellerService {
 
         for (int index = 0; index < command.sizes().size(); index++) {
             var size = command.sizes().get(index);
-            var sizeLabel = requiredText(size.sizeLabel(), "Every row needs a size label.");
+            var sizeValue = requiredText(size.sizeLabel(), "Every row needs a size value.");
+            var sizeSystem = optionalText(size.sizeSystem());
+            if (sizeSystem != null) sizeSystem = sizeSystem.toUpperCase(Locale.ROOT);
+            var sizeLabel = sizeSystem == null ? sizeValue : sizeSystem + " " + sizeValue;
             var measurements = normalizeMeasurements(size.measurements(), inputUnit, spec);
             var hasPrimary = spec.primaryKeys().stream().anyMatch(measurements::containsKey);
             if (!hasPrimary) {
@@ -222,6 +226,8 @@ public class SellerService {
             raw.put("subCategory", optionalText(command.subcategory()));
             raw.put("sizeLabel", sizeLabel);
             raw.put("sizeLabels", sizeLabel);
+            raw.put("sizeValue", sizeValue);
+            raw.put("sizeSystem", sizeSystem);
             raw.put("sizeKey", size.sizeKey() == null ? BigDecimal.valueOf(index + 1L) : size.sizeKey());
             raw.put("unit", MeasurementUnits.CANONICAL_UNIT);
             raw.put("averagePoint", average);
@@ -294,7 +300,8 @@ public class SellerService {
             primaryKeys,
             rows.stream().map(row -> new SizeResponse(
                 row.catalogId(),
-                firstText(row.sizeLabel(), text(row.rawData().get("sizeLabel")), "N/A"),
+                firstText(text(row.rawData().get("sizeValue")), row.sizeLabel(), text(row.rawData().get("sizeLabel")), "N/A"),
+                text(row.rawData().get("sizeSystem")),
                 row.sizeKey(),
                 row.averagePoint(),
                 jsonMaps.asMap(row.rawData().get("measurements"))

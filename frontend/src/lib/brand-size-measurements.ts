@@ -17,6 +17,7 @@ export type BrandSizeMeasurementRecord = {
   subCategory?: string | null;
   sizeLabels?: string | null;
   sizeLabel?: string | null;
+  sizeChartId?: string | null;
   size?: string | number | null;
   sizeKey?: number | null;
   label?: string | null;
