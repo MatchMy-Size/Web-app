@@ -568,17 +568,17 @@ export function ChangePasswordPage() {
   return <PasswordFlow mode="change" />;
 }
 
-export function ForgotPasswordPage() {
-  return <PasswordFlow mode="reset" />;
+export function ForgotPasswordPage({ portal = 'customer' }: { portal?: 'customer' | 'seller' }) {
+  return <PasswordFlow mode="reset" portal={portal} />;
 }
 
-function PasswordFlow({ mode }: { mode: PasswordFlowMode }) {
+function PasswordFlow({ mode, portal = 'customer' }: { mode: PasswordFlowMode; portal?: 'customer' | 'seller' }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user }  = useAuth();
   const { profile } = useRecommendationData(mode === 'change' ? user?.uid : null, { subject: 'self' });
   const isPasswordReset = mode === 'reset';
-  const sellerReset = isPasswordReset && searchParams.get('portal') === 'seller';
+  const sellerReset = isPasswordReset && (portal === 'seller' || searchParams.get('portal') === 'seller');
   const resetReturnPath = sellerReset ? '/seller/login' : '/auth/login';
 
   const [step,        setStep]        = useState<Step>('verify');
@@ -668,10 +668,10 @@ function PasswordFlow({ mode }: { mode: PasswordFlowMode }) {
           className="cp-back-btn"
           onClick={() => navigate(isPasswordReset ? resetReturnPath : '/app/settings')}
         >
-          {isPasswordReset ? 'Back to sign in' : 'Back to settings'}
+          {sellerReset ? 'Back to seller sign in' : isPasswordReset ? 'Back to sign in' : 'Back to settings'}
         </button>
         <div className="cp-topbar-divider" />
-        <span className="cp-topbar-title">{isPasswordReset ? 'Reset password' : 'Change password'}</span>
+        <span className="cp-topbar-title">{sellerReset ? 'Seller Studio · Reset password' : isPasswordReset ? 'Reset password' : 'Change password'}</span>
 
         {/* Step indicator */}
         <div className="cp-stepper">
@@ -701,9 +701,9 @@ function PasswordFlow({ mode }: { mode: PasswordFlowMode }) {
             <div className="cp-hero-glow" />
             <div className="cp-hero-icon-wrap"><Icon /></div>
             <div className="cp-hero-body">
-              <div className="cp-hero-eyebrow">{meta.eyebrow}</div>
+              <div className="cp-hero-eyebrow">{sellerReset ? `Seller account · ${meta.eyebrow}` : meta.eyebrow}</div>
               <div className="cp-hero-title">{meta.title}</div>
-              <div className="cp-hero-sub">{meta.sub}</div>
+              <div className="cp-hero-sub">{sellerReset && step === 'verify' ? 'Enter the phone number connected to your seller account. We’ll send a one-time verification code.' : meta.sub}</div>
             </div>
           </div>
 

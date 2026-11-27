@@ -59,7 +59,7 @@ export function SellerLoginPage() {
         <form onSubmit={submit} className="seller-form-stack">
           <label><span>Email or phone</span><div className="seller-input-icon"><FiMail /><input value={identifier} onChange={event => setIdentifier(event.target.value)} placeholder="seller@brand.com or +94…" autoComplete="username" required /></div></label>
           <label><span>Password</span><div className="seller-input-icon"><FiLock /><input type={showPassword ? 'text' : 'password'} value={password} onChange={event => setPassword(event.target.value)} placeholder="Enter your password" autoComplete="current-password" required /><button type="button" onClick={() => setShowPassword(value => !value)} aria-label="Toggle password">{showPassword ? <FiEyeOff /> : <FiEye />}</button></div></label>
-          <div className="seller-form-meta"><Link to="/auth/forgot-password?portal=seller">Forgot password?</Link></div>
+          <div className="seller-form-meta"><Link to="/seller/forgot-password">Forgot password?</Link></div>
           {error && <div className="seller-form-error">{error}</div>}
           <button className="seller-primary-button" type="submit" disabled={loading || !identifier.trim() || !password}>{loading ? 'Signing in…' : <>Open seller studio <FiArrowRight /></>}</button>
         </form>

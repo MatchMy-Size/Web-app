@@ -48,6 +48,7 @@ export default function App() {
           <Route path="/auth/register" element={<RegisterPage />} />
           <Route path="/auth/otp" element={<OtpPage />} />
           <Route path="/seller/login" element={<SellerLoginPage />} />
+          <Route path="/seller/forgot-password" element={<ForgotPasswordPage portal="seller" />} />
           <Route path="/seller/register" element={<SellerRegisterPage />} />
         </Route>
 
